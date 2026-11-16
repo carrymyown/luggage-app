@@ -1418,3 +1418,35 @@ input:focus, select:focus { outline: 1px solid var(--primary); }
 #kind-sheet .link { display: inline-block; margin: 8px 0 4px; }
 /* 行李箱設定：自己加的選項可以長按刪除 */
 #bge-sheet [data-custom] { -webkit-touch-callout: none; -webkit-user-select: none; user-select: none; }
+
+/* ---------- 首頁：旅程卡（左右滑動，每趟一張） ---------- */
+.trip-cards {
+  display: flex; overflow-x: auto; scroll-snap-type: x mandatory; -webkit-overflow-scrolling: touch;
+  scrollbar-width: none; margin: 0 0 6px;
+}
+.trip-cards::-webkit-scrollbar { display: none; }
+.trip-card {
+  flex: 0 0 100%; scroll-snap-align: center; box-sizing: border-box;
+  text-align: center; padding: 30px 8px 34px; color: var(--text); text-decoration: none;
+}
+.tc-date { font-size: 0.85rem; letter-spacing: 0.08em; color: var(--muted); }
+.tc-name { margin-left: 10px; }
+.tc-route { font-family: var(--serif); font-size: 1.25rem; letter-spacing: 0.06em; margin-top: 8px; }
+.tc-label { font-size: 0.9rem; letter-spacing: 0.12em; margin-top: 26px; }
+.tc-value {
+  font-family: var(--serif); font-weight: 300; font-size: clamp(5rem, 26vw, 8.5rem); line-height: 1;
+  letter-spacing: -0.02em; color: var(--gold); margin: 12px 0 10px; position: relative; display: inline-block;
+}
+.tc-value small { font-family: var(--sans); font-size: 0.16em; font-weight: 400; letter-spacing: 0.1em; color: var(--text); margin-left: 6px; }
+.tc-value.none { color: var(--line); }
+.tc-dot { display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: var(--ok); margin-left: 10px; vertical-align: middle; }
+.tc-dot.warn { background: var(--warn); }
+.tc-dot.bad { background: var(--bad); }
+.tc-dot.none { background: var(--line); }
+.tc-note { font-size: 0.8rem; color: var(--muted); letter-spacing: 0.06em; }
+.trip-dots { display: flex; justify-content: center; gap: 8px; margin: -4px 0 14px; }
+.trip-dots button { width: 6px; height: 6px; padding: 0; border: 0; border-radius: 50%; background: var(--line); cursor: pointer; }
+.trip-dots button.on { background: var(--text); }
+.trip-none { text-align: center; padding: 48px 0 40px; }
+.sec-right { display: flex; align-items: baseline; gap: 14px; }
+.bag-row[disabled] { cursor: default; color: inherit; opacity: 1; }

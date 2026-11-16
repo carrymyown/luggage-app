@@ -110,7 +110,7 @@
     var budget = info.remain + w.planUsed + w.impulseUsed;
     var planQ = budget * r, impQ = budget - planQ;
     return {
-      remain: info.remain, budget: budget, ratio: r, w: w, next: info.next,
+      remain: info.remain, budget: budget, ratio: r, w: w, next: info.next, leg: info.leg,
       planQ: planQ, impQ: impQ,
       planLeft: planQ - w.planUsed - w.reserve, impLeft: impQ - w.impulseUsed
     };
@@ -206,7 +206,7 @@
     }
     $('#shop-remain').textContent = fmt(q.remain);
     $('#shop-remain').classList.toggle('over', q.remain < 0);
-    $('#shop-remain-note').textContent = '依下一段 ' + window.Trips.fmtDate(q.next.leg.date) + '「' + (q.next.leg.from || '?') + ' → ' + (q.next.leg.to || '?') + '」的額度' +
+    $('#shop-remain-note').textContent = '依 ' + window.Trips.fmtDate(q.leg.date) + '「' + (q.leg.from || '?') + ' → ' + (q.leg.to || '?') + '」的額度（這趟最緊的一段）' +
       (q.next.trip.id !== t.id ? '（不是這趟旅程）' : '');
     function row(label, total, used, reserve, left) {
       return '<div class="sq-row"><div class="sq-head"><span>' + label + '</span><b class="' + (left < 0 ? 'over' : '') + '">剩 ' + fmt(left) + ' kg</b></div>' +

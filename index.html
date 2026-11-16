@@ -11,46 +11,28 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&family=Noto+Serif+TC:wght@300;400;600&display=swap">
-  <link rel="stylesheet" href="style.css?v=20261116b">
+  <link rel="stylesheet" href="style.css?v=20261116c">
 </head>
 <body>
   <main>
     <!-- 首頁 -->
     <section id="view-home" class="view">
       <button type="button" id="cloud-pill" class="cloud-pill off" onclick="document.getElementById('cloud-card').scrollIntoView({behavior:'smooth'})">☁️ 未登入雲端</button>
-      <div id="remain-card" class="remain-card">
-        <div class="eyebrow">REMAINING</div>
-        <div class="remain-label">剩餘可購物公斤數</div>
-        <div class="remain-value"><span id="remain-num">0.0</span><small> kg</small></div>
-        <div id="remain-status" class="remain-status">充裕</div>
-      </div>
-      <a id="shop-entry" class="shop-entry" href="#shop"><span><b>回程購物・送禮</b><span id="shop-entry-sub" class="muted small"></span></span><span class="shop-entry-go" aria-hidden="true">›</span></a>
-
-      <div id="first-trip" class="first-trip" hidden>
-        <p>行李額度會自動讀取「行程」裡下一段航班的托運、手提、背包額度。</p>
+      <!-- 旅程卡：每趟旅程一張，可以左右滑；顯示那一趟的剩餘公斤數 -->
+      <div id="trip-cards" class="trip-cards" aria-label="接下來的旅程"></div>
+      <div id="trip-dots" class="trip-dots" hidden></div>
+      <div id="trip-none" class="trip-none" hidden>
         <a class="btn primary first-trip-btn" href="#trips/new">＋ 先新增一趟旅程</a>
       </div>
+
+      <a id="shop-entry" class="shop-entry" href="#shop"><span><b>回程購物・送禮</b><span id="shop-entry-sub" class="muted small"></span></span><span class="shop-entry-go" aria-hidden="true">›</span></a>
 
       <div id="arrival-banner" class="card arrival-banner" hidden></div>
       <div id="gift-banner" class="card arrival-banner gift-banner" hidden></div>
 
-      <section id="allow-block" class="home-sec">
-        <div class="sec-head"><span class="eyebrow">ALLOWANCE</span><a id="limit-link" class="link small" href="#trips"><span id="limit-link-text">修改額度</span></a></div>
-        <div id="allow-line" class="allow-line"></div>
-        <div class="total-row">
-          <div><div class="muted small">目前行李總重量</div><div class="total-value"><span id="total-num">0.0</span> kg</div></div>
-          <div class="right"><div class="muted small">總上限</div><div class="total-value"><span id="limit-num">0</span> kg</div></div>
-        </div>
-      </section>
-
       <section id="bags-block" class="home-sec">
-        <div class="sec-head"><span class="eyebrow">LUGGAGE</span><span class="sec-title">我的行李</span></div>
+        <div class="sec-head"><span class="eyebrow">LUGGAGE</span><span class="sec-right"><span class="sec-title">我的行李</span><a id="bags-limit-link" class="link small" href="#trips">修改額度</a></span></div>
         <div id="bag-list"></div>
-      </section>
-
-      <section class="home-sec">
-        <div class="sec-head"><span class="eyebrow">NEXT TRIP</span><span class="sec-title">下一趟旅程</span></div>
-        <div id="next-trip" class="next-trip"></div>
       </section>
 
       <div id="cloud-card" class="home-sec cloud-card form">
@@ -765,20 +747,20 @@
     </div>
   </div>
 
-  <script src="weights.js?v=20261116b"></script>
-  <script src="photos.js?v=20261116b"></script>
-  <script src="clothing.js?v=20261116b"></script>
-  <script src="app.js?v=20261116b"></script>
-  <script src="closet.js?v=20261116b"></script>
-  <script src="trips.js?v=20261116b"></script>
-  <script src="organize.js?v=20261116b"></script>
-  <script src="packing.js?v=20261116b"></script>
-  <script src="drawer.js?v=20261116b"></script>
-  <script src="bags.js?v=20261116b"></script>
-  <script src="shop.js?v=20261116b"></script>
-  <script src="nav.js?v=20261116b"></script>
-  <script src="backup.js?v=20261116b"></script>
+  <script src="weights.js?v=20261116c"></script>
+  <script src="photos.js?v=20261116c"></script>
+  <script src="clothing.js?v=20261116c"></script>
+  <script src="app.js?v=20261116c"></script>
+  <script src="closet.js?v=20261116c"></script>
+  <script src="trips.js?v=20261116c"></script>
+  <script src="organize.js?v=20261116c"></script>
+  <script src="packing.js?v=20261116c"></script>
+  <script src="drawer.js?v=20261116c"></script>
+  <script src="bags.js?v=20261116c"></script>
+  <script src="shop.js?v=20261116c"></script>
+  <script src="nav.js?v=20261116c"></script>
+  <script src="backup.js?v=20261116c"></script>
   <script src="vendor/supabase.js"></script>
-  <script src="cloud.js?v=20261116b"></script>
+  <script src="cloud.js?v=20261116c"></script>
 </body>
 </html>

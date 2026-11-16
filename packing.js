@@ -560,8 +560,8 @@
     $('#pack-total').className = 'pk-total ' + lv;
     $('#pack-total').innerHTML = '總重量 <b>' + fmt(total) + ' kg</b>　／額度 ' + (known ? fmt(limit) + ' kg' : '尚未設定') +
       (same && remain != null ? '　<span class="muted">還剩 ' + fmt(remain) + ' kg（和首頁相同）</span>' : '');
-    var leg = same ? info.next.leg : legFor(curTrip);
-    $('#pack-leg-note').textContent = leg ? '額度依這趟的「' + (leg.from || '?') + ' → ' + (leg.to || '?') + '」；重量包含清單上還沒收好的東西' : '';
+    var leg = same ? info.leg : legFor(curTrip);
+    $('#pack-leg-note').textContent = leg ? '額度依這趟的「' + (leg.from || '?') + ' → ' + (leg.to || '?') + '」' + (same && info.tight ? '（這趟最緊的一段）' : '') + '；重量包含清單上還沒收好的東西' : '';
   }
 
   function entryById(id) { return curList.entries.find(function (e) { return e.id === id; }); }
@@ -927,6 +927,19 @@
     return ids;
   }
 
+  // 還沒出發的旅程：用打包清單估重量（空箱＋清單上要帶的東西），依行李箱
+  function zoneWeights(t) {
+    var list = ensureList(t, true);
+    var out = {};
+    activeZones(list).forEach(function (z) {
+      var bag = App.bagById(list.zones[z].bagId);
+      var w = bag.auto ? 0 : Number(bag.tare) || 0;
+      list.entries.forEach(function (e) { if (e.status === 'take' && e.zone === z) w += e.weight * e.qty; });
+      out[bag.id] = (out[bag.id] || 0) + w;
+    });
+    return out;
+  }
+
   // 首頁「我的行李」用：這趟每種行李的設定（和打包清單同一份）
   function tripZones(t) {
     var list = ensureList(t, true);
@@ -941,6 +954,9 @@
   function setTripZone(t, z, val) {
     var list = ensureList(t, true);
     var cfg = list.zones[z];
+    // 只有正在進行／下一趟的旅程，行李箱裡才真的有東西；其他旅程只改選擇，不搬東西
+    var nx = App.nextLeg();
+    var live = !!(nx && nx.trip.id === t.id);
     if (val === 'off') {
       if (!cfg.on) return '';
       if (activeZones(list).length <= 1) return '至少要帶一種行李';
@@ -951,12 +967,12 @@
       });
       // 不在清單上、但放在這個箱子裡的（例如購物）也移過去
       var to = list.zones[activeZones(list)[0]].bagId;
-      st().items.forEach(function (it) { if (it.bagId === cfg.bagId) it.bagId = to; });
+      if (live) st().items.forEach(function (it) { if (it.bagId === cfg.bagId) it.bagId = to; });
     } else {
       if (!App.bagById(val)) return '找不到這個行李箱';
       if (!cfg.on) { cfg.on = true; if (!cfg.bagId) cfg.bagId = val; }
       var old = cfg.bagId;
-      if (old && old !== val) App.moveBagContents(old, val);   // 已經放進去的東西一起搬過去
+      if (live && old && old !== val) App.moveBagContents(old, val);   // 已經放進去的東西一起搬過去
       cfg.bagId = val;
     }
     touch(list);
@@ -965,7 +981,7 @@
   }
 
   window.Packing = {
-    show: show, tripBagIds: tripBagIds, openAdd: openAdd, tripZones: tripZones, setTripZone: setTripZone, zones: function () { return ZONES; }, pendingByBag: pendingByBag, bagPending: bagPending, checkEntry: checkEntry, uncheckItem: uncheckItem,
+    show: show, tripBagIds: tripBagIds, openAdd: openAdd, tripZones: tripZones, setTripZone: setTripZone, zoneWeights: zoneWeights, zones: function () { return ZONES; }, pendingByBag: pendingByBag, bagPending: bagPending, checkEntry: checkEntry, uncheckItem: uncheckItem,
     moveItem: moveItem, moveEntryTo: moveEntryTo, takeOutItem: takeOutItem, takeOutEntry: takeOutEntry
   };
 })();
