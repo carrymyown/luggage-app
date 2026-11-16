@@ -1556,3 +1556,4 @@ button.pk-row.pk-simple { width: 100%; border: 0; background: none; font: inheri
   background: var(--text); color: #fff; font: inherit; font-size: 0.82rem; letter-spacing: 0.04em; line-height: 1.5; text-align: center; cursor: pointer; }
 .tip-bubble::after { content: ''; position: absolute; left: 50%; bottom: -6px; margin-left: -6px; border: 6px solid transparent; border-bottom: 0; border-top-color: var(--text); }
 .tip-plus { position: fixed; left: 50%; transform: translateX(-50%); bottom: calc(var(--tab-h, 64px) + 26px + env(safe-area-inset-bottom, 0px)); z-index: 60; margin: 0; width: max-content; max-width: calc(100% - 32px); }
+.nw {white-space:nowrap}

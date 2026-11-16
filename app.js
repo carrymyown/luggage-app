@@ -549,7 +549,8 @@
       if (i === 0 && l.from) c.push(l.from);
       if (l.to && c[c.length - 1] !== l.to) c.push(l.to);
     });
-    return c.map(esc).join(' → ') || '路線未定';
+    // 每個城市名稱不在中間斷行（手機上「台北」不會被拆成兩行）
+    return c.map(function (x) { return '<span class="nw">' + esc(x) + '</span>'; }).join(' → ') || '路線未定';
   }
 
   // ---------- 購物目標（可選）：想留給購物的公斤數；打包吃到這個空間時提醒 ----------
