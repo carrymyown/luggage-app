@@ -925,6 +925,8 @@ input[type="date"]::-webkit-date-and-time-value { text-align: left; }
 @media (min-width: 600px) {
   .ask-sheet { align-items: flex-start; padding-top: 18vh; }
 }
+/* 打包清單「新增」：衣櫃／抽屜東西很多時，視窗裡面捲動，下面的按鈕才按得到 */
+#pk-add-sheet .ask-panel { max-height: calc(100% - 12px); overflow-y: auto; -webkit-overflow-scrolling: touch; }
 
 /* ---------- 打包清單 ---------- */
 .tabbar a { font-size: 0.72rem; }
