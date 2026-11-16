@@ -264,7 +264,11 @@
     catch (e) { toast('無法儲存（瀏覽器可能在私密模式）'); }
     // 有登入雲端的話，稍後自動同步
     if (window.Cloud) window.Cloud.schedule();
+    // 有設購物目標：打包快吃到預留空間就提醒
+    clearTimeout(goalTimer);
+    goalTimer = setTimeout(function () { checkGoals(false); }, 50);
   }
+  var goalTimer = null;
 
   // 存檔但不觸發同步（雲端同步自己用）
   function saveQuiet() {
@@ -522,10 +526,92 @@
     return c.map(esc).join(' → ') || '路線未定';
   }
 
+  // ---------- 購物目標（可選）：想留給購物的公斤數；打包吃到這個空間時提醒 ----------
+  var GOAL_NEAR = 1;   // 離購物預留只剩 1 公斤以內就算「快吃到」
+  function goalOf(t) { var g = t && t.shopGoal; return g === '' || g == null || !isFinite(Number(g)) ? null : Number(g); }
+  // 這趟行李裡「旅途中買的」重量（購物、旅途中買的禮物）：它們本來就該用購物空間，不算打包吃掉的
+  function shoppingWeight(trip) {
+    var sh = state.shopping || { purchases: [] };
+    return state.items.reduce(function (sum, it) {
+      var p = it.purchaseId && sh.purchases.find(function (x) { return x.id === it.purchaseId; });
+      var g = it.giftId && (state.gifts || []).find(function (x) { return x.id === it.giftId; });
+      if ((p && p.tripId === trip.id) || (g && g.tripId === trip.id && g.source === 'trip')) return sum + it.weight * it.qty;
+      return sum;
+    }, 0);
+  }
+  // 打包後留給購物的空間，和購物目標比：ok／near 快吃到／over 已經吃到
+  function goalStatus(trip, r) {
+    var goal = goalOf(trip);
+    r = r || tripRemain(trip);
+    if (goal == null || r.remain == null) return null;
+    var free = r.remain + (r.live ? shoppingWeight(trip) : 0);
+    return { goal: goal, free: free, level: free < goal ? 'over' : free - goal <= GOAL_NEAR ? 'near' : 'ok' };
+  }
+
+  var goalSeen = {};   // 每趟旅程上次的狀態（只在變差的那一刻提醒一次）
+  var goalReady = false;
+  function checkGoals(silent) {
+    if (!silent && !goalReady) return;
+    goalReady = true;
+    var msg = '';
+    upcomingTrips().forEach(function (t) {
+      var g = goalStatus(t);
+      var now = g ? g.level : 'none', before = goalSeen[t.id] || 'none';
+      goalSeen[t.id] = now;
+      if (silent || !g || msg) return;
+      var rank = { none: 0, ok: 0, near: 1, over: 2 };
+      if (rank[now] <= rank[before]) return;
+      var name = t.name ? '「' + t.name + '」' : '這趟';
+      msg = now === 'over'
+        ? name + '打包的重量已經用到留給購物的空間了。\n購物目標 ' + fmt(g.goal) + ' kg，現在打包後只剩 ' + fmt(Math.max(0, g.free)) + ' kg 可以買。'
+        : name + '打包的重量快用到留給購物的空間了。\n再放 ' + fmt(g.free - g.goal) + ' kg 就會開始佔用購物目標的 ' + fmt(g.goal) + ' kg。';
+    });
+    if (msg) {
+      $('#goal-alert-text').textContent = msg;
+      $('#goal-alert').hidden = false;
+    }
+  }
+
+  var goalTripId = null;
+  function openGoal(id) {
+    var t = state.trips.find(function (x) { return x.id === id; });
+    if (!t) return;
+    goalTripId = id;
+    $('#goal-title').textContent = (t.name ? '「' + t.name + '」' : '這趟') + '的購物目標';
+    $('#goal-input').value = goalOf(t) == null ? '' : goalOf(t);
+    $('#goal-sheet').hidden = false;
+    setTimeout(function () { $('#goal-input').focus(); }, 50);
+  }
+  function setGoal(v) {
+    var t = state.trips.find(function (x) { return x.id === goalTripId; });
+    $('#goal-sheet').hidden = true;
+    if (!t) return;
+    t.shopGoal = v;
+    t.updatedAt = Date.now();
+    var g = goalStatus(t);
+    goalSeen[t.id] = g ? g.level : 'none';   // 剛設定時不跳提醒，直接在卡片上顯示
+    save();
+    toast(v === '' ? '已取消購物目標' : '購物目標：' + fmt(v) + ' kg');
+    renderHome();
+  }
+  $('#goal-form').addEventListener('submit', function (e) {
+    e.preventDefault();
+    var v = parseFloat($('#goal-input').value);
+    if (!isFinite(v) || v < 0) { toast('請輸入公斤數，或按「不設定」'); return; }
+    setGoal(Math.round(v * 10) / 10);
+  });
+  $('#goal-clear').addEventListener('click', function () { setGoal(''); });
+  $('#goal-sheet').addEventListener('click', function (e) { if (e.target.id === 'goal-sheet' || e.target.id === 'goal-cancel') $('#goal-sheet').hidden = true; });
+  $('#goal-alert').addEventListener('click', function (e) { if (e.target.id === 'goal-alert' || e.target.id === 'goal-alert-ok') $('#goal-alert').hidden = true; });
+
   function tripCard(t) {
     var r = tripRemain(t);
     var lv = level(r.remain, r.limit);
-    return '<a class="trip-card" href="#trips/' + encodeURIComponent(t.id) + '" data-trip-card="' + esc(t.id) + '">' +
+    var g = goalStatus(t, r);
+    var goalHtml = goalOf(t) == null ? '<button type="button" class="link small tc-goal" data-goal="' + esc(t.id) + '">＋ 設定購物目標</button>' :
+      '<button type="button" class="link small tc-goal" data-goal="' + esc(t.id) + '">購物目標 ' + fmt(goalOf(t)) + ' kg</button>' +
+      (g && g.level === 'over' ? '<span class="tc-goal-warn">打包已用到購物空間</span>' : g && g.level === 'near' ? '<span class="tc-goal-warn near">打包快用到購物空間</span>' : '');
+    return '<div class="trip-card" role="link" tabindex="0" data-trip-card="' + esc(t.id) + '">' +
       '<div class="tc-date">' + esc(tripDates(t)) + '<span class="tc-name">' + esc(t.name || '') + '</span></div>' +
       '<div class="tc-route">' + tripRoute(t) + '</div>' +
       '<div class="tc-label">剩餘公斤數</div>' +
@@ -533,8 +619,16 @@
       '<i class="tc-dot ' + lv + '" title="' + (lv === 'bad' ? '超重' : lv === 'warn' ? '快滿了' : lv === 'ok' ? '充裕' : '尚未設定額度') + '"></i></small></div>' +
       (r.remain == null ? '<div class="tc-note">尚未設定額度</div>' :
         r.tight && r.leg ? '<div class="tc-note">最緊：' + esc(r.leg.from || '?') + ' → ' + esc(r.leg.to || '?') + '</div>' : '') +
-      '</a>';
+      '<div class="tc-goal-row">' + goalHtml + '</div>' +
+      '</div>';
   }
+  // 點旅程卡進行程設定；點「購物目標」開設定
+  $('#trip-cards').addEventListener('click', function (e) {
+    var g = e.target.closest('[data-goal]');
+    if (g) { openGoal(g.getAttribute('data-goal')); return; }
+    var c = e.target.closest('[data-trip-card]');
+    if (c) location.hash = '#trips/' + encodeURIComponent(c.getAttribute('data-trip-card'));
+  });
 
   function renderHome() {
     var n0 = nextLeg();
@@ -1432,6 +1526,7 @@
     toast: toast,
     renderHome: renderHome,
     remainInfo: remainInfo,
+    tripRemain: tripRemain,
     autoBag: autoBag,
     groupOf: groupOf,
     kindName: kindName,
@@ -1506,6 +1601,7 @@
   document.addEventListener('DOMContentLoaded', function () {
     route();
     checkPhotos();
+    checkGoals(true);   // 記下目前的狀態，打開 app 時不跳提醒
   });
 
   // 讓 app 沒有網路時也能打開

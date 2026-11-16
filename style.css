@@ -1465,3 +1465,11 @@ button.pk-row.pk-simple { width: 100%; border: 0; background: none; font: inheri
 /* 我的家 → 我的行李箱：每個家可以新增 */
 .bg-add-home { display: inline-block; margin: 10px 0 4px; }
 .trip-pack-box .field-title:first-child { margin-top: 0; }
+
+/* 旅程卡：購物目標 */
+.trip-card { cursor: pointer; }
+.tc-goal-row { display: flex; justify-content: center; align-items: baseline; flex-wrap: wrap; gap: 4px 12px; margin-top: 12px; }
+.tc-goal { padding: 2px 0; }
+.tc-goal-warn { font-size: 0.8rem; letter-spacing: 0.04em; color: var(--bad); }
+.tc-goal-warn.near { color: var(--warn); }
+.goal-alert-text { white-space: pre-line; line-height: 1.7; margin: 6px 0 16px; }

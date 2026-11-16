@@ -11,7 +11,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&family=Noto+Serif+TC:wght@300;400;600&display=swap">
-  <link rel="stylesheet" href="style.css?v=20261116d">
+  <link rel="stylesheet" href="style.css?v=20261116e">
 </head>
 <body>
   <main>
@@ -324,9 +324,6 @@
             <div class="muted small">還可以買</div>
             <div class="shop-remain"><span id="shop-remain">—</span><small> kg</small></div>
             <p id="shop-remain-note" class="muted small"></p>
-            <div class="field-title">計畫購物和衝動購物的比例 <span id="shop-ratio-text" class="muted small"></span></div>
-            <input id="shop-ratio" class="shop-ratio" type="range" min="0" max="100" step="5" value="70" aria-label="計畫購物佔比">
-            <div id="shop-quota"></div>
           </div>
 
           <div class="card shop-try-card">
@@ -336,16 +333,6 @@
           </div>
 
           <button type="button" id="shop-record" class="btn primary shop-record">＋ 記一筆購物</button>
-
-          <section class="home-sec">
-            <div class="sec-head"><span class="eyebrow">PLAN</span><span class="sec-title">計畫要買</span></div>
-            <form id="shop-plan-form" class="dr-add-row shop-plan-form" autocomplete="off">
-              <input id="shop-plan-name" maxlength="40" placeholder="例如：泰國香米、乳液">
-              <span class="input-unit shop-plan-w"><input id="shop-plan-w" type="number" inputmode="decimal" min="0" step="any" placeholder="重量"><span class="unit-text">kg</span></span>
-              <button type="submit" class="btn primary dr-add-btn">加入</button>
-            </form>
-            <div id="shop-plans"></div>
-          </section>
 
           <section class="home-sec">
             <div class="sec-head"><span class="eyebrow">RECORDS</span><span class="sec-title">購物紀錄</span></div>
@@ -725,6 +712,29 @@
     </div>
   </div>
 
+  <!-- 首頁：購物目標（可選） -->
+  <div id="goal-sheet" class="sheet ask-sheet" hidden>
+    <form id="goal-form" class="sheet-panel ask-panel form" autocomplete="off">
+      <div id="goal-title" class="sheet-title">購物目標</div>
+      <p class="muted small">想留多少公斤給購物？打包快用到這個空間時會提醒你。可以不設定。</p>
+      <span class="input-unit"><input id="goal-input" type="number" inputmode="decimal" min="0" step="any" enterkeyhint="done" placeholder="例如 5"><span class="unit-text">kg</span></span>
+      <div class="cloud-btns">
+        <button type="button" id="goal-clear" class="btn ghost">不設定</button>
+        <button type="submit" class="btn primary">確認</button>
+      </div>
+      <button type="button" id="goal-cancel" class="btn ghost">取消</button>
+    </form>
+  </div>
+
+  <!-- 購物空間提醒 -->
+  <div id="goal-alert" class="sheet" hidden>
+    <div class="sheet-panel" role="alertdialog" aria-modal="true" aria-labelledby="goal-alert-title">
+      <div id="goal-alert-title" class="sheet-title">購物空間提醒</div>
+      <p id="goal-alert-text" class="goal-alert-text"></p>
+      <button type="button" id="goal-alert-ok" class="btn primary">知道了</button>
+    </div>
+  </div>
+
   <!-- 首頁：選擇行李箱（和打包清單同一份） -->
   <div id="kind-sheet" class="sheet" hidden>
     <div class="sheet-panel" role="dialog" aria-modal="true" aria-labelledby="kind-sheet-title">
@@ -743,20 +753,20 @@
     </div>
   </div>
 
-  <script src="weights.js?v=20261116d"></script>
-  <script src="photos.js?v=20261116d"></script>
-  <script src="clothing.js?v=20261116d"></script>
-  <script src="app.js?v=20261116d"></script>
-  <script src="closet.js?v=20261116d"></script>
-  <script src="trips.js?v=20261116d"></script>
-  <script src="organize.js?v=20261116d"></script>
-  <script src="packing.js?v=20261116d"></script>
-  <script src="drawer.js?v=20261116d"></script>
-  <script src="bags.js?v=20261116d"></script>
-  <script src="shop.js?v=20261116d"></script>
-  <script src="nav.js?v=20261116d"></script>
-  <script src="backup.js?v=20261116d"></script>
+  <script src="weights.js?v=20261116e"></script>
+  <script src="photos.js?v=20261116e"></script>
+  <script src="clothing.js?v=20261116e"></script>
+  <script src="app.js?v=20261116e"></script>
+  <script src="closet.js?v=20261116e"></script>
+  <script src="trips.js?v=20261116e"></script>
+  <script src="organize.js?v=20261116e"></script>
+  <script src="packing.js?v=20261116e"></script>
+  <script src="drawer.js?v=20261116e"></script>
+  <script src="bags.js?v=20261116e"></script>
+  <script src="shop.js?v=20261116e"></script>
+  <script src="nav.js?v=20261116e"></script>
+  <script src="backup.js?v=20261116e"></script>
   <script src="vendor/supabase.js"></script>
-  <script src="cloud.js?v=20261116d"></script>
+  <script src="cloud.js?v=20261116e"></script>
 </body>
 </html>

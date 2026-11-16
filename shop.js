@@ -5,7 +5,7 @@
  *   plans      計畫要買：{ id, tripId, name, weight(每個 kg), qty, purchaseId(買了之後連到購物紀錄), createdAt }
  *   purchases  購物紀錄：{ id, tripId, name, weight(每個 kg), qty, price, category, city, bagId, homeDest(之後放到哪個家),
  *                         placedHome(整理行李時已經放到哪個家), planId, date, createdAt, updatedAt }
- *   ratio      { 旅程 id: 計畫購物佔比 0–1 }
+ *   ratio      （舊資料：以前的計畫／衝動購物比例，已不使用）
  * state.gifts  送禮：{ id, tripId, name, weight(每個 kg), qty, to(送給誰), city(在哪個城市送), status, source, drawerId,
  *                     bagId, home(不在行李裡時放在哪個家), givenDate, createdAt, updatedAt }
  *   status：want 想買／bought 已買好／packed 在行李裡／given 已送出
@@ -102,18 +102,12 @@
     return { planUsed: planUsed, impulseUsed: impulseUsed, reserve: reserve, boughtCount: boughtCount, boughtW: boughtW };
   }
 
+  // 還可以買多少：就是這趟旅程的剩餘公斤數（和首頁旅程卡同一個數字；購物和行李裡的禮物已經扣掉）
   function quota(id) {
-    var info = App.remainInfo();
-    var w = tripWeights(id);
-    var r = ratioOf(id);
-    if (info.remain == null) return { remain: null, w: w, ratio: r };
-    var budget = info.remain + w.planUsed + w.impulseUsed;
-    var planQ = budget * r, impQ = budget - planQ;
-    return {
-      remain: info.remain, budget: budget, ratio: r, w: w, next: info.next, leg: info.leg,
-      planQ: planQ, impQ: impQ,
-      planLeft: planQ - w.planUsed - w.reserve, impLeft: impQ - w.impulseUsed
-    };
+    var t = tripById(id);
+    var r = t ? App.tripRemain(t) : null;
+    if (!r || r.remain == null) return { remain: null };
+    return { remain: r.remain, leg: r.leg, tight: r.tight, trip: t };
   }
 
   // ---------- 首頁 ----------
@@ -195,26 +189,15 @@
 
   function renderQuota(t) {
     var q = quota(t.id);
-    var pct = Math.round(q.ratio * 100);
-    $('#shop-ratio').value = pct;
-    $('#shop-ratio-text').textContent = '計畫 ' + pct + '%・衝動 ' + (100 - pct) + '%';
     if (q.remain == null) {
       $('#shop-remain').textContent = '—';
-      $('#shop-remain-note').textContent = '沒有接下來的航班，新增旅程後就會計算';
-      $('#shop-quota').innerHTML = '';
+      $('#shop-remain').classList.remove('over');
+      $('#shop-remain-note').textContent = '這趟還沒設定額度';
       return q;
     }
     $('#shop-remain').textContent = fmt(q.remain);
     $('#shop-remain').classList.toggle('over', q.remain < 0);
-    $('#shop-remain-note').textContent = '依 ' + window.Trips.fmtDate(q.leg.date) + '「' + (q.leg.from || '?') + ' → ' + (q.leg.to || '?') + '」的額度（這趟最緊的一段）' +
-      (q.next.trip.id !== t.id ? '（不是這趟旅程）' : '');
-    function row(label, total, used, reserve, left) {
-      return '<div class="sq-row"><div class="sq-head"><span>' + label + '</span><b class="' + (left < 0 ? 'over' : '') + '">剩 ' + fmt(left) + ' kg</b></div>' +
-        '<div class="sq-bar"><i style="width:' + Math.max(0, Math.min(100, total > 0 ? (used + reserve) / total * 100 : 100)) + '%"></i></div>' +
-        '<div class="muted small">額度 ' + fmt(total) + ' kg・已買 ' + fmt(used) + ' kg' + (reserve != null ? '・預留 ' + fmt(reserve) + ' kg' : '') + '</div></div>';
-    }
-    $('#shop-quota').innerHTML = row('計畫購物', q.planQ, q.w.planUsed, q.w.reserve, q.planLeft) +
-      row('衝動購物', q.impQ, q.w.impulseUsed, null, q.impLeft);
+    $('#shop-remain-note').textContent = q.remain < 0 ? '已經超重了' : (q.tight && q.leg ? '依最緊的一段「' + (q.leg.from || '?') + ' → ' + (q.leg.to || '?') + '」' : '');
     return q;
   }
 
@@ -233,15 +216,6 @@
   function renderBuy(t) {
     renderQuota(t);
     renderTry();
-    var plans = sh().plans.filter(function (p) { return p.tripId === t.id; });
-    $('#shop-plans').innerHTML = plans.length ? plans.map(function (p) {
-      var done = p.purchaseId && purchaseById(p.purchaseId);
-      return '<div class="sp-row' + (done ? ' done' : '') + '">' +
-        '<button type="button" class="bp-check" data-plan-buy="' + esc(p.id) + '" aria-label="' + (done ? '已買' : '買了') + '">' + (done ? '✓' : '') + '</button>' +
-        '<span class="sp-name">' + esc(p.name) + (p.qty > 1 ? ' <span class="muted">× ' + p.qty + '</span>' : '') + '</span>' +
-        '<span class="bp-w">約 ' + App.fmtWeight(p.weight * p.qty) + '</span>' +
-        '<button type="button" class="bp-out" data-plan-del="' + esc(p.id) + '" aria-label="刪除：' + esc(p.name) + '">✕</button></div>';
-    }).join('') : '<p class="muted small">還沒有計畫要買的東西。先列下來，會從計畫購物額度預留重量。</p>';
     renderRecords(t);
   }
 
@@ -302,7 +276,7 @@
       var w = list.filter(function (g) { return giftStatus(g) === 'packed'; }).reduce(function (s, g) { return s + g.weight * g.qty; }, 0);
       $('#gift-list').innerHTML = list.length ?
         '<p class="muted small gf-sum">' + list.length + ' 項・在行李裡 ' + fmt(w) + ' kg</p>' + list.map(function (g) { return giftRow(g, false); }).join('') :
-        '<p class="muted small">這趟還沒有禮物。可以先記下想買的，重量會從計畫購物預留。</p>';
+        '<p class="muted small">這趟還沒有禮物。可以先記下想買的。</p>';
     } else {
       var by = {};
       st().gifts.forEach(function (g) { var p = g.to || '未填對象'; (by[p] = by[p] || []).push(g); });
@@ -679,25 +653,7 @@
   });
 
   $('#shop-trip').addEventListener('change', function () { tripId = this.value; render(); });
-  $('#shop-ratio').addEventListener('input', function () {
-    var t = curTrip(); if (!t) return;
-    sh().ratio[t.id] = Math.round(this.value) / 100;
-    renderQuota(t); renderTry();
-  });
-  $('#shop-ratio').addEventListener('change', function () { App.save(); });   // 也會同步到雲端
   $('#shop-try').addEventListener('input', renderTry);
-
-  $('#shop-plan-form').addEventListener('submit', function (e) {
-    e.preventDefault();
-    var t = curTrip(); if (!t) return;
-    var name = $('#shop-plan-name').value.trim();
-    if (!name) { App.toast('請輸入要買什麼'); return; }
-    var ref = App.findRef(name);
-    var w = parseFloat($('#shop-plan-w').value);
-    sh().plans.push({ id: App.uid(), tripId: t.id, name: name, weight: isFinite(w) && w >= 0 ? w : (ref ? ref.weight : 0.5), qty: 1, purchaseId: null, createdAt: Date.now() });
-    $('#shop-plan-name').value = ''; $('#shop-plan-w').value = '';
-    App.save(); render();
-  });
 
   // 整理行李用：這筆行李物品是購物或禮物時的資訊
   function itemInfo(it) {
