@@ -4,7 +4,7 @@
  * ⚠ 維護規則：每次新增或修改功能、欄位、選項，都要回來檢查這個檔案，
  *   讓範例能示範到最新的功能。範例一律透過各功能「自己的新增函式」產生
  *   （Closet.create、Drawer.create、Bags.create、Trips.create、Packing.prepareTrip、
- *   Shop.writePurchase、Shop.writeGift），跟使用者在畫面上新增的資料格式完全一樣，
+ *   Shop.writePurchase、Shop.writeGift、Onboard.setDefaults），跟使用者在畫面上新增的資料格式完全一樣，
  *   不要在這裡另外手寫資料結構。
  *
  * 內容都是虛構的；使用台灣用語，不出現中國大陸的城市名稱。
@@ -17,6 +17,9 @@
 
   // 範例使用者的家
   var HOMES = ['台北', '東京'];
+
+  // 第一次使用設定裡的「常搭的航空公司和行李額度」：新增旅程時第一段會自動帶入
+  var DEFAULTS = { airline: '長榮航空', checked: 23, carry: 7, personal: '' };
 
   // 衣櫃：沒有照片，畫面會用第一個顏色畫成色塊；不放品牌
   // group／type／subtype 要用 clothing.js 裡的選項
@@ -61,6 +64,7 @@
   var ALLOW = { checked: 23, carry: 7, personal: 5 };
   var TRIP = {
     name: '台北・東京・首爾', origin: '台北', endHome: '台北', pouchMode: 'personal', seasons: ['冬'], activities: [],
+    shopGoal: 5,   // 首頁的購物目標：留 5 公斤給回程購物
     legs: [
       { day: 0, from: '台北', to: '東京', depTime: '08:50', arrTime: '13:05', flightNo: 'BR198', airline: '長榮航空', allowance: ALLOW,
         connection: { baggage: 'recheck', mode: 'enter', stayDays: 4, note: '在東京的家停留，可以換行李箱' } },
@@ -100,6 +104,7 @@
     function day(n) { var d = new Date(base); d.setDate(d.getDate() + n); return ymd(d); }
 
     s.homes = HOMES.slice();
+    window.Onboard.setDefaults(DEFAULTS.airline, DEFAULTS.checked, DEFAULTS.carry, DEFAULTS.personal);
 
     CLOSET.forEach(function (c) {
       var tags = window.Clothing.empty();
@@ -123,7 +128,7 @@
 
     var trip = window.Trips.create({
       id: 'sample-trip', name: TRIP.name, origin: TRIP.origin, endHome: TRIP.endHome, pouchMode: TRIP.pouchMode,
-      seasons: TRIP.seasons, activities: TRIP.activities,
+      seasons: TRIP.seasons, activities: TRIP.activities, shopGoal: TRIP.shopGoal,
       legs: TRIP.legs.map(function (l) {
         var o = {}; Object.keys(l).forEach(function (k) { if (k !== 'day') o[k] = l[k]; });
         o.date = day(l.day);

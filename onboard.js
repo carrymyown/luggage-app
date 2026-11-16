@@ -52,13 +52,16 @@
 
   function num(v) { var n = parseFloat(v); return isFinite(n) && n >= 0 ? n : ''; }
 
+  // 常搭的航空公司和行李額度（設定畫面和範例資料都用這裡）：新增旅程時第一段會自動帶入
+  function setDefaults(airline, checked, carry, personal) {
+    var d = { airline: String(airline || '').trim().slice(0, 30), allowance: { checked: num(checked), carry: num(carry), personal: num(personal) } };
+    if (d.airline || d.allowance.checked !== '' || d.allowance.carry !== '' || d.allowance.personal !== '') st().defaults = d;
+  }
+
   // 每一步按「下一步」時存起來；按「跳過」就不存這一步
   function saveStep() {
     if (step === 1 && $('#ob-home').value.trim()) { App.addHome($('#ob-home').value.trim().slice(0, 20)); $('#ob-home').value = ''; }
-    if (step === 2) {
-      var d = { airline: $('#ob-airline').value.trim().slice(0, 30), allowance: { checked: num($('#ob-checked').value), carry: num($('#ob-carry').value), personal: num($('#ob-personal').value) } };
-      if (d.airline || d.allowance.checked !== '' || d.allowance.carry !== '' || d.allowance.personal !== '') st().defaults = d;
-    }
+    if (step === 2) setDefaults($('#ob-airline').value, $('#ob-checked').value, $('#ob-carry').value, $('#ob-personal').value);
     if (step === 3) {
       var home = App.homes()[0] || '';
       Object.keys(pickedBags).forEach(function (i) {
@@ -258,5 +261,5 @@
     showTips(view);
   }
 
-  window.Onboard = { afterRoute: afterRoute, open: openOnboard };
+  window.Onboard = { afterRoute: afterRoute, open: openOnboard, setDefaults: setDefaults };
 })();
