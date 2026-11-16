@@ -1044,7 +1044,7 @@ a.limit-link { text-decoration: none; }
    細線分隔、不用色塊與陰影、圓角極小；標題用思源宋體，內文用思源黑體
    ===================================================================== */
 :root {
-  --bg: #FAF7F2;
+  --bg: #F7F4EE;
   --card: #FFFFFF;
   --text: #0B1F3A;
   --muted: #7A7F87;
@@ -1478,3 +1478,16 @@ button.pk-row.pk-simple { width: 100%; border: 0; background: none; font: inheri
 .trip-here { display: flex; align-items: baseline; gap: 12px; margin: 0 0 14px; }
 .trip-here b { font-family: var(--serif); font-weight: 400; font-size: 1.2rem; letter-spacing: 0.06em; }
 .trip-hidden-note { margin-top: 16px; }
+
+/* ---------- 品牌字標 ---------- */
+.brand { text-align: center; margin: 0 0 6px; }
+.wordmark {
+  display: inline-block;
+  font-family: "Cormorant Garamond", "Times New Roman", serif;
+  font-weight: 300;
+  font-size: 0.95rem;
+  letter-spacing: 0.3em;
+  padding-left: 0.3em; /* 抵銷最後一個字母後的字距，讓字標視覺置中 */
+  color: #111;
+  line-height: 1;
+}
