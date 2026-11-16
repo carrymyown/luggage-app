@@ -11,7 +11,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&family=Noto+Serif+TC:wght@300;400;600&display=swap">
-  <link rel="stylesheet" href="style.css?v=20261116e">
+  <link rel="stylesheet" href="style.css?v=20261116f">
 </head>
 <body>
   <main>
@@ -146,6 +146,7 @@
           <h1 data-en="TRIP">行程設定</h1>
           <a href="#trips/new" class="btn primary small-btn">＋ 新增旅程</a>
         </div>
+        <p id="trip-here" class="trip-here" hidden></p>
         <div id="trip-mode" class="seg mode-seg">
           <button type="button" data-mode="list" class="on">列表</button>
           <button type="button" data-mode="month">月曆</button>
@@ -160,6 +161,10 @@
 
         <div id="trip-view-list">
           <div id="trip-list"></div>
+          <details id="trip-past" class="trip-past" hidden>
+            <summary id="trip-past-title">已結束的行程</summary>
+            <div id="trip-past-list"></div>
+          </details>
           <p id="trip-empty" class="empty-big" hidden>還沒有旅程。<br>點右上角「＋ 新增旅程」，加上每段航班和行李額度，<br>首頁就會依下一段航班計算剩餘公斤數。</p>
         </div>
 
@@ -753,20 +758,20 @@
     </div>
   </div>
 
-  <script src="weights.js?v=20261116e"></script>
-  <script src="photos.js?v=20261116e"></script>
-  <script src="clothing.js?v=20261116e"></script>
-  <script src="app.js?v=20261116e"></script>
-  <script src="closet.js?v=20261116e"></script>
-  <script src="trips.js?v=20261116e"></script>
-  <script src="organize.js?v=20261116e"></script>
-  <script src="packing.js?v=20261116e"></script>
-  <script src="drawer.js?v=20261116e"></script>
-  <script src="bags.js?v=20261116e"></script>
-  <script src="shop.js?v=20261116e"></script>
-  <script src="nav.js?v=20261116e"></script>
-  <script src="backup.js?v=20261116e"></script>
+  <script src="weights.js?v=20261116f"></script>
+  <script src="photos.js?v=20261116f"></script>
+  <script src="clothing.js?v=20261116f"></script>
+  <script src="app.js?v=20261116f"></script>
+  <script src="closet.js?v=20261116f"></script>
+  <script src="trips.js?v=20261116f"></script>
+  <script src="organize.js?v=20261116f"></script>
+  <script src="packing.js?v=20261116f"></script>
+  <script src="drawer.js?v=20261116f"></script>
+  <script src="bags.js?v=20261116f"></script>
+  <script src="shop.js?v=20261116f"></script>
+  <script src="nav.js?v=20261116f"></script>
+  <script src="backup.js?v=20261116f"></script>
   <script src="vendor/supabase.js"></script>
-  <script src="cloud.js?v=20261116e"></script>
+  <script src="cloud.js?v=20261116f"></script>
 </body>
 </html>

@@ -1425,7 +1425,7 @@ input:focus, select:focus { outline: 1px solid var(--primary); }
   scrollbar-width: none; margin: 0 0 6px;
 }
 .trip-cards::-webkit-scrollbar { display: none; }
-.trip-card {
+.trip-cards .trip-card {
   flex: 0 0 100%; scroll-snap-align: center; box-sizing: border-box;
   text-align: center; padding: 30px 8px 34px; color: var(--text); text-decoration: none;
 }
@@ -1467,9 +1467,16 @@ button.pk-row.pk-simple { width: 100%; border: 0; background: none; font: inheri
 .trip-pack-box .field-title:first-child { margin-top: 0; }
 
 /* 旅程卡：購物目標 */
-.trip-card { cursor: pointer; }
+.trip-cards .trip-card { cursor: pointer; border-top: 0; }
 .tc-goal-row { display: flex; justify-content: center; align-items: baseline; flex-wrap: wrap; gap: 4px 12px; margin-top: 12px; }
 .tc-goal { padding: 2px 0; }
 .tc-goal-warn { font-size: 0.8rem; letter-spacing: 0.04em; color: var(--bad); }
 .tc-goal-warn.near { color: var(--warn); }
 .goal-alert-text { white-space: pre-line; line-height: 1.7; margin: 6px 0 16px; }
+
+/* 行程頁：目前所在地、已結束的行程 */
+.trip-here { display: flex; align-items: baseline; gap: 12px; margin: 0 0 14px; }
+.trip-here b { font-family: var(--serif); font-weight: 400; font-size: 1.2rem; letter-spacing: 0.06em; }
+.trip-past { margin-top: 18px; border-top: 1px solid var(--line); padding-top: 12px; }
+.trip-past summary { cursor: pointer; color: var(--muted); font-size: 0.9rem; letter-spacing: 0.08em; padding: 4px 0 10px; }
+.trip-past .trip-card { opacity: 0.7; }
