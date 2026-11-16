@@ -4,7 +4,7 @@
 
 ## 網址
 
-https://mop0723-ai.github.io/luggage-app/
+https://carrymyown.github.io/luggage-app/
 
 推送到 `main` 分支後，GitHub Actions 會自動發布到 GitHub Pages（設定檔在 `.github/workflows/pages.yml`）。
 
@@ -64,7 +64,7 @@ https://mop0723-ai.github.io/luggage-app/
 1. 在 Supabase 的 SQL Editor 執行 `supabase/setup.sql`（建立資料表與 RLS 規則，可重複執行）。
    再執行 `supabase/item-photos.sql`（建立私人照片空間 item-photos 與安全規則）。
 2. Authentication → Sign In / Providers：確認 Email 已開啟。
-3. Authentication → URL Configuration：Site URL 設為 `https://mop0723-ai.github.io/luggage-app/`。
+3. Authentication → URL Configuration：Site URL 設為 `https://carrymyown.github.io/luggage-app/`。
 
 ## 介面
 
