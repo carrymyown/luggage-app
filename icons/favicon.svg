@@ -1,8 +1,1 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="6 6 88 88" role="img" aria-label="CMO">
-  <rect x="6" y="6" width="88" height="88" fill="#F7F4EE"/>
-  <g fill="none" stroke="#111" stroke-width="4" stroke-linecap="square" stroke-linejoin="miter">
-    <path d="M30.49 41.51A12 12 0 1 0 30.49 58.49"/>
-    <path d="M39 62V38L50 56L61 38V62"/>
-    <circle cx="78" cy="50" r="12"/>
-  </g>
-</svg>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="8 4 84 92" role="img" aria-label="Carry My Own"><rect x="8" y="4" width="84" height="92" rx="12" fill="#F7F4EE"/><g fill="none" stroke="#111" stroke-width="3.6" stroke-linejoin="round" stroke-linecap="butt"><rect x="28" y="38" width="44" height="54" rx="6"/><rect x="37" y="44" width="26" height="6" rx="3"/><path d="M40 44V20a10 10 0 0 1 20 0V44"/><path d="M47 44V20a3 3 0 0 1 6 0V44"/><rect x="50" y="26" width="13" height="8" rx="1" fill="#F7F4EE"/><path d="M56.5 26V34"/><rect x="37" y="62" width="26" height="17" rx="1.5"/></g></svg>
