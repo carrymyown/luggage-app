@@ -1672,6 +1672,13 @@
     bagById: bagById
   };
 
+  // 換頁（包括按返回、往回滑）時，把上一頁開著的視窗關掉，不然會蓋住新的頁面、點不到
+  // （第一次使用設定除外）
+  window.addEventListener('hashchange', function () {
+    document.querySelectorAll('.sheet:not([hidden])').forEach(function (el) {
+      if (el.id !== 'onboard-sheet') el.hidden = true;
+    });
+  });
   window.addEventListener('hashchange', route);
   // 其他分頁改了資料時同步
   window.addEventListener('storage', function (e) {
