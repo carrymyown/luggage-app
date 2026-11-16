@@ -184,8 +184,10 @@
         hint = '依上一趟「' + prev.name + '」結束後回到的家帶入';
       }
     }
-    // 還沒設定過「結束後回到哪個家」，就依最後一段的抵達城市猜
-    if (draft.endHome == null) draft.endHome = guessEndHome(draft);
+    // 還沒設定過「結束後回到哪個家」，就依最後一段的抵達城市猜；
+    // 自己點選之前，改了航班會跟著重新猜（新旅程一開始還沒有航班，不能只猜一次）
+    endAuto = draft.endHome == null;
+    if (endAuto) draft.endHome = guessEndHome(draft);
     if (!draft.legs.length) draft.legs.push(newLeg(null, draft.origin));
     $('#tf-origin-hint').textContent = hint;
     $('#tf-origin-hint').hidden = !hint;
@@ -244,6 +246,13 @@
     if (i >= 0) arr.splice(i, 1); else arr.push(v);
     renderPackSettings();
   });
+
+  var endAuto = false;   // 「結束後回到哪個家」還沒自己選過：跟著最後一段的抵達城市
+  function autoEndHome() {
+    if (!endAuto) return;
+    var g = guessEndHome(draft);
+    if (g !== draft.endHome) { draft.endHome = g; renderEndHome(); }
+  }
 
   function renderEndHome() {
     var homes = App.homes();
@@ -398,6 +407,7 @@
     }).join('');
     $('#tf-origin-home').innerHTML = homeFor(draft.origin)
       ? '<div class="home-badge">🏠 出發地' + esc(homeFor(draft.origin)) + '有家</div>' : '';
+    autoEndHome();   // 新增、刪除、搬動航班後，最後一段可能換了
   }
 
   // 輸入時直接更新草稿（不重畫，避免打字被打斷）
@@ -431,7 +441,7 @@
       l.allowance[field] = numVal(el.value);
     } else {
       l[field] = field === 'flightNo' ? el.value.trim().toUpperCase() : el.value.trim();
-      if (field === 'to') $('#tf-legs [data-home="' + i + '"]').innerHTML = homeBadge(l.to);
+      if (field === 'to') { $('#tf-legs [data-home="' + i + '"]').innerHTML = homeBadge(l.to); autoEndHome(); }
       if (['date', 'depTime', 'arrDate', 'arrTime', 'to', 'from'].indexOf(field) >= 0) refreshConn(+i);
       if ((field === 'to' || field === 'date') && !Array.isArray(draft.seasons)) renderPackSettings();   // 自動判斷的季節跟著更新
     }
@@ -484,6 +494,7 @@
     var c = e.target.closest('[data-end-home]');
     if (!c) return;
     draft.endHome = c.getAttribute('data-end-home');
+    endAuto = false;
     renderEndHome();
   });
 
