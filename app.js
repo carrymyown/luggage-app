@@ -28,7 +28,8 @@
    * 存在 localStorage（luggage-app-v1）的資料結構，第 2 版：
    *
    * bags   行李：{ id, name, kind, limit(上限 kg), tare(空箱 kg) }
-   *          kind：checked 托運、carry 手提、personal 背包／個人物品（對應航班的三種額度）
+   *          kind：pouch 隨身小包、personal 背包／個人物品、carry 手提、checked 托運
+   *          auto：true＝「尚未選擇行李箱」的占位（空箱算 0，不出現在行李箱設定）
    *          limit：沒有排行程時使用的上限；有下一段航班時改用那段的額度
    * items  行李裡的東西：{ id, name, weight(每單位 kg), qty, unit, category, bagId, catalogId }
    *          catalogId：對應到 memory 裡的哪一件（用來顯示照片）
@@ -64,7 +65,8 @@
    *          legs 航班段：{ id, from, to, date(起飛日期 YYYY-MM-DD), depTime, arrDate, arrTime(當地時間 HH:MM), flightNo, airline,
    *            connection: { baggage: through 直掛／recheck 領出, mode: transit 不入境／enter 入境停留, stayDays, note }
    *              （抵達這段的終點後、轉下一段時的設定；最後一段不用）
-   *            allowance: { checked, carry, personal }（公斤；空白＝沿用行李自己的上限，0＝這段沒有這項額度）,
+   *            allowance: { checked, carry, personal, pouch }（公斤；空白＝尚未設定額度，0＝這段沒有這項額度；
+   *              pouch 只在旅程的 pouchMode＝separate 時用）,
    *            bookingCode,  預留：訂位代號
    *            ai }          預留：AI 辨識結果 { confidence, fromImage, at }
    *
@@ -76,10 +78,7 @@
   function defaultState() {
     return {
       schemaVersion: SCHEMA_VERSION,
-      bags: [
-        { id: uid(), name: '托運行李', kind: 'checked', limit: 23, tare: 4 },
-        { id: uid(), name: '登機箱', kind: 'carry', limit: 7, tare: 2.5 }
-      ],
+      bags: [],   // 行李箱由你自己在「我的行李箱」新增；還沒選時顯示「尚未選擇行李箱」
       items: [],
       memory: [],
       outfits: [],
@@ -91,14 +90,32 @@
   }
 
   // 補齊常帶物品的欄位
-  // 依行李名稱猜類型（托運、手提、背包）
+  // 依行李名稱猜類型（隨身小包、背包、手提、托運）
   function guessBagKind(name) {
     name = String(name || '');
+    if (/小包|腰包|斜背|胸包|pouch/i.test(name)) return 'pouch';
     if (/背包|個人|后背|後背|包包/.test(name)) return 'personal';
     if (/登機|手提|隨身|carry/i.test(name)) return 'carry';
     return 'checked';
   }
-  var BAG_KINDS = [['checked', '托運'], ['carry', '手提'], ['personal', '背包']];
+  // 四種行李，首頁和打包清單都照這個順序
+  var BAG_KINDS = [['pouch', '隨身小包'], ['personal', '背包'], ['carry', '手提'], ['checked', '托運']];
+  function kindName(k) { return (BAG_KINDS.find(function (x) { return x[0] === k; }) || [, ''])[1]; }
+
+  // 「尚未選擇行李箱」：每種行李一個占位（id 固定，兩台裝置合併不會重複），空箱重量算 0，不會出現在行李箱設定裡
+  function autoBag(kind) {
+    var b = state.bags.find(function (x) { return x.id === 'auto-' + kind; }) ||
+      state.bags.find(function (x) { return x.auto && x.kind === kind; });
+    if (!b) { b = normalizeBag({ id: 'auto-' + kind, name: kindName(kind), kind: kind, tare: 0, auto: true }); state.bags.push(b); }
+    return b;
+  }
+
+  // 隨身小包的重量算在哪一項額度：依行程設定（預設算進背包／個人物品）；不計算時回傳 null
+  function groupOf(kind, trip) {
+    if (kind !== 'pouch') return kind;
+    var m = (trip && trip.pouchMode) || 'personal';
+    return m === 'separate' ? 'pouch' : m === 'none' ? null : 'personal';
+  }
 
   // 行李箱的欄位
   function normalizeBag(b) {
@@ -106,7 +123,7 @@
     if (!b.kind) b.kind = guessBagKind(b.name);
     ['size', 'style', 'material', 'home'].forEach(function (k) { if (b[k] == null) b[k] = ''; });
     if (b.tare == null) b.tare = 0;
-    if (b.limit == null) b.limit = b.kind === 'checked' ? 23 : 7;
+    if (b.limit == null) b.limit = '';   // 舊欄位：額度現在一律讀行程設定
     if (b.photoId === undefined) b.photoId = null;
     if (b.photoPath === undefined) b.photoPath = null;
     return b;
@@ -127,6 +144,7 @@
     if (t.cloudId === undefined) t.cloudId = null;
     if (t.syncedAt === undefined) t.syncedAt = null;
     if (t.endHome === undefined) t.endHome = null;
+    if (!t.pouchMode) t.pouchMode = 'personal';   // 隨身小包：personal 算進背包額度／separate 單獨計算／none 不計算
     return t;
   }
 
@@ -135,6 +153,7 @@
     ['from', 'to', 'date', 'depTime', 'arrDate', 'arrTime', 'flightNo', 'airline'].forEach(function (k) { if (l[k] == null) l[k] = ''; });
     if (!l.connection) l.connection = { baggage: '', mode: '', stayDays: '', note: '' };
     if (!l.allowance) l.allowance = { checked: '', carry: '', personal: '' };
+    if (l.allowance.pouch === undefined) l.allowance.pouch = '';
     if (l.bookingCode === undefined) l.bookingCode = null;
     if (l.ai === undefined) l.ai = null;
     return l;
@@ -202,6 +221,15 @@
     if (!s.customOptions || typeof s.customOptions !== 'object') s.customOptions = {};
     if (!Array.isArray(s.packLists)) s.packLists = [];
     s.bags.forEach(normalizeBag);
+    // 以前 app 自己建立的預設行李（托運行李 4 kg、登機箱 2.5 kg、打包清單自動建立的 0 kg）不是你選的行李箱：
+    // 改成「尚未選擇行李箱」（資料保留，空箱不算，等你選真正用的行李箱）
+    s.bags.forEach(function (b) {
+      if (b.auto) return;
+      var plain = !b.size && !b.style && !b.material && !b.home && !b.photoId;
+      var t = Number(b.tare) || 0;
+      if (plain && ((b.name === '托運行李' && (t === 4 || t === 0)) || (b.name === '登機箱' && (t === 2.5 || t === 0)) ||
+          ((b.name === '手提行李' || b.name === '背包') && t === 0))) b.auto = true;
+    });
     if (!s.shopping || typeof s.shopping !== 'object') s.shopping = {};
     if (!Array.isArray(s.shopping.plans)) s.shopping.plans = [];
     if (!Array.isArray(s.shopping.purchases)) s.shopping.purchases = [];
@@ -287,10 +315,11 @@
   function bagLoad(bag) {
     return state.items.reduce(function (sum, it) {
       return it.bagId === bag.id ? sum + it.weight * it.qty : sum;
-    }, Number(bag.tare) || 0);
+    }, bag.auto ? 0 : Number(bag.tare) || 0);   // 尚未選擇行李箱：空箱算 0
   }
 
   function level(remain, limit) {
+    if (limit == null) return 'none';
     if (remain < 0) return 'bad';
     if (limit > 0 && remain / limit < WARN_RATIO) return 'warn';
     return 'ok';
@@ -331,27 +360,14 @@
     return v === '' || v == null ? null : Number(v) || 0;
   }
 
-  // 每個行李這次的上限：有下一段航班就用那段的額度（同類型有好幾個行李就平分）；
-  // 那段沒填這項額度、或沒有排行程時，用行李自己設定的上限
-  function bagLimits(next, used) {
-    var out = {};
-    used = used || activeBags(next);
-    state.bags.forEach(function (b) {
-      var a = next ? allowanceOf(next.leg, b.kind) : null;
-      if (a == null) { out[b.id] = Number(b.limit) || 0; return; }
-      var same = used.filter(function (x) { return x.kind === b.kind; }).length || 1;
-      out[b.id] = a / same;
-    });
-    return out;
-  }
-
   // 挑行李時的順序：這趟用到的箱子排前面（預設選第一個），放在家裡的箱子排後面並註明在哪
   function pickBags() {
     var act = activeBags(nextLeg());
-    return act.concat(state.bags.filter(function (b) { return act.indexOf(b) < 0; }));
+    return act.concat(state.bags.filter(function (b) { return act.indexOf(b) < 0 && !b.auto; }));
   }
   function isTripBag(id) { return activeBags(nextLeg()).some(function (b) { return b.id === id; }); }
   function bagLabel(b) {
+    if (b.auto) return kindName(b.kind) + '（尚未選擇行李箱）';
     return b.name + (!isTripBag(b.id) && b.home ? '（在' + b.home + '）' : '');
   }
   function bagOptions() {
@@ -361,8 +377,9 @@
   // 這趟用到的行李箱（放在家裡沒帶的箱子不算空箱重量）
   function activeBags(next) {
     var ids = window.Packing ? window.Packing.tripBagIds(next && next.trip) : null;
-    if (!ids) return state.bags.slice();
-    if (!ids.length && !next) return state.bags.slice();   // 沒有旅程：照舊列出全部
+    var real = state.bags.filter(function (b) { return !b.auto; });
+    if (!ids) return real;
+    if (!ids.length && !next) return real;   // 沒有旅程：列出自己的行李箱
     return state.bags.filter(function (b) { return ids.indexOf(b.id) >= 0; });
   }
 
@@ -388,42 +405,58 @@
       '<a class="link small next-more" href="#trips/' + encodeURIComponent(next.trip.id) + '">查看行程 ›</a>';
   }
 
-  // 額度一行：托運／手提／背包（只顯示，修改要到行程設定）
+  // 額度一行（只顯示，修改要到行程設定）；隨身小包依這趟的設定顯示
   function renderAllowance(next) {
     var el = $('#allow-line');
     if (!next) {
       el.innerHTML = '<span class="muted">沒有接下來的航班，新增旅程後就會讀取額度。</span>';
       return;
     }
-    var a = next.leg.allowance || {};
-    el.innerHTML = BAG_KINDS.map(function (k) {
-      var v = a[k[0]];
+    var mode = next.trip.pouchMode || 'personal';
+    var list = [['checked', '托運'], ['carry', '手提'], ['personal', mode === 'personal' ? '背包＋隨身小包' : '背包']];
+    if (mode === 'separate') list.push(['pouch', '隨身小包']);
+    el.innerHTML = list.map(function (k) {
+      var v = allowanceOf(next.leg, k[0]);
       return '<span class="allow-item"><span class="muted small">' + k[1] + '</span><b>' +
-        (v === '' || v == null ? '未填' : fmt(Number(v)) + ' kg') + '</b></span>';
+        (v == null ? '尚未設定額度' : fmt(v) + ' kg') + '</b></span>';
     }).join('') +
-      '<div class="allow-src muted small">依 ' + window.Trips.fmtDate(next.leg.date) + '「' + esc(next.leg.from || '?') + ' → ' + esc(next.leg.to || '?') + '」</div>';
+      '<div class="allow-src muted small">依 ' + window.Trips.fmtDate(next.leg.date) + '「' + esc(next.leg.from || '?') + ' → ' + esc(next.leg.to || '?') + '」' +
+      (mode === 'none' ? '・隨身小包不計算重量' : '') + '</div>';
   }
 
   // ---------- 首頁 ----------
   var openBag = null;   // 展開中的行李
 
-  // 剩餘公斤數：行李裡的東西（打包、購物、還在行李裡的禮物）＋打包清單上還沒收好的，對比下一段航班的額度
+  // 剩餘公斤數：行李裡的東西（打包、購物、還在行李裡的禮物）＋打包清單上還沒收好的，對比下一段航班的額度。
+  // 額度一律讀行程設定；同一項額度的行李加在一起比（例如背包＋隨身小包）；沒填額度的那項不算進剩餘。
+  // 首頁、打包清單、購物頁都用這個
   function remainInfo() {
     var next = nextLeg();
+    var trip = next && next.trip;
     var pend = window.Packing ? window.Packing.pendingByBag() : {};
     var used = activeBags(next);
-    var limits = bagLimits(next, used);
-    var total = 0, limit = 0, loads = {};
-    used.forEach(function (b) { loads[b.id] = bagLoad(b) + (pend[b.id] ? pend[b.id].weight : 0); total += loads[b.id]; });
-    // 總上限：這趟有帶的每種行李各算一次額度（有填就用航班額度，沒填就加總那類行李自己的上限）；
-    // 沒帶的種類（例如沒帶背包）不算，首頁、打包、購物都用這個數字
-    BAG_KINDS.forEach(function (k) {
-      if (!used.some(function (b) { return b.kind === k[0]; })) return;
-      var a = next ? allowanceOf(next.leg, k[0]) : null;
-      if (a != null) limit += a;
-      else used.forEach(function (b) { if (b.kind === k[0]) limit += limits[b.id]; });
+    var loads = {}, groups = {}, total = 0, limit = 0, remain = 0, known = 0, missing = [];
+    used.forEach(function (b) {
+      loads[b.id] = bagLoad(b) + (pend[b.id] ? pend[b.id].weight : 0);
+      var g = groupOf(b.kind, trip);
+      if (!g) return;   // 隨身小包設定成「不計算」
+      total += loads[b.id];
+      if (!groups[g]) groups[g] = { key: g, load: 0, allow: next ? allowanceOf(next.leg, g) : null, bags: [] };
+      groups[g].load += loads[b.id];
+      groups[g].bags.push(b);
     });
-    return { next: next, limits: limits, loads: loads, bags: used, pend: pend, total: total, limit: limit, remain: next ? limit - total : null };
+    Object.keys(groups).forEach(function (k) {
+      var gr = groups[k];
+      if (gr.allow == null) { missing.push(k); return; }
+      known++; limit += gr.allow; remain += gr.allow - gr.load;
+    });
+    var limits = {};
+    used.forEach(function (b) { var g = groups[groupOf(b.kind, trip)]; limits[b.id] = g ? g.allow : null; });
+    return {
+      next: next, bags: used, loads: loads, limits: limits, groups: groups, pend: pend, total: total, missing: missing,
+      groupOf: function (kind) { return groupOf(kind, trip); },
+      limit: known ? limit : null, remain: next && known ? remain : null
+    };
   }
 
   // 箱子裡的東西搬到另一個箱子（換行李箱）
@@ -448,10 +481,10 @@
   }
 
   function renderHome() {
+    var n0 = nextLeg();
+    if (n0 && window.Packing) window.Packing.tripZones(n0.trip);   // 先確定這趟每種行李用哪個箱子（和打包清單同一份）
     var info = remainInfo();
-    var next = info.next, limits = info.limits, total = info.total, limit = info.limit;
-    var pend = info.pend;
-    function pendOf(b) { return pend[b.id] || { weight: 0, count: 0 }; }
+    var next = info.next, total = info.total, limit = info.limit, remain = info.remain;
     if (window.Shop) window.Shop.renderHomeBits();
     var noTrips = !state.trips.length;
     $('#first-trip').hidden = !noTrips;
@@ -460,41 +493,103 @@
     renderNextTrip(next);
     renderAllowance(next);
     if (window.Organize) window.Organize.check();
-    var remain = limit - total;
     var lv = level(remain, limit);
 
     var card = $('#remain-card');
-    card.className = 'remain-card ' + (next ? lv : 'none');
-    // 額度只讀行程：沒有接下來的航班時不計算
-    $('#remain-num').textContent = next ? fmt(remain) : '—';
-    $('#remain-status').innerHTML = '<i class="dot"></i><span>' + (!next ? '新增旅程後就會計算' :
+    card.className = 'remain-card ' + (remain != null ? lv : 'none');
+    // 額度只讀行程：沒有接下來的航班、或航班沒填額度時不計算
+    $('#remain-num').textContent = remain != null ? fmt(remain) : '—';
+    $('#remain-status').innerHTML = '<i class="dot"></i><span>' + (!next ? '新增旅程後就會計算' : remain == null ? '尚未設定額度' :
       lv === 'bad' ? '超重 ' + fmt(-remain) + ' kg' : lv === 'warn' ? '快滿了' : '充裕') + '</span>';
     $('#total-num').textContent = fmt(total);
-    $('#limit-num').textContent = next ? fmt(limit) : '—';
+    $('#limit-num').textContent = limit != null ? fmt(limit) : '—';
     $('#limit-link').href = next ? legLink(next) : '#trips/new';
     $('#limit-link-text').textContent = next ? '修改額度' : '新增旅程';
 
-    // 我的行李：每個行李一行，點了展開裡面的東西
+    // 我的行李：四種行李各一行（隨身小包、背包、手提、托運），選的行李箱和打包清單是同一份
     if (openBag && !bagById(openBag)) openBag = null;
-    var html = info.bags.map(function (b) {
-      var w = bagLoad(b) + pendOf(b).weight;
-      var lim = limits[b.id];
-      var blv = next ? level(lim - w, lim) : 'ok';
-      var items = state.items.filter(function (it) { return it.bagId === b.id; });
-      var pending = window.Packing ? window.Packing.bagPending(b.id) : [];
-      var count = items.length + pending.length;
-      var kindName = (BAG_KINDS.find(function (k) { return k[0] === b.kind; }) || [, ''])[1];
-      var open = openBag === b.id;
-      return '<div class="bag-block' + (open ? ' open' : '') + '">' +
-        '<button type="button" class="bag-row" data-bag-open="' + esc(b.id) + '" aria-expanded="' + open + '">' +
-        '<span class="bag-row-name"><b>' + esc(b.name) + '</b><span class="muted small">' + kindName + '・' + count + ' 件</span></span>' +
-        '<span class="bag-row-w"><i class="dot ' + (next ? blv : 'none') + '"></i>' + fmt(w) + (next ? '<span class="muted"> / ' + fmt(lim) + '</span>' : '') + ' kg</span>' +
-        '<span class="bag-chev" aria-hidden="true">' + (open ? '−' : '+') + '</span></button>' +
-        (open ? bagPanel(b, items, pending, next) : '') + '</div>';
+    var zones = next && window.Packing ? window.Packing.tripZones(next.trip) : [];
+    var shown = [];
+    var html = zones.map(function (z) {
+      if (!z.on) {
+        return '<div class="bag-off"><span><b>' + kindName(z.kind) + '</b><span class="muted small">這趟不帶</span></span>' +
+          '<button type="button" class="link small" data-pick-kind="' + z.kind + '">選擇行李箱</button></div>';
+      }
+      shown.push(z.bag.id);
+      return bagRow(z.bag, z.kind, info);
     }).join('');
+    // 其他放了東西、但不在這趟清單上的行李箱
+    html += info.bags.filter(function (b) { return shown.indexOf(b.id) < 0; }).map(function (b) { return bagRow(b, null, info); }).join('');
     $('#bag-list').innerHTML = html;
     Photos.fillThumbs($('#bag-list'));
   }
+
+  function bagRow(b, zoneKind, info) {
+    var next = info.next;
+    var w = info.loads[b.id] != null ? info.loads[b.id] : bagLoad(b);
+    var gkey = info.groupOf(b.kind);
+    var gr = gkey && info.groups[gkey];
+    var allow = gr ? gr.allow : null;
+    var shared = gr && gr.bags.length > 1;   // 例如背包＋隨身小包一起比
+    var gw = gr ? gr.load : w;
+    var blv = level(allow == null ? 0 : allow - gw, allow);
+    var items = state.items.filter(function (it) { return it.bagId === b.id; });
+    var pending = window.Packing ? window.Packing.bagPending(b.id) : [];
+    var count = items.length + pending.length;
+    var open = openBag === b.id;
+    var right = !gkey ? '<span class="muted small">不計算</span> ' + fmt(w) + ' kg' :
+      allow == null ? fmt(w) + ' kg' :
+      (shared ? '<span class="muted small">合計</span> ' : '') + fmt(shared ? gw : w) + '<span class="muted"> / ' + fmt(allow) + '</span> kg';
+    var sub = (b.auto ? '<span class="bag-warn">尚未選擇行李箱</span>' : esc(b.name)) + '・空箱 ' + fmt(b.auto ? 0 : Number(b.tare) || 0) + ' kg・' + count + ' 件';
+    var kind = zoneKind || b.kind;
+    return '<div class="bag-block' + (open ? ' open' : '') + '">' +
+      '<button type="button" class="bag-row" data-bag-open="' + esc(b.id) + '" aria-expanded="' + open + '">' +
+      '<span class="bag-row-name"><b>' + kindName(kind) + '</b><span class="muted small">' + sub + '</span></span>' +
+      '<span class="bag-row-w"><i class="dot ' + (allow == null ? 'none' : blv) + '"></i>' + right + '</span>' +
+      '<span class="bag-chev" aria-hidden="true">' + (open ? '−' : '+') + '</span></button>' +
+      '<div class="bag-tools">' +
+      (zoneKind ? '<button type="button" class="link small" data-pick-kind="' + zoneKind + '">選擇行李箱</button>' : '') +
+      (b.auto ? '<span class="muted small">選了行李箱，空箱重量就會自動算進去</span>' : '') +
+      (next && gkey && allow == null ? '<span class="muted small">' + (kind === 'pouch' && gkey === 'personal' ? '算在背包額度，背包' : '') + '尚未設定額度</span><a class="link small" href="' + legLink(next) + '">修改額度</a>' : '') +
+      '</div>' +
+      (open ? bagPanel(b, items, pending, next) : '') + '</div>';
+  }
+
+  // ---------- 首頁：選擇行李箱 ----------
+  var pickKind = null;
+  function openKindSheet(kind) {
+    var next = nextLeg();
+    if (!next || !window.Packing) return;
+    pickKind = kind;
+    var zone = window.Packing.tripZones(next.trip).find(function (z) { return z.kind === kind; });
+    var cur = zone && zone.on ? zone.bag : null;
+    var origin = window.Trips ? window.Trips.homeFor(next.trip.origin) : '';
+    var bags = state.bags.filter(function (b) { return !b.auto && b.kind === kind; }).sort(function (a, b) {
+      return (b.home === origin ? 1 : 0) - (a.home === origin ? 1 : 0);
+    });
+    $('#kind-sheet-title').textContent = '這趟的' + kindName(kind) + '用哪一個行李箱？';
+    $('#kind-sheet-list').innerHTML = (bags.length ? bags.map(function (b) {
+      return '<button type="button" class="btn ghost sheet-bag' + (cur && cur.id === b.id ? ' cur' : '') + '" data-kind-bag="' + esc(b.id) + '">' +
+        esc(b.name) + '<span class="muted small">' + [b.home ? (b.home === origin ? b.home + '・出發地' : '在' + b.home) : '', b.size, '空箱 ' + fmt(Number(b.tare) || 0) + ' kg'].filter(Boolean).join('・') + '</span></button>';
+    }).join('') : '<p class="muted small">「我的行李箱」裡還沒有' + kindName(kind) + '。</p>') +
+      '<a class="link small" href="#bags" data-kind-manage="1">到行李箱設定新增或修改 ›</a>' +
+      '<button type="button" class="btn ghost sheet-bag' + (zone && !zone.on ? ' cur' : '') + '" data-kind-bag="off">這趟不帶' + kindName(kind) + '</button>';
+    $('#kind-sheet').hidden = false;
+  }
+  $('#kind-sheet').addEventListener('click', function (e) {
+    var el = e.target.closest('[data-kind-bag]');
+    if (el && pickKind) {
+      var v = el.getAttribute('data-kind-bag');
+      var msg = window.Packing.setTripZone(nextLeg().trip, pickKind, v);
+      $('#kind-sheet').hidden = true;
+      if (msg) { toast(msg); return; }
+      toast(v === 'off' ? '這趟不帶' + kindName(pickKind) : '這趟的' + kindName(pickKind) + '用：' + bagById(v).name);
+      renderHome();
+      return;
+    }
+    if (e.target.closest('[data-kind-manage]')) { $('#kind-sheet').hidden = true; return; }
+    if (e.target.id === 'kind-sheet' || e.target.id === 'kind-sheet-cancel') $('#kind-sheet').hidden = true;
+  });
 
   // 展開的行李：依品類分組，可打勾、移到別的行李、拿出來
   function bagPanel(b, items, pending, next) {
@@ -535,6 +630,7 @@
 
   $('#bag-list').addEventListener('click', function (e) {
     var el;
+    if ((el = e.target.closest('[data-pick-kind]'))) { openKindSheet(el.getAttribute('data-pick-kind')); return; }
     if ((el = e.target.closest('[data-bag-open]'))) {
       var id = el.getAttribute('data-bag-open');
       openBag = openBag === id ? null : id;
@@ -702,6 +798,12 @@
     if (!state.customOptions) state.customOptions = {};
     var list = state.customOptions[ctx] || (state.customOptions[ctx] = []);
     if (list.indexOf(value) < 0) { list.push(value); save(); }
+  }
+  function removeCustom(ctx, value) {
+    var list = (state.customOptions || {})[ctx];
+    if (!list) return;
+    var i = list.indexOf(value);
+    if (i >= 0) { list.splice(i, 1); save(); }
   }
   function addHome(name) {
     if (state.homes.indexOf(name) < 0) { state.homes.push(name); save(); }
@@ -1245,6 +1347,11 @@
     toast: toast,
     renderHome: renderHome,
     remainInfo: remainInfo,
+    autoBag: autoBag,
+    groupOf: groupOf,
+    kindName: kindName,
+    allowanceOf: allowanceOf,
+    removeCustom: removeCustom,
     normalizeBag: normalizeBag,
     moveBagContents: moveBagContents,
     bagLocOf: bagLocOf,

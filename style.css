@@ -1406,3 +1406,15 @@ input:focus, select:focus { outline: 1px solid var(--primary); }
 .pk-bags-card .field-title { margin-top: 0; }
 .pk-bag-hint { flex-basis: 100%; }
 .pk-bags-note { margin: 8px 0 4px; }
+
+/* 首頁「我的行李」：選擇行李箱、這趟不帶 */
+.bag-tools { display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 14px; padding: 0 0 12px; margin-top: -4px; }
+.bag-warn { color: var(--bad); }
+.bag-off { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; padding: 12px 0; border-top: 1px solid var(--line); }
+.bag-off > span { display: flex; align-items: baseline; gap: 10px; }
+.bag-off b { font-weight: 500; color: var(--muted); }
+#kind-sheet .sheet-bag { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; text-align: left; }
+#kind-sheet .sheet-bag.cur { border-color: var(--primary); font-weight: 500; }
+#kind-sheet .link { display: inline-block; margin: 8px 0 4px; }
+/* 行李箱設定：自己加的選項可以長按刪除 */
+#bge-sheet [data-custom] { -webkit-touch-callout: none; -webkit-user-select: none; user-select: none; }

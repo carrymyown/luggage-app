@@ -1,6 +1,6 @@
 /*
  * 我的行李箱（在「打包」裡）
- * 每個行李箱：{ id, name, kind(checked 托運／carry 手提／personal 背包), size, style, material, tare(空箱 kg),
+ * 每個行李箱：{ id, name, kind(pouch 隨身小包／personal 背包／carry 手提／checked 托運), size, style, material, tare(空箱 kg),
  *              limit(沒填航班額度時的上限), home(放在哪個家), photoId, photoPath }
  * 位置：箱子裡有東西＝跟著旅程出門；空的＝在它的家（見 app.js bagLocOf）
  */
@@ -11,10 +11,13 @@
   var $ = function (sel) { return document.querySelector(sel); };
   var esc = App.esc;
 
-  var SIZES = ['20 吋', '24 吋', '26 吋', '28 吋', '31 吋'];
-  var STYLES = ['胖胖箱', '一般五五開箱'];
-  var MATERIALS = ['硬箱', '布箱'];
-  var OTHER = '其他';
+  // 尺寸、款式、材質：固定選項＋自己新增的（存在 customOptions，長按可刪除）。
+  // 以前存過的 24 吋、26 吋、胖胖箱、其他…照樣保留並顯示
+  var OPTS = {
+    size: { base: ['20 吋', '28 吋', '31 吋'], ctx: 'bag-size', add: '新增尺寸', label: '尺寸' },
+    style: { base: ['三七開', '五五開'], ctx: 'bag-style', add: '新增款式', label: '款式' },
+    material: { base: ['硬箱', '布箱'], ctx: 'bag-material', add: '新增材質', label: '材質' }
+  };
 
   function st() { return App.state(); }
   function kindName(k) { return (App.bagKinds().find(function (x) { return x[0] === k; }) || [, ''])[1]; }
@@ -29,7 +32,7 @@
 
   // ---------- 列表 ----------
   function render() {
-    var bags = st().bags;
+    var bags = st().bags.filter(function (b) { return !b.auto; });   // 「尚未選擇行李箱」的占位不列出
     var order = App.homes().concat(['']);
     var html = order.map(function (h) {
       var list = bags.filter(function (b) {
@@ -52,12 +55,16 @@
   // ---------- 編輯 ----------
   var cur = null, isNew = false, newPhoto = null, photoRemoved = false;
 
-  function chips(el, list, value, attr) {
-    var opts = list.slice();
-    if (value && opts.indexOf(value) < 0) opts.push(value);
-    el.innerHTML = opts.map(function (o) {
-      return '<button type="button" class="chip' + (o === value ? ' on' : '') + '" ' + attr + '="' + esc(o) + '">' + esc(o) + '</button>';
-    }).join('') + '<button type="button" class="chip" ' + attr + '="' + OTHER + '">' + OTHER + '</button>';
+  function chips(field) {
+    var o = OPTS[field], value = cur[field];
+    var custom = App.customs(o.ctx);
+    var opts = o.base.concat(custom.filter(function (c) { return o.base.indexOf(c) < 0; }));
+    if (value && opts.indexOf(value) < 0) opts.push(value);   // 舊資料的選項照樣顯示
+    $('#bge-' + field).innerHTML = opts.map(function (v) {
+      var mine = custom.indexOf(v) >= 0 && o.base.indexOf(v) < 0;
+      return '<button type="button" class="chip' + (v === value ? ' on' : '') + '" data-bge-opt="' + field + '" data-v="' + esc(v) + '"' +
+        (mine ? ' data-custom="1" title="長按可以刪除"' : '') + '>' + esc(v) + '</button>';
+    }).join('') + '<button type="button" class="chip add-chip" data-bge-add="' + field + '">＋ ' + o.add + '</button>';
   }
 
   function renderForm() {
@@ -65,9 +72,7 @@
     $('#bge-kind').innerHTML = App.bagKinds().map(function (k) {
       return '<button type="button" class="' + (cur.kind === k[0] ? 'on' : '') + '" data-bge-kind="' + k[0] + '">' + k[1] + '</button>';
     }).join('');
-    chips($('#bge-size'), SIZES, cur.size, 'data-bge-size');
-    chips($('#bge-style'), STYLES, cur.style, 'data-bge-style');
-    chips($('#bge-material'), MATERIALS, cur.material, 'data-bge-material');
+    chips('size'); chips('style'); chips('material');
     $('#bge-home').innerHTML = App.homes().map(function (h) {
       return '<button type="button" class="chip' + (cur.home === h ? ' on' : '') + '" data-bge-home="' + esc(h) + '">' + esc(h) + '</button>';
     }).join('');
@@ -96,24 +101,51 @@
     $('#bge-sheet .org-panel').scrollTop = 0;
   }
 
-  function pickOther(field, label) {
-    window.Clothing.askText('自己輸入「' + label + '」', '').then(function (v) {
+  // 新增選項：輸入後按確認或鍵盤的完成就存好，變成新的選項並選上
+  function addOption(field) {
+    var o = OPTS[field];
+    window.Clothing.askText(o.add, '').then(function (v) {
       v = (v || '').trim().slice(0, 20);
-      if (v) { cur[field] = v; renderForm(); }
+      if (!v) return;
+      if (o.base.indexOf(v) < 0) App.addCustom(o.ctx, v);
+      cur[field] = v;
+      renderForm();
     });
   }
+
+  // 長按自己加的選項：刪除（已經用這個選項的行李箱不受影響）
+  var press = null, pressed = false;
+  $('#bge-sheet').addEventListener('pointerdown', function (e) {
+    var el = e.target.closest('[data-custom]');
+    if (!el) return;
+    pressed = false;
+    clearTimeout(press);
+    press = setTimeout(function () {
+      pressed = true;
+      var field = el.getAttribute('data-bge-opt'), v = el.getAttribute('data-v');
+      if (!confirm('要刪除自己加的選項「' + v + '」嗎？\n（已經選了這個的行李箱會保留原本的資料）')) return;
+      App.removeCustom(OPTS[field].ctx, v);
+      renderForm();
+    }, 600);
+  });
+  ['pointerup', 'pointercancel', 'pointerleave', 'pointermove'].forEach(function (ev) {
+    $('#bge-sheet').addEventListener(ev, function (e) {
+      if (ev === 'pointermove' && !(Math.abs(e.movementX || 0) + Math.abs(e.movementY || 0) > 6)) return;
+      clearTimeout(press);
+    });
+  });
+  $('#bge-sheet').addEventListener('contextmenu', function (e) { if (e.target.closest('[data-custom]')) e.preventDefault(); });
 
   $('#bge-sheet').addEventListener('click', function (e) {
     var t = e.target, el;
     if ((el = t.closest('[data-bge-kind]'))) { cur.kind = el.getAttribute('data-bge-kind'); renderForm(); return; }
-    var map = [['data-bge-size', 'size', '尺寸'], ['data-bge-style', 'style', '款式'], ['data-bge-material', 'material', '材質']];
-    for (var i = 0; i < map.length; i++) {
-      if ((el = t.closest('[' + map[i][0] + ']'))) {
-        var v = el.getAttribute(map[i][0]);
-        if (v === OTHER) pickOther(map[i][1], map[i][2]);
-        else { cur[map[i][1]] = cur[map[i][1]] === v ? '' : v; renderForm(); }
-        return;
-      }
+    if ((el = t.closest('[data-bge-add]'))) { addOption(el.getAttribute('data-bge-add')); return; }
+    if ((el = t.closest('[data-bge-opt]'))) {
+      if (pressed) { pressed = false; return; }   // 剛剛是長按，不要當成點選
+      var f = el.getAttribute('data-bge-opt'), v = el.getAttribute('data-v');
+      cur[f] = cur[f] === v ? '' : v;
+      renderForm();
+      return;
     }
     if ((el = t.closest('[data-bge-home]'))) { cur.home = el.getAttribute('data-bge-home'); renderForm(); return; }
     if (t.id === 'bge-photo-remove') { newPhoto = null; photoRemoved = true; showPhoto(null); return; }
@@ -142,7 +174,7 @@
     b.size = cur.size; b.style = cur.style; b.material = cur.material;
     b.tare = isFinite(tare) && tare >= 0 ? tare : 0;
     b.home = cur.home || '';
-    if (isNew) { b.limit = b.kind === 'checked' ? 23 : b.kind === 'carry' ? 7 : 5; st().bags.push(b); }
+    if (isNew) st().bags.push(b);
     var job = Promise.resolve();
     if (newPhoto) {
       b.photoId = 'bag-' + b.id;
@@ -165,11 +197,11 @@
     var b = App.bagById(cur.id);
     if (!b) return;
     if (App.bagLocOf(b).state === 'out') { App.toast('箱子裡還有東西，請先拿出來或換到別的箱子'); return; }
-    if (st().bags.length <= 1) { App.toast('至少要保留一個行李箱'); return; }
     if (!confirm('要刪除行李箱「' + b.name + '」嗎？')) return;
     st().bags = st().bags.filter(function (x) { return x !== b; });
+    // 有旅程選了這個箱子：改回「尚未選擇行李箱」
     (st().packLists || []).forEach(function (l) {
-      Object.keys(l.zones || {}).forEach(function (z) { if (l.zones[z].bagId === b.id) { l.zones[z].bagId = null; l.zones[z].on = false; } });
+      Object.keys(l.zones || {}).forEach(function (z) { if (l.zones[z].bagId === b.id) l.zones[z].bagId = App.autoBag(z).id; });
     });
     if (b.photoId) { Photos.del(b.photoId).catch(function () {}); if (window.Cloud) window.Cloud.queueDelete(b.photoId); }
     App.save();

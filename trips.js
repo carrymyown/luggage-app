@@ -97,10 +97,11 @@
   var editingId = null;
 
   function newLeg(prev, from) {
-    var a = prev ? prev.allowance : { checked: 23, carry: 7, personal: '' };
+    // 額度不自己預設：第一段空白，之後的段沿用上一段填的
+    var a = prev ? prev.allowance : { checked: '', carry: '', personal: '', pouch: '' };
     return App.normalizeLeg({
       from: from || '', to: '', date: '', flightNo: '', airline: prev ? prev.airline : '',
-      allowance: { checked: a.checked, carry: a.carry, personal: a.personal }
+      allowance: { checked: a.checked, carry: a.carry, personal: a.personal, pouch: a.pouch == null ? '' : a.pouch }
     });
   }
 
@@ -128,6 +129,7 @@
     $('#tf-origin').value = draft.origin;
     $('#tf-delete').hidden = !t;
     renderLegs();
+    renderPouch();
     renderEndHome();
   }
 
@@ -135,6 +137,21 @@
     var last = t.legs[t.legs.length - 1];
     return (last && homeFor(last.to)) || '';
   }
+
+  // 隨身小包的重量：算進背包額度（預設）／單獨計算／不計算
+  var POUCH_MODES = [['personal', '算進背包額度'], ['separate', '單獨計算'], ['none', '不計算']];
+  function renderPouch() {
+    $('#tf-pouch').innerHTML = POUCH_MODES.map(function (m) {
+      return '<button type="button" class="chip' + ((draft.pouchMode || 'personal') === m[0] ? ' on' : '') + '" data-pouch-mode="' + m[0] + '">' + m[1] + '</button>';
+    }).join('');
+  }
+  $('#tf-pouch').addEventListener('click', function (e) {
+    var c = e.target.closest('[data-pouch-mode]');
+    if (!c) return;
+    draft.pouchMode = c.getAttribute('data-pouch-mode');
+    renderPouch();
+    renderLegs();
+  });
 
   function renderEndHome() {
     var homes = App.homes();
@@ -186,11 +203,12 @@
       '</div>' +
       '<div class="leg-home" data-home="' + i + '">' + homeBadge(l.to) + '</div>' +
       '<div class="leg-recheck" data-recheck="' + i + '">' + recheckNote(l, i, n) + '</div>' +
-      '<div class="field-title">這段的行李額度 <span class="muted small">沒填＝沿用行李額度的設定；填 0＝這段沒有這項</span></div>' +
+      '<div class="field-title">這段的行李額度 <span class="muted small">沒填＝尚未設定額度；填 0＝這段沒有這項</span></div>' +
       '<div class="allow-grid">' +
       input('checked', '托運（公斤）', 'type="number" inputmode="decimal" step="any" min="0" placeholder="例如 23"', a.checked) +
       input('carry', '手提（公斤）', 'type="number" inputmode="decimal" step="any" min="0" placeholder="例如 7"', a.carry) +
-      input('personal', '背包／個人物品', 'type="number" inputmode="decimal" step="any" min="0" placeholder="公斤"', a.personal) +
+      input('personal', '背包／個人物品' + (draft.pouchMode === 'personal' ? '<span class="muted">（含隨身小包）</span>' : ''), 'type="number" inputmode="decimal" step="any" min="0" placeholder="公斤"', a.personal) +
+      (draft.pouchMode === 'separate' ? input('pouch', '隨身小包（公斤）', 'type="number" inputmode="decimal" step="any" min="0" placeholder="公斤"', a.pouch) : '') +
       '</div></div>';
   }
 
@@ -317,7 +335,7 @@
     if (i == null) return;
     var l = draft.legs[+i];
     var field = el.getAttribute('data-field');
-    if (['checked', 'carry', 'personal'].indexOf(field) >= 0) {
+    if (['checked', 'carry', 'personal', 'pouch'].indexOf(field) >= 0) {
       l.allowance[field] = numVal(el.value);
     } else {
       l[field] = field === 'flightNo' ? el.value.trim().toUpperCase() : el.value.trim();

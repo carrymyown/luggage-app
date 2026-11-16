@@ -11,7 +11,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&family=Noto+Serif+TC:wght@300;400;600&display=swap">
-  <link rel="stylesheet" href="style.css?v=20261116a">
+  <link rel="stylesheet" href="style.css?v=20261116b">
 </head>
 <body>
   <main>
@@ -217,6 +217,8 @@
           </label>
           <p id="tf-origin-hint" class="muted small origin-hint" hidden></p>
           <div id="tf-origin-home"></div>
+          <div class="field-title">隨身小包的重量 <span class="muted small">預設和背包／個人物品一起算</span></div>
+          <div id="tf-pouch" class="chips"></div>
         </div>
 
         <div id="tf-legs"></div>
@@ -745,6 +747,15 @@
     </div>
   </div>
 
+  <!-- 首頁：選擇行李箱（和打包清單同一份） -->
+  <div id="kind-sheet" class="sheet" hidden>
+    <div class="sheet-panel" role="dialog" aria-modal="true" aria-labelledby="kind-sheet-title">
+      <div id="kind-sheet-title" class="sheet-title">選擇行李箱</div>
+      <div id="kind-sheet-list" class="sheet-list"></div>
+      <button type="button" id="kind-sheet-cancel" class="btn ghost">取消</button>
+    </div>
+  </div>
+
   <!-- 選擇要放進哪個行李 -->
   <div id="bag-sheet" class="sheet" hidden>
     <div class="sheet-panel" role="dialog" aria-modal="true" aria-labelledby="bag-sheet-title">
@@ -754,20 +765,20 @@
     </div>
   </div>
 
-  <script src="weights.js?v=20261116a"></script>
-  <script src="photos.js?v=20261116a"></script>
-  <script src="clothing.js?v=20261116a"></script>
-  <script src="app.js?v=20261116a"></script>
-  <script src="closet.js?v=20261116a"></script>
-  <script src="trips.js?v=20261116a"></script>
-  <script src="organize.js?v=20261116a"></script>
-  <script src="packing.js?v=20261116a"></script>
-  <script src="drawer.js?v=20261116a"></script>
-  <script src="bags.js?v=20261116a"></script>
-  <script src="shop.js?v=20261116a"></script>
-  <script src="nav.js?v=20261116a"></script>
-  <script src="backup.js?v=20261116a"></script>
+  <script src="weights.js?v=20261116b"></script>
+  <script src="photos.js?v=20261116b"></script>
+  <script src="clothing.js?v=20261116b"></script>
+  <script src="app.js?v=20261116b"></script>
+  <script src="closet.js?v=20261116b"></script>
+  <script src="trips.js?v=20261116b"></script>
+  <script src="organize.js?v=20261116b"></script>
+  <script src="packing.js?v=20261116b"></script>
+  <script src="drawer.js?v=20261116b"></script>
+  <script src="bags.js?v=20261116b"></script>
+  <script src="shop.js?v=20261116b"></script>
+  <script src="nav.js?v=20261116b"></script>
+  <script src="backup.js?v=20261116b"></script>
   <script src="vendor/supabase.js"></script>
-  <script src="cloud.js?v=20261116a"></script>
+  <script src="cloud.js?v=20261116b"></script>
 </body>
 </html>
