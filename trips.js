@@ -130,6 +130,7 @@
     $('#tf-delete').hidden = !t;
     renderLegs();
     renderPouch();
+    renderPackSettings();
     renderEndHome();
   }
 
@@ -151,6 +152,32 @@
     draft.pouchMode = c.getAttribute('data-pouch-mode');
     renderPouch();
     renderLegs();
+  });
+
+  // 這趟的季節與活動（打包清單依這裡自動帶入物品）；還沒改過就顯示自動判斷的結果
+  function renderPackSettings() {
+    var P = window.Packing;
+    if (!P) return;
+    var seasons = Array.isArray(draft.seasons) ? draft.seasons : P.guessSeasons(draft);
+    var acts = Array.isArray(draft.activities) ? draft.activities : P.guessActs(draft);
+    $('#tf-seasons').innerHTML = P.seasonOptions().map(function (s) {
+      return '<button type="button" class="chip' + (seasons.indexOf(s) >= 0 ? ' on' : '') + '" data-tf-season="' + s + '">' + s + '</button>';
+    }).join('');
+    $('#tf-acts').innerHTML = P.actOptions().map(function (a) {
+      return '<button type="button" class="chip' + (acts.indexOf(a) >= 0 ? ' on' : '') + '" data-tf-act="' + esc(a) + '">' + esc(a) + '</button>';
+    }).join('');
+  }
+  document.addEventListener('click', function (e) {
+    var c = e.target.closest('[data-tf-season], [data-tf-act]');
+    if (!c || !draft) return;
+    var P = window.Packing;
+    if (!Array.isArray(draft.seasons)) draft.seasons = P.guessSeasons(draft).slice();
+    if (!Array.isArray(draft.activities)) draft.activities = P.guessActs(draft).slice();
+    var arr = c.hasAttribute('data-tf-season') ? draft.seasons : draft.activities;
+    var v = c.getAttribute('data-tf-season') || c.getAttribute('data-tf-act');
+    var i = arr.indexOf(v);
+    if (i >= 0) arr.splice(i, 1); else arr.push(v);
+    renderPackSettings();
   });
 
   function renderEndHome() {
@@ -341,6 +368,7 @@
       l[field] = field === 'flightNo' ? el.value.trim().toUpperCase() : el.value.trim();
       if (field === 'to') $('#tf-legs [data-home="' + i + '"]').innerHTML = homeBadge(l.to);
       if (['date', 'depTime', 'arrDate', 'arrTime', 'to', 'from'].indexOf(field) >= 0) refreshConn(+i);
+      if ((field === 'to' || field === 'date') && !Array.isArray(draft.seasons)) renderPackSettings();   // 自動判斷的季節跟著更新
     }
   });
 
@@ -351,6 +379,7 @@
     if (['date', 'arrDate'].indexOf(field) < 0) return;
     draft.legs[+i][field] = el.value.trim();
     refreshConn(+i);
+    if (!Array.isArray(draft.seasons)) renderPackSettings();
   });
 
   $('#trip-form').addEventListener('click', function (e) {

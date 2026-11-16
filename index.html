@@ -11,7 +11,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&family=Noto+Serif+TC:wght@300;400;600&display=swap">
-  <link rel="stylesheet" href="style.css?v=20261116c">
+  <link rel="stylesheet" href="style.css?v=20261116d">
 </head>
 <body>
   <main>
@@ -212,6 +212,14 @@
           <div id="tf-end-home" class="chips"></div>
         </div>
 
+        <div class="card trip-pack-box">
+          <div class="field-title">這趟的季節 <span class="muted small">依日期和城市自動判斷，可以自己改</span></div>
+          <div id="tf-seasons" class="chips pick"></div>
+          <div class="field-title">這趟的活動</div>
+          <div id="tf-acts" class="chips pick"></div>
+          <p class="muted small">打包清單會依這裡自動帶入需要的衣物和裝備。</p>
+        </div>
+
         <button type="submit" class="btn primary save-trip">儲存旅程</button>
         <button type="button" id="tf-delete" class="btn danger" hidden>刪除這趟旅程</button>
       </form>
@@ -219,7 +227,6 @@
 
     <!-- 打包清單 -->
     <section id="view-pack" class="view" hidden>
-      <div class="home-switch"><a href="#pack" class="on">打包清單</a><a href="#bags">我的行李箱</a></div>
       <div class="page-head"><h1 data-en="PACKING">打包清單</h1></div>
       <p id="pack-empty" class="empty-big" hidden>還沒有旅程。<br>先到「行程」新增一趟旅程，這裡就會自動產生打包清單。<br><a href="#trips/new" class="link">＋ 新增旅程</a></p>
 
@@ -229,7 +236,7 @@
         </label>
 
         <div class="card pk-bags-card">
-          <div class="field-title">這趟帶哪些行李箱 <span class="muted small">點選單就可以換箱子，已經放進去的東西會一起搬過去</span></div>
+          <div class="field-title">這趟帶哪些行李箱</div>
           <div id="pack-bags"></div>
         </div>
 
@@ -238,17 +245,7 @@
           <div class="bar ok pk-progress"><i id="pack-progress-bar" style="width:0"></i></div>
           <div id="pack-weights" class="pk-weights"></div>
           <div id="pack-total" class="pk-total"></div>
-          <p id="pack-leg-note" class="muted small"></p>
         </div>
-
-        <details class="card pk-setup">
-          <summary>這趟的季節與活動</summary>
-          <div class="field-title">目的地季節 <span class="muted small">依日期和城市自動判斷，可以自己改</span></div>
-          <div id="pack-seasons" class="chips pick"></div>
-          <div class="field-title">這趟的活動 <span class="muted small">會列出相關裝備和鞋子</span></div>
-          <div id="pack-acts" class="chips pick"></div>
-          <button type="button" id="pack-regen" class="btn ghost">依設定補上建議的物品</button>
-        </details>
 
         <div class="cloud-btns">
           <button type="button" id="pack-add" class="btn ghost">＋ 手動新增</button>
@@ -266,7 +263,7 @@
 
     <!-- 我的抽屜 -->
     <section id="view-drawer" class="view" hidden>
-      <div class="home-switch"><a href="#closet">我的衣櫃</a><a href="#drawer" class="on">我的抽屜</a></div>
+      <div class="home-switch"><a href="#closet">我的衣櫃</a><a href="#drawer" class="on">我的抽屜</a><a href="#bags">我的行李箱</a></div>
       <div class="page-head"><h1 data-en="DRAWER">我的抽屜</h1></div>
       <div id="dr-tabs" class="tabs"></div>
 
@@ -305,10 +302,9 @@
 
     <!-- 我的行李箱 -->
     <section id="view-bags" class="view" hidden>
-      <div class="home-switch"><a href="#pack">打包清單</a><a href="#bags" class="on">我的行李箱</a></div>
+      <div class="home-switch"><a href="#closet">我的衣櫃</a><a href="#drawer">我的抽屜</a><a href="#bags" class="on">我的行李箱</a></div>
       <div class="page-head"><h1 data-en="SUITCASES">我的行李箱</h1></div>
-      <p class="muted small">箱子裡有東西＝跟著旅程出門；空的＝放在它的家。打包清單會從這裡挑行李箱，空箱重量自動算進去。</p>
-      <button type="button" id="bg-add" class="btn ghost">＋ 新增行李箱</button>
+      <p class="muted small">每個家放了哪些行李箱。打包時從這裡選這趟要用哪一個。</p>
       <div id="bg-list"></div>
     </section>
 
@@ -371,7 +367,7 @@
     <!-- 我的衣櫃 -->
     <section id="view-closet" class="view" hidden>
       <div id="closet-list">
-        <div class="home-switch"><a href="#closet" class="on">我的衣櫃</a><a href="#drawer">我的抽屜</a></div>
+        <div class="home-switch"><a href="#closet" class="on">我的衣櫃</a><a href="#drawer">我的抽屜</a><a href="#bags">我的行李箱</a></div>
         <div class="page-head">
           <h1 data-en="WARDROBE">我的衣櫃</h1>
           <a href="#closet/new" class="btn primary small-btn">＋ 新增衣服</a>
@@ -461,10 +457,10 @@
     <button type="button" id="plus-btn" class="plus-btn" aria-label="新增" aria-haspopup="dialog">
       <svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14"/><path d="M5 12h14"/></svg>
     </button>
-    <a href="#pack" data-views="pack bags">
+    <a href="#pack" data-views="pack">
       <svg class="ico" viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="7" width="14" height="13.5" rx="1"/><path d="M9 7V4.5h6V7"/><path d="M9 11.5h6"/><path d="M8.5 20.5v1"/><path d="M15.5 20.5v1"/></svg><span>打包</span>
     </a>
-    <a href="#closet" data-views="closet drawer">
+    <a href="#closet" data-views="closet drawer bags">
       <svg class="ico" viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4.5" y="3.5" width="15" height="17" rx="1"/><path d="M12 3.5v17"/><path d="M10 11v2"/><path d="M14 11v2"/></svg><span>我的家</span>
     </a>
   </nav>
@@ -747,20 +743,20 @@
     </div>
   </div>
 
-  <script src="weights.js?v=20261116c"></script>
-  <script src="photos.js?v=20261116c"></script>
-  <script src="clothing.js?v=20261116c"></script>
-  <script src="app.js?v=20261116c"></script>
-  <script src="closet.js?v=20261116c"></script>
-  <script src="trips.js?v=20261116c"></script>
-  <script src="organize.js?v=20261116c"></script>
-  <script src="packing.js?v=20261116c"></script>
-  <script src="drawer.js?v=20261116c"></script>
-  <script src="bags.js?v=20261116c"></script>
-  <script src="shop.js?v=20261116c"></script>
-  <script src="nav.js?v=20261116c"></script>
-  <script src="backup.js?v=20261116c"></script>
+  <script src="weights.js?v=20261116d"></script>
+  <script src="photos.js?v=20261116d"></script>
+  <script src="clothing.js?v=20261116d"></script>
+  <script src="app.js?v=20261116d"></script>
+  <script src="closet.js?v=20261116d"></script>
+  <script src="trips.js?v=20261116d"></script>
+  <script src="organize.js?v=20261116d"></script>
+  <script src="packing.js?v=20261116d"></script>
+  <script src="drawer.js?v=20261116d"></script>
+  <script src="bags.js?v=20261116d"></script>
+  <script src="shop.js?v=20261116d"></script>
+  <script src="nav.js?v=20261116d"></script>
+  <script src="backup.js?v=20261116d"></script>
   <script src="vendor/supabase.js"></script>
-  <script src="cloud.js?v=20261116c"></script>
+  <script src="cloud.js?v=20261116d"></script>
 </body>
 </html>

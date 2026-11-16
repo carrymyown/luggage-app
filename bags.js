@@ -38,7 +38,7 @@
       var list = bags.filter(function (b) {
         return h ? (b.home === h) : (!b.home || App.homes().indexOf(b.home) < 0);
       });
-      if (!list.length) return '';
+      if (!list.length && !h) return '';   // 每個家都列出來（可以在那個家新增）；「未設定家」有箱子才列
       return '<div class="bg-group"><div class="bp-cat">' + (h ? esc(h) : '未設定家') + '</div>' + list.map(function (b) {
         var spec = [kindName(b.kind), b.size, b.style, b.material].filter(Boolean).join('・');
         return '<button type="button" class="bg-row" data-bag-edit="' + esc(b.id) + '">' +
@@ -46,9 +46,10 @@
           '<span class="bg-info"><b>' + esc(b.name) + '</b><span class="muted small">' + esc(spec) + '</span>' +
           '<span class="muted small">' + esc(locText(b)) + '</span></span>' +
           '<span class="bg-tare"><span class="muted small">空箱</span>' + fmt(b.tare) + ' kg</span></button>';
-      }).join('') + '</div>';
+      }).join('') +
+        (h ? '<button type="button" class="link small bg-add-home" data-bg-add-home="' + esc(h) + '">＋ 在' + esc(h) + '新增行李箱</button>' : '') + '</div>';
     }).join('');
-    $('#bg-list').innerHTML = html || '<p class="empty-big">還沒有行李箱。</p>';
+    $('#bg-list').innerHTML = html || '<p class="empty-big">還沒有家。到「我的衣櫃」新增衣服時可以新增家。</p>';
     Photos.fillThumbs($('#bg-list'));
   }
 
@@ -68,7 +69,7 @@
   }
 
   function renderForm() {
-    $('#bge-title').textContent = isNew ? '新增行李箱' : '編輯行李箱';
+    $('#bge-title').textContent = isNew ? (cur.home ? '在' + cur.home + '新增行李箱' : '新增行李箱') : '編輯行李箱';
     $('#bge-kind').innerHTML = App.bagKinds().map(function (k) {
       return '<button type="button" class="' + (cur.kind === k[0] ? 'on' : '') + '" data-bge-kind="' + k[0] + '">' + k[1] + '</button>';
     }).join('');
@@ -87,10 +88,10 @@
     $('#bge-photo-remove').hidden = !url;
   }
 
-  function open(id) {
+  function open(id, home) {
     var b = id && App.bagById(id);
     isNew = !b;
-    cur = b ? JSON.parse(JSON.stringify(b)) : { name: '', kind: 'checked', size: '', style: '', material: '', tare: '', home: App.homes()[0] || '', limit: 23 };
+    cur = b ? JSON.parse(JSON.stringify(b)) : { name: '', kind: 'checked', size: '', style: '', material: '', tare: '', home: home || App.homes()[0] || '' };
     newPhoto = null; photoRemoved = false;
     $('#bge-name').value = cur.name || '';
     $('#bge-tare').value = cur.tare !== '' && cur.tare != null ? cur.tare : '';
@@ -213,7 +214,8 @@
   $('#view-bags').addEventListener('click', function (e) {
     var el = e.target.closest('[data-bag-edit]');
     if (el) { open(el.getAttribute('data-bag-edit')); return; }
-    if (e.target.id === 'bg-add') open(null);
+    var ah = e.target.closest('[data-bg-add-home]');
+    if (ah) open(null, ah.getAttribute('data-bg-add-home'));
   });
 
   window.Bags = { show: render, open: open };

@@ -657,7 +657,7 @@
       return '<button type="button" class="btn ghost sheet-bag' + (cur && cur.id === b.id ? ' cur' : '') + '" data-kind-bag="' + esc(b.id) + '">' +
         esc(b.name) + '<span class="muted small">' + [b.home ? (b.home === origin ? b.home + '・出發地' : '在' + b.home) : '', b.size, '空箱 ' + fmt(Number(b.tare) || 0) + ' kg'].filter(Boolean).join('・') + '</span></button>';
     }).join('') : '<p class="muted small">「我的行李箱」裡還沒有' + kindName(kind) + '。</p>') +
-      '<a class="link small" href="#bags" data-kind-manage="1">到行李箱設定新增或修改 ›</a>' +
+      '<a class="link small" href="#bags" data-kind-manage="1">到「我的家 → 我的行李箱」新增或修改 ›</a>' +
       '<button type="button" class="btn ghost sheet-bag' + (zone && !zone.on ? ' cur' : '') + '" data-kind-bag="off">這趟不帶' + kindName(kind) + '</button>';
     $('#kind-sheet').hidden = false;
   }
