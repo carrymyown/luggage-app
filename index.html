@@ -16,7 +16,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&family=Noto+Serif+TC:wght@300;400;600&display=swap">
-  <link rel="stylesheet" href="style.css?v=20261116i">
+  <link rel="stylesheet" href="style.css?v=20261116j">
 </head>
 <body>
   <main>
@@ -24,7 +24,10 @@
     <section id="view-home" class="view">
       <header class="masthead">
         <img class="wordmark" src="icons/wordmark.png" alt="Carry My Own" width="1200" height="86">
-        <button type="button" id="cloud-pill" class="cloud-pill off" onclick="document.getElementById('cloud-card').scrollIntoView({behavior:'smooth'})">☁️ 未登入雲端</button>
+        <button type="button" id="account-btn" class="account-btn signed-out" aria-label="帳號、登入與備份" title="帳號">
+          <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="8.5" r="3.6"/><path d="M4.8 20c.9-3.6 3.8-5.6 7.2-5.6s6.3 2 7.2 5.6"/></svg>
+          <i class="account-dot" aria-hidden="true"></i>
+        </button>
       </header>
       <!-- 旅程卡：每趟旅程一張，可以左右滑；顯示那一趟的剩餘公斤數 -->
       <div id="trip-cards" class="trip-cards" aria-label="接下來的旅程"></div>
@@ -33,7 +36,6 @@
         <a class="btn primary first-trip-btn" href="#trips/new">＋ 先新增一趟旅程</a>
       </div>
 
-      <a id="shop-entry" class="shop-entry" href="#shop"><span><b>回程購物・送禮</b><span id="shop-entry-sub" class="muted small"></span></span><span class="shop-entry-go" aria-hidden="true">›</span></a>
 
       <div id="arrival-banner" class="card arrival-banner" hidden></div>
       <div id="gift-banner" class="card arrival-banner gift-banner" hidden></div>
@@ -43,18 +45,6 @@
         <div id="bag-list"></div>
       </section>
 
-      <div id="cloud-card" class="home-sec cloud-card form">
-        <div class="sec-head"><span class="eyebrow">ACCOUNT</span></div>
-        <div class="card-head"><span>備份與雲端同步</span></div>
-        <p class="muted small">備份檔包含所有資料和照片，可以存到「檔案」App。接上雲端前，建議先備份一次。</p>
-        <div class="cloud-btns">
-          <button type="button" id="backup-export" class="btn ghost">匯出備份</button>
-          <label class="btn ghost file-btn">匯入備份<input id="backup-import" type="file" accept=".json,application/json"></label>
-        </div>
-        <a id="backup-download" class="btn primary download-btn" hidden>下載備份檔</a>
-        <hr class="cloud-hr">
-        <div id="cloud-box"></div>
-      </div>
     </section>
 
     <!-- 放進行李 -->
@@ -240,31 +230,23 @@
       <p id="pack-empty" class="empty-big" hidden>還沒有旅程。<br>先到「行程」新增一趟旅程，這裡就會自動產生打包清單。<br><a href="#trips/new" class="link">＋ 新增旅程</a></p>
 
       <div id="pack-main" hidden>
-        <label class="pk-trip">這趟旅程
+        <label class="pk-trip" id="pack-trip-wrap">這趟旅程
           <select id="pack-trip"></select>
         </label>
 
-        <div class="card pk-bags-card">
-          <div class="field-title">這趟帶哪些行李箱</div>
-          <div id="pack-bags"></div>
-        </div>
+        <!-- 只留一行：還能放幾公斤（和首頁的剩餘公斤數同一個數字；打勾就扣、取消就加回來） -->
+        <div id="pack-remain" class="pk-remain"><span class="pk-remain-label">還能放</span><b id="pack-remain-num">—</b><span class="pk-remain-unit">kg</span></div>
 
-        <div class="card pk-summary">
-          <div class="pk-progress-head"><b id="pack-progress-text"></b></div>
-          <div class="bar ok pk-progress"><i id="pack-progress-bar" style="width:0"></i></div>
-          <div id="pack-weights" class="pk-weights"></div>
-          <div id="pack-total" class="pk-total"></div>
-        </div>
-
-        <div class="cloud-btns">
-          <button type="button" id="pack-add" class="btn ghost">＋ 手動新增</button>
-          <button type="button" id="pack-check" class="btn primary">出發前檢查</button>
-        </div>
+        <button type="button" id="pack-add" class="btn ghost pk-add-btn">＋ 新增</button>
 
         <div id="pack-zones"></div>
 
-        <div id="pack-home-wrap" class="card pk-home" hidden>
-          <div class="pk-zone-head"><b>家裡已經有，不用帶</b></div>
+        <div class="pk-foot">
+          <button type="button" id="pack-check" class="link small">出發前檢查</button>
+        </div>
+
+        <div id="pack-home-wrap" class="pk-home" hidden>
+          <div class="pk-home-title">家裡已經有，不用帶</div>
           <div id="pack-home"></div>
         </div>
       </div>
@@ -512,17 +494,24 @@
   <!-- 打包清單：手動新增 -->
   <div id="pk-add-sheet" class="sheet ask-sheet" hidden>
     <form id="pk-add-form" class="sheet-panel ask-panel form" autocomplete="off">
-      <div class="sheet-title">手動新增物品</div>
-      <label>名稱<input id="pk-add-name" maxlength="40" list="pk-add-names" placeholder="例如：自拍棒"><datalist id="pk-add-names"></datalist></label>
-      <div class="pk-add-row">
-        <label>重量（g）<input id="pk-add-weight" type="number" inputmode="decimal" min="0" step="any" placeholder="例如 200"></label>
-        <label>數量<input id="pk-add-qty" type="number" inputmode="numeric" min="1" step="1" value="1"></label>
+      <div class="sheet-title">新增到打包清單</div>
+      <div id="pk-add-tabs" class="home-switch pk-add-tabs"><button type="button" data-pk-tab="closet">從衣櫃挑</button><button type="button" data-pk-tab="drawer">從抽屜挑</button><button type="button" data-pk-tab="input" class="on">直接輸入</button></div>
+      <div id="pk-add-pick" hidden>
+        <input id="pk-add-search" class="more-search" placeholder="搜尋名稱" autocomplete="off">
+        <div id="pk-add-list"></div>
       </div>
-      <label>放在哪一區<select id="pk-add-zone"></select></label>
-      <label class="pk-only"><input id="pk-add-only" type="checkbox"> 只能手提（例如行動電源、護照）</label>
+      <div id="pk-add-input">
+        <label>名稱<input id="pk-add-name" maxlength="40" list="pk-add-names" placeholder="例如：自拍棒"><datalist id="pk-add-names"></datalist></label>
+        <div class="pk-add-row">
+          <label>重量（g）<input id="pk-add-weight" type="number" inputmode="decimal" min="0" step="any" placeholder="例如 200"></label>
+          <label>數量<input id="pk-add-qty" type="number" inputmode="numeric" min="1" step="1" value="1"></label>
+        </div>
+        <label>放在哪一區<select id="pk-add-zone"></select></label>
+        <label class="pk-only"><input id="pk-add-only" type="checkbox"> 只能手提（例如行動電源、護照）</label>
+      </div>
       <div class="cloud-btns">
-        <button type="button" id="pk-add-cancel" class="btn ghost">取消</button>
-        <button type="submit" class="btn primary">加入清單</button>
+        <button type="button" id="pk-add-cancel" class="btn ghost">完成</button>
+        <button type="submit" id="pk-add-submit" class="btn primary">加入清單</button>
       </div>
     </form>
   </div>
@@ -721,6 +710,21 @@
     </div>
   </div>
 
+  <!-- 帳號：登入狀態、登入／登出、備份、行李箱設定 -->
+  <div id="account-sheet" class="sheet" hidden>
+    <div class="sheet-panel org-panel form account-panel" role="dialog" aria-modal="true" aria-labelledby="account-title">
+      <div id="account-title" class="sheet-title">帳號</div>
+      <div id="cloud-box"></div>
+      <div class="account-links">
+        <button type="button" id="backup-export" class="link small">匯出備份</button>
+        <label class="link small file-link">匯入備份<input id="backup-import" type="file" accept=".json,application/json"></label>
+        <a class="link small" href="#bags" data-account-close="1">行李箱設定</a>
+      </div>
+      <a id="backup-download" class="btn primary download-btn" hidden>下載備份檔</a>
+      <button type="button" id="account-close" class="btn ghost">關閉</button>
+    </div>
+  </div>
+
   <!-- 首頁：購物目標（可選） -->
   <div id="goal-sheet" class="sheet ask-sheet" hidden>
     <form id="goal-form" class="sheet-panel ask-panel form" autocomplete="off">
@@ -762,20 +766,20 @@
     </div>
   </div>
 
-  <script src="weights.js?v=20261116i"></script>
-  <script src="photos.js?v=20261116i"></script>
-  <script src="clothing.js?v=20261116i"></script>
-  <script src="app.js?v=20261116i"></script>
-  <script src="closet.js?v=20261116i"></script>
-  <script src="trips.js?v=20261116i"></script>
-  <script src="organize.js?v=20261116i"></script>
-  <script src="packing.js?v=20261116i"></script>
-  <script src="drawer.js?v=20261116i"></script>
-  <script src="bags.js?v=20261116i"></script>
-  <script src="shop.js?v=20261116i"></script>
-  <script src="nav.js?v=20261116i"></script>
-  <script src="backup.js?v=20261116i"></script>
+  <script src="weights.js?v=20261116j"></script>
+  <script src="photos.js?v=20261116j"></script>
+  <script src="clothing.js?v=20261116j"></script>
+  <script src="app.js?v=20261116j"></script>
+  <script src="closet.js?v=20261116j"></script>
+  <script src="trips.js?v=20261116j"></script>
+  <script src="organize.js?v=20261116j"></script>
+  <script src="packing.js?v=20261116j"></script>
+  <script src="drawer.js?v=20261116j"></script>
+  <script src="bags.js?v=20261116j"></script>
+  <script src="shop.js?v=20261116j"></script>
+  <script src="nav.js?v=20261116j"></script>
+  <script src="backup.js?v=20261116j"></script>
   <script src="vendor/supabase.js"></script>
-  <script src="cloud.js?v=20261116i"></script>
+  <script src="cloud.js?v=20261116j"></script>
 </body>
 </html>

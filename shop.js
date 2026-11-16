@@ -682,8 +682,14 @@
     }
   }
 
+  // 從首頁旅程卡進來：直接看那一趟的購物和送禮
+  function openTrip(id) {
+    if (tripById(id)) tripId = id;
+    location.hash = '#shop';
+  }
+
   window.Shop = {
-    show: show, renderHomeBits: renderHomeBits, openBuy: openBuy, giftsHere: giftsHere,
+    show: show, openTrip: openTrip, renderHomeBits: renderHomeBits, openBuy: openBuy, giftsHere: giftsHere,
     itemInfo: itemInfo, leftAtHome: leftAtHome
   };
 })();

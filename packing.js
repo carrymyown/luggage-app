@@ -481,97 +481,38 @@
   }
 
   function render() {
-    var list = curList, t = curTrip;
-    // 設定：行李
-    // 從「我的行李箱」挑：出發地那個家的箱子排前面
-    var origin = originOf(list);
-    $('#pack-bags').innerHTML = ZONES.map(function (z) {
-      var cfg = list.zones[z[0]];
-      var bag = cfg.bagId && App.bagById(cfg.bagId);
-      var on = cfg.on && !!bag;
-      // 每種行李一個選單：各個家的行李箱（出發地的家排前面），或「這趟不帶」
-      var choices = bagsOfKind(z[0], origin);
-      var homes = [];
-      choices.forEach(function (b) { var h = b.home || ''; if (homes.indexOf(h) < 0) homes.push(h); });
-      // 出發地的家最前面，再來照「家」的順序，未設定家放最後
-      var homeOrder = App.homes();
-      homes.sort(function (a, b) {
-        function rank(h) { return h === origin ? -1 : h === '' ? 999 : (homeOrder.indexOf(h) < 0 ? 500 : homeOrder.indexOf(h)); }
-        return rank(a) - rank(b);
-      });
-      return '<label class="pk-bag-one"><span>' + z[1] + '</span><select data-zone-bag="' + z[0] + '">' +
-        (on && bag.auto ? '<option value="" selected>尚未選擇行李箱</option>' : '') +
-        homes.map(function (h) {
-          return '<optgroup label="' + esc(h ? h + (h === origin ? '（出發地）' : '') : '未設定家') + '">' +
-            choices.filter(function (b) { return (b.home || '') === h; }).map(function (b) {
-              return '<option value="' + esc(b.id) + '"' + (on && b.id === bag.id ? ' selected' : '') + '>' + esc(b.name) + '</option>';
-            }).join('') + '</optgroup>';
-        }).join('') +
-        '<option value="off"' + (on ? '' : ' selected') + '>這趟不帶</option></select></label>';
-    }).join('');
+    var list = curList;
+    // 只有一趟旅程時不顯示選旅程
+    $('#pack-trip-wrap').hidden = st().trips.length < 2;
+    renderRemain();
 
-    renderSummary();
-
-    // 三區
+    // 依隨身小包、背包、手提、托運分組；打勾的變淡、排到該組最下面
     var act = activeZones(list);
     $('#pack-zones').innerHTML = act.map(function (z) {
       var rows = list.entries.filter(function (e) { return e.status === 'take' && e.zone === z; })
         .sort(function (a, b) { return (a.checked ? 1 : 0) - (b.checked ? 1 : 0); });
-      var bag = App.bagById(list.zones[z].bagId);
-      return '<div class="card pk-zone" data-zone="' + z + '">' +
-        '<div class="pk-zone-head"><b>' + zoneName(z) + '</b><span class="muted small">' + esc(bag.auto ? '尚未選擇行李箱' : bag.name) + '・' + rows.length + ' 件</span></div>' +
+      if (!rows.length) return '';
+      return '<div class="pk-zone" data-zone="' + z + '">' +
+        '<div class="pk-zone-head"><b>' + zoneName(z) + '</b></div>' +
         rows.map(rowHTML).join('') + '</div>';
-    }).join('');
+    }).join('') || '<p class="muted small">清單是空的。點「＋ 新增」從衣櫃、抽屜挑，或直接輸入。</p>';
 
     var home = list.entries.filter(function (e) { return e.status === 'home'; });
     $('#pack-home-wrap').hidden = !home.length;
     $('#pack-home').innerHTML = home.map(function (e) {
-      var m = e.catalogId && App.entryById(e.catalogId);
-      var loc = m ? App.locOf(m) : null;
       return '<button type="button" class="pk-row pk-simple gray" data-take="' + esc(e.id) + '" aria-label="改成要帶：' + esc(e.name) + '">' +
         '<span class="pk-name">' + esc(e.name) + '</span><span class="pk-w-item">' + esc(App.fmtWeight(e.weight * e.qty)) + '</span></button>';
     }).join('');
-    Photos.fillThumbs($('#view-pack'));
   }
 
-  function renderSummary() {
-    var list = curList;
-    var take = list.entries.filter(function (e) { return e.status === 'take' && activeZones(list).indexOf(e.zone) >= 0; });
-    var done = take.filter(function (e) { return e.checked; }).length;
-    var pct = take.length ? Math.round(done / take.length * 100) : 0;
-    $('#pack-progress-text').textContent = '已收好 ' + done + '／總共 ' + take.length + ' 件';
-    $('#pack-progress-bar').style.width = pct + '%';
-    var stats = zoneStats(list, curTrip);
-    // 這趟就是下一段航班的旅程：和首頁用同一套計算（同一個剩餘公斤數）
-    var info = App.remainInfo();
-    var same = info.next && info.next.trip.id === curTrip.id;
-    if (same) {
-      stats = Object.keys(info.groups).map(function (g) {
-        var gr = info.groups[g];
-        var kinds = gr.bags.map(function (b) { return b.kind; });
-        return { key: g, label: groupLabel(g, kinds), weight: gr.load, limit: gr.allow,
-          tare: gr.bags.reduce(function (s0, b) { return s0 + (b.auto ? 0 : Number(b.tare) || 0); }, 0),
-          level: level(gr.allow == null ? 0 : gr.allow - gr.load, gr.allow) };
-      });
-    }
-    var total = 0, limit = 0, known = 0;
-    $('#pack-weights').innerHTML = stats.map(function (s) {
-      total += s.weight;
-      if (s.limit != null) { limit += s.limit; known++; }
-      var p = s.limit > 0 ? Math.min(100, s.weight / s.limit * 100) : s.limit == null ? 0 : 100;
-      return '<div class="pk-w ' + s.level + '"><div class="pk-w-head"><span>' + esc(s.label) + '</span>' +
-        '<b>' + fmt(s.weight) + (s.limit == null ? '' : ' / ' + fmt(s.limit)) + ' kg</b></div>' +
-        '<div class="bar ' + s.level + '"><i style="width:' + p + '%"></i></div>' +
-        '<div class="muted small">' + (s.limit == null ? '尚未設定額度' : s.level === 'bad' ? '超重 ' + fmt(s.weight - s.limit) + ' kg' : '還可以放 ' + fmt(s.limit - s.weight) + ' kg') +
-        '・含空箱 ' + fmt(s.tare) + ' kg</div></div>';
-    }).join('');
-    if (same) { total = info.total; limit = info.limit; known = limit == null ? 0 : 1; }
-    var remain = same ? info.remain : (known ? limit - total : null);
-    var lv = level(remain == null ? 0 : remain, known ? limit : null);
-    $('#pack-total').className = 'pk-total ' + lv;
-    $('#pack-total').innerHTML = '總重量 <b>' + fmt(total) + ' kg</b>　／額度 ' + (known ? fmt(limit) + ' kg' : '尚未設定') +
-      (same && remain != null ? '　<span class="muted">還剩 ' + fmt(remain) + ' kg</span>' : '');
-
+  // 最上方一行：還能放幾公斤（和首頁旅程卡的剩餘公斤數同一個計算；打勾就扣、取消打勾就加回來）
+  function renderRemain() {
+    var r = App.tripRemain(curTrip);
+    var el = $('#pack-remain');
+    var lv = r.remain == null ? 'none' : level(r.remain, r.limit);
+    el.className = 'pk-remain ' + lv;
+    $('#pack-remain-num').textContent = r.remain == null ? '—' : fmt(r.remain);
+    el.title = r.remain == null ? '這趟還沒設定額度' : '';
   }
 
   function entryById(id) { return curList.entries.find(function (e) { return e.id === id; }); }
@@ -626,18 +567,6 @@
 
   function toggle(arr, v) { var i = arr.indexOf(v); if (i >= 0) arr.splice(i, 1); else arr.push(v); }
 
-  // 換成另一個行李箱：已經收好的東西一起搬過去
-  $('#pack-bags').addEventListener('change', function (ev) {
-    var z = ev.target.getAttribute('data-zone-bag');
-    if (!z) return;
-    var cfg = curList.zones[z], newId = ev.target.value;
-    if (!newId || (cfg.on && cfg.bagId === newId)) return;
-    var msg = setTripZone(curTrip, z, newId);
-    if (msg) { App.toast(msg); render(); return; }
-    var b = App.bagById(newId);
-    App.toast(newId === 'off' ? '這趟不帶' + zoneName(z) : '這趟的' + zoneName(z) + '用：' + (b ? b.name : ''));
-    render();
-  });
 
   // ---------- 拖曳到別區（按住 ⠿ 拖；只點一下則跳出選單） ----------
   var drag = null;
@@ -727,9 +656,60 @@
     st().memory.forEach(function (m) { if (names.indexOf(m.name) < 0) names.push(m.name); });
     (window.REFERENCE_WEIGHTS || []).forEach(function (r) { if (names.indexOf(r.name) < 0) names.push(r.name); });
     $('#pk-add-names').innerHTML = names.map(function (n) { return '<option value="' + esc(n) + '">'; }).join('');
+    $('#pk-add-search').value = '';
+    setAddTab('closet');
     $('#pk-add-sheet').hidden = false;
-    setTimeout(function () { $('#pk-add-name').focus(); }, 50);
   }
+
+  // ＋ 新增：從衣櫃挑／從抽屜挑／直接輸入
+  var addTab = 'closet';
+  function setAddTab(tab) {
+    addTab = tab;
+    Array.prototype.forEach.call(document.querySelectorAll('[data-pk-tab]'), function (b) { b.classList.toggle('on', b.getAttribute('data-pk-tab') === tab); });
+    var input = tab === 'input';
+    $('#pk-add-pick').hidden = input;
+    $('#pk-add-input').hidden = !input;
+    $('#pk-add-submit').hidden = !input;
+    if (input) setTimeout(function () { $('#pk-add-name').focus(); }, 50);
+    else renderPick();
+  }
+  function renderPick() {
+    var q = norm($('#pk-add-search').value.trim());
+    var inList = {};
+    curList.entries.forEach(function (e) { if (e.catalogId && e.status === 'take') inList[e.catalogId] = true; });
+    var list = st().memory.filter(function (m) {
+      return (addTab === 'closet' ? App.isCloth(m) : !App.isCloth(m)) && (!q || norm(m.name).indexOf(q) >= 0);
+    }).sort(function (a, b) { return (inList[a.id] ? 1 : 0) - (inList[b.id] ? 1 : 0) || a.name.localeCompare(b.name); });
+    $('#pk-add-list').innerHTML = list.length ? list.map(function (m) {
+      var loc = App.locOf(m);
+      return '<button type="button" class="more-row' + (inList[m.id] ? ' in' : '') + '" data-pk-pick="' + esc(m.id) + '"' + (inList[m.id] ? ' disabled' : '') + '>' +
+        '<span class="more-name">' + esc(m.name) + '<span class="muted small">' + esc(App.fmtWeight(m.weight || 0)) +
+        (loc && loc.home ? '・' + esc(loc.home) : '') + '</span></span>' +
+        '<span class="more-plus" aria-hidden="true">' + (inList[m.id] ? '✓' : '＋') + '</span></button>';
+    }).join('') : '<p class="muted small">' + (addTab === 'closet' ? '衣櫃' : '抽屜') + '裡沒有符合的東西。</p>';
+  }
+  function pickToList(id) {
+    var m = App.entryById(id);
+    if (!m) return;
+    var e = curList.entries.find(function (x) { return x.catalogId === m.id; });
+    if (!e) { e = fromCatalog(m, 'manual'); curList.entries.push(e); }
+    e.status = 'take';
+    e.zone = defaultZone(curList, e);
+    touch(curList);
+    App.save();
+    render();
+    renderPick();
+    App.toast('已加入' + zoneName(e.zone) + '：' + m.name);
+  }
+  $('#pk-add-tabs').addEventListener('click', function (ev) {
+    var b = ev.target.closest('[data-pk-tab]');
+    if (b) setAddTab(b.getAttribute('data-pk-tab'));
+  });
+  $('#pk-add-search').addEventListener('input', renderPick);
+  $('#pk-add-list').addEventListener('click', function (ev) {
+    var b = ev.target.closest('[data-pk-pick]');
+    if (b) pickToList(b.getAttribute('data-pk-pick'));
+  });
   var addMatch = null;
   $('#pk-add-name').addEventListener('input', function () {
     var name = this.value.trim();
@@ -953,7 +933,7 @@
     activeZones(list).forEach(function (z) {
       var bag = App.bagById(list.zones[z].bagId);
       var w = bag.auto ? 0 : Number(bag.tare) || 0;
-      list.entries.forEach(function (e) { if (e.status === 'take' && e.zone === z) w += e.weight * e.qty; });
+      list.entries.forEach(function (e) { if (e.status === 'take' && e.zone === z && e.checked) w += e.weight * e.qty; });   // 打勾的才算
       out[bag.id] = (out[bag.id] || 0) + w;
     });
     return out;

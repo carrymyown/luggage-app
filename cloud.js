@@ -338,7 +338,7 @@
   // ---------- 畫面 ----------
   function renderStatus() {
     var el = $('#cloud-status');
-    var pill = $('#cloud-pill');
+    var acc = $('#account-btn');
     var text = '', cls = status.state;
     if (!client) { text = '雲端暫時無法使用'; cls = 'off'; }
     else if (!user) { text = '未登入雲端'; cls = 'off'; }
@@ -348,10 +348,11 @@
     else if (status.state === 'ok') text = '已同步 ' + hhmm(status.at);
     else text = '準備同步…';
     if (el) { el.textContent = text; el.className = 'cloud-status ' + cls; }
-    if (pill) {
-      pill.textContent = (cls === 'ok' ? '☁️ ' : cls === 'error' ? '⚠️ ' : cls === 'syncing' ? '🔄 ' : '☁️ ') +
-        (user && cls === 'ok' ? '已同步' : text);
-      pill.className = 'cloud-pill ' + cls;
+    // 右上角帳號圖示：還沒登入時旁邊一個小點；同步失敗時小點變紅
+    if (acc) {
+      acc.classList.toggle('signed-out', !user);
+      acc.classList.toggle('sync-error', !!user && cls === 'error');
+      acc.title = user ? (cls === 'ok' ? '已同步' : text) : '未登入雲端';
     }
   }
 

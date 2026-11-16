@@ -1482,8 +1482,39 @@ button.pk-row.pk-simple { width: 100%; border: 0; background: none; font: inheri
 /* 首頁刊頭：CARRY MY OWN 文字 logo（小、置中、留白多），雲端狀態放右邊 */
 .masthead { position: relative; display: flex; justify-content: center; align-items: center; padding: 6px 0 18px; margin-bottom: 4px; border-bottom: 1px solid var(--line); }
 .wordmark { display: block; height: 13px; width: auto; }
-.masthead .cloud-pill { position: absolute; right: 0; top: 50%; transform: translateY(-75%); margin: 0; }
-@media (max-width: 560px) {
-  .masthead { flex-direction: column; gap: 10px; }
-  .masthead .cloud-pill { position: static; transform: none; }
-}
+
+/* 右上角帳號圖示（細線條）；還沒登入時旁邊一個小點 */
+.masthead .account-btn { position: absolute; right: 0; top: 50%; transform: translateY(-62%); }
+.account-btn { border: 0; background: none; padding: 4px; color: var(--text); cursor: pointer; line-height: 0; }
+.account-btn svg { display: block; }
+.account-dot { display: none; position: absolute; top: 4px; right: 2px; width: 6px; height: 6px; border-radius: 50%; background: var(--gold); }
+.account-btn.signed-out .account-dot { display: block; }
+.account-btn.sync-error .account-dot { display: block; background: var(--bad); }
+.account-panel .account-links { display: flex; flex-wrap: wrap; gap: 6px 20px; margin: 18px 0 6px; padding-top: 14px; border-top: 1px solid var(--line); }
+.file-link { position: relative; cursor: pointer; }
+.file-link input { position: absolute; inset: 0; opacity: 0; width: 100%; cursor: pointer; }
+/* 旅程卡底下的購物・禮物 */
+.tc-shop { display: inline-block; margin-top: 10px; color: var(--muted); }
+
+/* 打包頁：只有「還能放 X kg」和清單 */
+.pk-remain { display: flex; align-items: baseline; gap: 10px; margin: 4px 0 18px; padding-bottom: 14px; border-bottom: 1px solid var(--line); }
+.pk-remain-label { font-size: 0.95rem; letter-spacing: 0.08em; }
+.pk-remain b { font-family: var(--serif); font-weight: 300; font-size: 2.6rem; line-height: 1; color: var(--text); font-variant-numeric: tabular-nums; }
+.pk-remain-unit { color: var(--muted); }
+.pk-remain.warn b { color: var(--warn); }
+.pk-remain.bad b { color: var(--bad); }
+.pk-remain.none b { color: var(--line); }
+.pk-add-btn { width: 100%; margin: 0 0 6px; }
+#pack-zones .pk-zone { margin-top: 18px; }
+#pack-zones .pk-zone-head { padding-bottom: 6px; border-bottom: 1px solid var(--line); }
+.pk-simple.done { opacity: 0.45; }
+.pk-foot { margin-top: 26px; padding-top: 12px; border-top: 1px solid var(--line); }
+.pk-home { margin-top: 14px; font-size: 0.85rem; }
+.pk-home-title { color: var(--muted); font-size: 0.8rem; letter-spacing: 0.08em; margin-bottom: 4px; }
+.pk-home .pk-row { padding: 4px 0; }
+.pk-add-tabs { margin: 4px 0 12px; }
+.more-plus { flex: none; width: 28px; text-align: center; color: var(--text); }
+.more-row.in { color: var(--muted); cursor: default; }
+.account-links { align-items: baseline; }
+.account-links .link { font-size: 0.85rem; padding: 4px 0; margin: 0; }
+.form .account-links label.file-link { display: inline-block; color: var(--primary); font-size: 0.85rem; margin: 0; }

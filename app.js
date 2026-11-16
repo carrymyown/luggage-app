@@ -414,7 +414,7 @@
   function tripWeights(trip) {
     var n = nextLeg();
     if (n && n.trip.id === trip.id) {
-      var pend = window.Packing ? window.Packing.pendingByBag() : {};
+      var pend = {};   // 打包清單上還沒打勾的不算：打勾＝放進行李才扣重量
       var used = activeBags(n), loads = {};
       used.forEach(function (b) { loads[b.id] = bagLoad(b) + (pend[b.id] ? pend[b.id].weight : 0); });
       return { live: true, bags: used, loads: loads, pend: pend };
@@ -620,12 +620,23 @@
       (r.remain == null ? '<div class="tc-note">尚未設定額度</div>' :
         r.tight && r.leg ? '<div class="tc-note">最緊：' + esc(r.leg.from || '?') + ' → ' + esc(r.leg.to || '?') + '</div>' : '') +
       '<div class="tc-goal-row">' + goalHtml + '</div>' +
+      shopLine(t) +
       '</div>';
+  }
+  // 旅程卡底下一行小字：這趟的購物和禮物，點了進這趟的購物／送禮頁
+  function shopLine(t) {
+    var sh = state.shopping || { purchases: [] };
+    var nb = sh.purchases.filter(function (p) { return p.tripId === t.id; }).length;
+    var ng = (state.gifts || []).filter(function (g) { return g.tripId === t.id; }).length;
+    return '<button type="button" class="link small tc-shop" data-shop-trip="' + esc(t.id) + '">' +
+      (nb || ng ? '購物 ' + nb + ' 件・禮物 ' + ng + ' 份' : '購物・禮物') + ' ›</button>';
   }
   // 點旅程卡進行程設定；點「購物目標」開設定
   $('#trip-cards').addEventListener('click', function (e) {
     var g = e.target.closest('[data-goal]');
     if (g) { openGoal(g.getAttribute('data-goal')); return; }
+    var sp = e.target.closest('[data-shop-trip]');
+    if (sp) { if (window.Shop) window.Shop.openTrip(sp.getAttribute('data-shop-trip')); return; }
     var c = e.target.closest('[data-trip-card]');
     if (c) location.hash = '#trips/' + encodeURIComponent(c.getAttribute('data-trip-card'));
   });

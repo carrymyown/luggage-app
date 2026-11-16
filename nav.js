@@ -8,6 +8,12 @@
   var $ = function (sel) { return document.querySelector(sel); };
   var esc = App.esc;
 
+  // ---------- 帳號（右上角）：登入狀態、登入／登出、備份、行李箱設定 ----------
+  $('#account-btn').addEventListener('click', function () { $('#account-sheet').hidden = false; });
+  $('#account-sheet').addEventListener('click', function (e) {
+    if (e.target.id === 'account-sheet' || e.target.id === 'account-close' || e.target.closest('[data-account-close]')) $('#account-sheet').hidden = true;
+  });
+
   // ---------- 「＋」選單 ----------
   function closePlus() { $('#plus-sheet').hidden = true; }
 
