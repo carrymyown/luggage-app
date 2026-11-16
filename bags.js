@@ -165,17 +165,29 @@
     }).catch(function () { App.toast('這張照片讀不到，請換一張試試'); });
   });
 
+  // ---------- 新增／修改行李箱（表單和範例資料都用這裡，格式才會一樣） ----------
+  // o：{ name, kind, size, style, material, tare(kg), home, id?, extra? }
+  function fillBag(b, o) {
+    b.name = o.name;
+    b.kind = o.kind;
+    b.size = o.size; b.style = o.style; b.material = o.material;
+    b.tare = isFinite(o.tare) && o.tare >= 0 ? o.tare : 0;
+    b.home = o.home || '';
+    return b;
+  }
+  function create(o) {
+    var b = App.normalizeBag(Object.assign({ id: o.id || App.uid() }, o.extra || {}));
+    fillBag(b, o);
+    st().bags.push(b);
+    return b;
+  }
+
   function save() {
     var name = $('#bge-name').value.trim();
     if (!name) { App.toast('請輸入名稱'); return; }
     var tare = parseFloat($('#bge-tare').value);
-    var b = isNew ? App.normalizeBag({ id: App.uid() }) : App.bagById(cur.id);
-    b.name = name;
-    b.kind = cur.kind;
-    b.size = cur.size; b.style = cur.style; b.material = cur.material;
-    b.tare = isFinite(tare) && tare >= 0 ? tare : 0;
-    b.home = cur.home || '';
-    if (isNew) st().bags.push(b);
+    var fields = { name: name, kind: cur.kind, size: cur.size, style: cur.style, material: cur.material, tare: tare, home: cur.home };
+    var b = isNew ? create(fields) : fillBag(App.bagById(cur.id), fields);
     var job = Promise.resolve();
     if (newPhoto) {
       b.photoId = 'bag-' + b.id;
@@ -218,5 +230,5 @@
     if (ah) open(null, ah.getAttribute('data-bg-add-home'));
   });
 
-  window.Bags = { show: render, open: open };
+  window.Bags = { show: render, open: open, create: create };
 })();

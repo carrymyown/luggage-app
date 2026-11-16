@@ -454,11 +454,16 @@
   }
 
   // 範例資料用：產生清單、選好行李箱、把幾樣先打勾（和真的操作走同一套流程）
-  function prepareTrip(t, zones, checkNames) {
+  // addNames：另外用「＋ 加入」加進清單的東西（衣櫃／抽屜裡的名稱）
+  function prepareTrip(t, zones, checkNames, addNames) {
     var list = ensureList(t);
     if (list.needsGenerate) { delete list.needsGenerate; generate(list, t); }
     syncTripSettings(t, list);
     Object.keys(zones).forEach(function (k) { setTripZone(t, k, zones[k]); });
+    (addNames || []).forEach(function (name) {
+      var m = st().memory.find(function (x) { return x.name === name; });
+      if (m) addToList(list, m);
+    });
     reconcile(list);
     list.entries.forEach(function (e) {
       if (e.status === 'take' && !e.checked && checkNames.indexOf(e.name) >= 0) setChecked(list, e, true);
@@ -703,14 +708,20 @@
         '<span class="more-plus" aria-hidden="true">' + (inList[m.id] ? '✓' : '＋') + '</span></button>';
     }).join('') : '<p class="muted small">' + (addTab === 'closet' ? '衣櫃' : '抽屜') + '裡沒有符合的東西。</p>';
   }
+  // 把衣櫃／抽屜的東西加進打包清單（「＋ 加入」和範例資料都用這裡）
+  function addToList(list, m) {
+    var e = list.entries.find(function (x) { return x.catalogId === m.id; });
+    if (!e) { e = fromCatalog(m, 'manual'); list.entries.push(e); }
+    e.status = 'take';
+    e.zone = defaultZone(list, e);
+    touch(list);
+    return e;
+  }
+
   function pickToList(id) {
     var m = App.entryById(id);
     if (!m) return;
-    var e = curList.entries.find(function (x) { return x.catalogId === m.id; });
-    if (!e) { e = fromCatalog(m, 'manual'); curList.entries.push(e); }
-    e.status = 'take';
-    e.zone = defaultZone(curList, e);
-    touch(curList);
+    var e = addToList(curList, m);
     App.save();
     render();
     renderPick();

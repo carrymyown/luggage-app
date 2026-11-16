@@ -342,6 +342,28 @@
     syncHeavy();
   }
 
+  // ---------- 新增／修改一件衣服（表單和範例資料都用這裡，格式才會一樣） ----------
+  function fillCloth(m, o) {
+    m.name = o.name;
+    m.weight = o.weight;
+    m.estimated = !!o.estimated;
+    m.clothing = JSON.parse(JSON.stringify(o.tags));
+    // 睡衣以「一套」為單位；改成別的類別就回到「個」
+    if (o.tags.group === '睡衣') m.unit = '套';
+    else if (m.unit === '套') m.unit = '個';
+    m.updatedAt = Date.now();
+  }
+  // o：{ name, weight(kg), estimated, tags（Clothing 的標籤，含 home）, id?, extra? }
+  function create(o) {
+    var base = { unit: '個', category: '必備品', bagId: st().bags[0] && st().bags[0].id, uses: 0 };
+    if (o.id) base.id = o.id;
+    var m = App.normalizeEntry(Object.assign(base, o.extra || {}));
+    fillCloth(m, o);
+    st().memory.push(m);
+    if (o.tags.home) { m.moves = [{ home: o.tags.home, date: App.todayStr() }]; m.location = { state: 'home', home: o.tags.home, since: App.todayStr() }; }
+    return m;
+  }
+
   $('#closet-form').addEventListener('submit', function (e) {
     e.preventDefault();
     var tags = picker.get();
@@ -352,22 +374,14 @@
 
     var isNew = !editing;
     var before = isNew ? null : App.locOf(App.entryById(editing));
-    var m = isNew
-      ? App.normalizeEntry({ unit: '個', category: '必備品', bagId: st().bags[0] && st().bags[0].id, uses: 0 })
-      : App.entryById(editing);
-    m.name = name;
-    m.weight = weight;
-    m.estimated = !weightByUser;
-    m.clothing = JSON.parse(JSON.stringify(tags));
-    // 睡衣以「一套」為單位；改成別的類別就回到「個」
-    if (tags.group === '睡衣') m.unit = '套';
-    else if (m.unit === '套') m.unit = '個';
-    m.updatedAt = Date.now();
-    if (isNew) st().memory.push(m);
-    // 「放在哪個家」改了，而且不在行李裡：當作搬到那個家（記一筆移動紀錄）
-    if (tags.home) {
-      if (isNew) { m.moves = [{ home: tags.home, date: App.todayStr() }]; m.location = { state: 'home', home: tags.home, since: App.todayStr() }; }
-      else if (before && before.state !== 'packed' && before.state !== 'pending' && before.home !== tags.home) App.markHome(m, tags.home, App.todayStr(), true);
+    var fields = { name: name, weight: weight, estimated: !weightByUser, tags: tags };
+    var m;
+    if (isNew) m = create(fields);
+    else {
+      m = App.entryById(editing);
+      fillCloth(m, fields);
+      // 「放在哪個家」改了，而且不在行李裡：當作搬到那個家（記一筆移動紀錄）
+      if (tags.home && before && before.state !== 'packed' && before.state !== 'pending' && before.home !== tags.home) App.markHome(m, tags.home, App.todayStr(), true);
     }
 
     var oldPhotoId = null;
@@ -434,5 +448,5 @@
     }
   }
 
-  window.Closet = { show: show };
+  window.Closet = { show: show, create: create };
 })();

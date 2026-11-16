@@ -365,22 +365,22 @@
       '<span class="muted">不放進行李，不會扣剩餘公斤數</span>';
   }
 
-  function saveBuy() {
-    var name = $('#buy-name').value.trim();
-    if (!name) { App.toast('請輸入名稱'); return; }
-    var s = st();
-    var p = buy.isNew ? { id: buy.id, createdAt: Date.now(), date: App.todayStr(), planId: buy.planId || null, tripId: buy.tripId } : purchaseById(buy.id);
-    if (!p) return;
-    p.name = name;
-    p.weight = num($('#buy-weight').value);
-    p.qty = Math.max(1, parseInt($('#buy-qty').value, 10) || 1);
-    p.price = $('#buy-price').value.trim().slice(0, 20);
-    p.category = $('#buy-cat').value || '必備品';
-    p.city = buy.city || '';
-    p.homeDest = buy.homeDest || '';
-    p.bagId = buy.bagId || '';
+  // ---------- 記一筆購物（表單和範例資料都用這裡，格式才會一樣） ----------
+  // p：要修改的紀錄（新增就給 null）
+  // o：{ id?, tripId, planId?, date?, name, weight(kg), qty, price, category, city, homeDest, bagId }
+  function writePurchase(p, o) {
+    var s = st(), isNew = !p;
+    if (isNew) p = { id: o.id || App.uid(), createdAt: Date.now(), date: o.date || App.todayStr(), planId: o.planId || null, tripId: o.tripId };
+    p.name = o.name;
+    p.weight = num(o.weight);
+    p.qty = Math.max(1, parseInt(o.qty, 10) || 1);
+    p.price = String(o.price || '').trim().slice(0, 20);
+    p.category = o.category || '必備品';
+    p.city = o.city || '';
+    p.homeDest = o.homeDest || '';
+    p.bagId = o.bagId || '';
     p.updatedAt = Date.now();
-    if (buy.isNew) {
+    if (isNew) {
       sh().purchases.push(p);
       var plan = p.planId && sh().plans.find(function (x) { return x.id === p.planId; });
       if (plan) plan.purchaseId = p.id;
@@ -394,6 +394,19 @@
     } else if (it) {
       s.items = s.items.filter(function (x) { return x !== it; });
     }
+    return p;
+  }
+
+  function saveBuy() {
+    var name = $('#buy-name').value.trim();
+    if (!name) { App.toast('請輸入名稱'); return; }
+    var p = buy.isNew ? null : purchaseById(buy.id);
+    if (!buy.isNew && !p) return;
+    writePurchase(p, {
+      id: buy.id, tripId: buy.tripId, planId: buy.planId, name: name,
+      weight: $('#buy-weight').value, qty: $('#buy-qty').value, price: $('#buy-price').value,
+      category: $('#buy-cat').value, city: buy.city, homeDest: buy.homeDest, bagId: buy.bagId
+    });
     App.save();
     $('#buy-sheet').hidden = true;
     App.toast(buy.isNew ? '已記下：' + name : '已儲存');
@@ -556,24 +569,37 @@
     g.updatedAt = Date.now();
   }
 
+  // ---------- 新增／修改禮物（表單和範例資料都用這裡，格式才會一樣） ----------
+  // g：要修改的禮物（新增就給 null）
+  // o：{ id?, tripId, name, weight(kg), qty, to, city, source('trip'|'drawer'|'home'), drawerId, status, bagId }
+  function writeGift(g, o) {
+    var isNew = !g;
+    if (isNew) g = { id: o.id || App.uid(), tripId: o.tripId, createdAt: Date.now(), status: 'want', givenDate: '' };
+    g.name = o.name;
+    g.weight = num(o.weight);
+    var dm = o.source === 'drawer' && o.drawerId && App.entryById(o.drawerId);
+    if (dm) { g.name = dm.name; g.weight = dm.weight || 0; }
+    g.qty = Math.max(1, parseInt(o.qty, 10) || 1);
+    g.to = String(o.to || '').trim().slice(0, 20);
+    g.city = o.city || '';
+    g.source = o.source;
+    g.drawerId = o.source === 'drawer' ? o.drawerId : null;
+    if (isNew) st().gifts.push(g);
+    var prev = giftStatus(g);
+    if (prev !== o.status || o.status === 'packed') setGiftStatus(g, o.status, o.bagId);
+    g.updatedAt = Date.now();
+    return g;
+  }
+
   function saveGift() {
     var name = $('#gift-name').value.trim();
     if (!name) { App.toast('請輸入禮物名稱'); return; }
-    var g = gift.isNew ? { id: gift.id, tripId: gift.tripId, createdAt: Date.now(), status: 'want', givenDate: '' } : giftById(gift.id);
-    if (!g) return;
-    g.name = name;
-    g.weight = num($('#gift-weight').value);
-    var dm = gift.source === 'drawer' && gift.drawerId && App.entryById(gift.drawerId);
-    if (dm) { g.name = dm.name; g.weight = dm.weight || 0; }
-    g.qty = Math.max(1, parseInt($('#gift-qty').value, 10) || 1);
-    g.to = $('#gift-to').value.trim().slice(0, 20);
-    g.city = gift.city || '';
-    g.source = gift.source;
-    g.drawerId = gift.source === 'drawer' ? gift.drawerId : null;
-    if (gift.isNew) st().gifts.push(g);
-    var prev = giftStatus(g);
-    if (prev !== gift.status || gift.status === 'packed') setGiftStatus(g, gift.status, gift.bagId);
-    g.updatedAt = Date.now();
+    var g = gift.isNew ? null : giftById(gift.id);
+    if (!gift.isNew && !g) return;
+    writeGift(g, {
+      id: gift.id, tripId: gift.tripId, name: name, weight: $('#gift-weight').value, qty: $('#gift-qty').value,
+      to: $('#gift-to').value, city: gift.city, source: gift.source, drawerId: gift.drawerId, status: gift.status, bagId: gift.bagId
+    });
     App.save();
     $('#gift-sheet').hidden = true;
     App.toast(gift.isNew ? '已新增禮物' : '已儲存');
@@ -689,7 +715,7 @@
   }
 
   window.Shop = {
-    show: show, openTrip: openTrip, renderHomeBits: renderHomeBits, openBuy: openBuy, giftsHere: giftsHere,
+    show: show, writePurchase: writePurchase, writeGift: writeGift, openTrip: openTrip, renderHomeBits: renderHomeBits, openBuy: openBuy, giftsHere: giftsHere,
     itemInfo: itemInfo, leftAtHome: leftAtHome
   };
 })();

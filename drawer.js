@@ -204,6 +204,33 @@
     $('#dr-add-approx').hidden = true;
   }
 
+  // ---------- 新增一筆抽屜用品（表單和範例資料都用這裡，格式才會一樣） ----------
+  // o：{ name, weight(kg), unit, category, estimated, home, count（數量，可空白）, id?, extra? }
+  function create(o) {
+    var today = App.todayStr();
+    var hasCount = o.count != null && o.count !== '';
+    var base = {
+      name: o.name,
+      weight: o.weight,
+      unit: o.unit || '個',
+      category: o.category,
+      bagId: st().bags[0] && st().bags[0].id,
+      uses: 0,
+      estimated: !!o.estimated,
+      home: o.home,
+      count: hasCount ? o.count : null,
+      countUnit: o.unit || '個',
+      stock: hasCount ? '' : 'have',
+      drawer: true,
+      location: { state: 'home', home: o.home, since: today },
+      moves: [{ home: o.home, date: today }]
+    };
+    if (o.id) base.id = o.id;
+    var m = App.normalizeEntry(Object.assign(base, o.extra || {}));
+    st().memory.push(m);
+    return m;
+  }
+
   $('#dr-add').addEventListener('submit', function (e) {
     e.preventDefault();
     var name = $('#dr-name').value.trim();
@@ -213,24 +240,15 @@
     var g = parseFloat($('#dr-add-weight').value);
     var ref = App.findRef(name);
     var qty = parseInt($('#dr-add-qty').value, 10);
-    var today = App.todayStr();
-    var m = App.normalizeEntry({
+    create({
       name: name,
       weight: isFinite(g) && g >= 0 ? g / 1000 : (ref ? ref.weight : 0.1),
       unit: $('#dr-add-unit').value || '個',
       category: $('#dr-add-cat').value,
-      bagId: st().bags[0] && st().bags[0].id,
-      uses: 0,
       estimated: fromRef || !(isFinite(g) && g >= 0),
       home: addHome,
-      count: isFinite(qty) && $('#dr-add-qty').value !== '' ? qty : null,
-      countUnit: $('#dr-add-unit').value || '個',
-      stock: isFinite(qty) && $('#dr-add-qty').value !== '' ? '' : 'have',
-      drawer: true,
-      location: { state: 'home', home: addHome, since: today },
-      moves: [{ home: addHome, date: today }]
+      count: isFinite(qty) && $('#dr-add-qty').value !== '' ? qty : null
     });
-    st().memory.push(m);
     App.save();
     App.toast('已放進' + addHome + '的抽屜：' + name);
     resetAdd();
@@ -345,5 +363,5 @@
     render();
   }
 
-  window.Drawer = { show: show };
+  window.Drawer = { show: show, create: create };
 })();
