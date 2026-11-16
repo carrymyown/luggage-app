@@ -251,6 +251,7 @@
 
   function sync() {
     if (!client || !user) return Promise.resolve();
+    if (App.sampleMode()) return Promise.resolve();   // 範例模式：不同步，範例不會進雲端
     if (!navigator.onLine) { setStatus('offline'); return Promise.resolve(); }
     if (syncing) { again = true; return syncing; }
     setStatus('syncing');
@@ -332,7 +333,7 @@
 
   // 資料有變更時呼叫：稍等一下再同步，避免一直上傳
   function schedule(ms) {
-    if (!client || !user) return;
+    if (!client || !user || App.sampleMode()) return;
     clearTimeout(timer);
     timer = setTimeout(sync, ms == null ? 2500 : ms);
   }
@@ -381,6 +382,7 @@
         '<div class="cloud-btns"><button type="button" id="cl-sync" class="btn ghost">立即同步</button>' +
         '<button type="button" id="cl-logout" class="btn ghost">登出</button></div>';
     }
+    if (App.sampleMode()) box.innerHTML += '<p class="muted small">現在是範例資料，不會同步到雲端；清除範例後就會同步你自己的資料。</p>';
     renderStatus();
   }
 

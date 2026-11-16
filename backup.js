@@ -94,6 +94,8 @@
       var when = b.exportedAt ? new Date(b.exportedAt).toLocaleString('zh-TW') : '不明時間';
       if (!confirm('要用 ' + when + ' 的備份，取代這台裝置上目前的資料嗎？\n（照片 ' + (b.photos || []).length + ' 張）\n\n有登入雲端的話，還原後會再和雲端同步。')) return;
       try {
+        // 還原時離開範例模式，回到自己的資料
+        try { localStorage.removeItem('cmo-sample-mode'); localStorage.removeItem('cmo-sample-state'); } catch (e) { /* 不影響 */ }
         Object.keys(b.localStorage).forEach(function (k) {
           if (k.indexOf('luggage-') === 0 && k !== 'luggage-cloud-v1') localStorage.setItem(k, b.localStorage[k]);
         });

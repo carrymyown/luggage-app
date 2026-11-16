@@ -1,10 +1,11 @@
 /*
- * 第一次使用設定、試用範例、使用提示、帳號選單裡的「我的家」
+ * 第一次使用設定、試用範例、範例模式的提示泡泡、帳號選單裡的「我的家」
  *
- * - 第一次使用：帳號裡沒有任何資料、也還沒看過時（state.onboarded 不是 true），顯示三步歡迎畫面
- * - 範例資料：每一筆都標 sample: true（id 以 sample- 開頭），「清除範例」只刪這些，使用者自己的東西不受影響；
- *   範例新增的家記在 state.sampleHomes，清除時沒有被自己的東西用到才刪
- * - 使用提示：每個主要頁面第一次進入時顯示一句話，按「知道了」就不再出現（記在這台裝置）
+ * - 第一次使用：自己的資料是空的、也還沒設定過（state.onboarded 不是 true）時，顯示歡迎畫面：
+ *   「先看範例」或「直接開始設定」（家 → 常搭的航空公司和行李額度 → 常用的行李箱，每步都能跳過）
+ * - 範例模式：範例資料放在這台裝置另一個地方（見 app.js 的 enterSample／exitSample），
+ *   不同步到雲端，也不讀寫使用者自己的資料；「清除範例，開始使用」＝刪掉範例、回到自己的資料
+ * - 提示泡泡：只在範例模式出現，首頁、打包、我的家、中間的＋各一次，點一下就消失
  */
 (function () {
   'use strict';
@@ -14,17 +15,22 @@
   var esc = App.esc;
   function st() { return App.state(); }
 
-  // ---------- 第一次使用設定 ----------
-  var step = 1, shownThisVisit = false;
-  var BAG_PRESETS = [['checked', '托運大箱', 4.2], ['carry', '登機箱', 2.6], ['personal', '後背包', 0.8], ['pouch', '隨身小包', 0.3]];
+  // ---------- 歡迎畫面與第一次使用設定 ----------
+  var step = 0, shownThisVisit = false;
+  var BAG_PRESETS = [['checked', '28 吋托運箱', 4.5, '28 吋'], ['carry', '20 吋登機箱', 2.6, '20 吋'], ['personal', '後背包', 0.8, ''], ['pouch', '隨身小包', 0.3, '']];
   var pickedBags = {};
 
-  function needsOnboarding() { return !st().onboarded && App.isEmptyState(); }
+  function needsOnboarding() { return !App.sampleMode() && !st().onboarded && App.isEmptyState(); }
 
-  function openOnboard() {
+  function openOnboard(at) {
     shownThisVisit = true;
-    step = 1; pickedBags = {};
+    step = at || 0; pickedBags = {};
     $('#ob-home').value = '';
+    var d = st().defaults || {}, a = d.allowance || {};
+    $('#ob-airline').value = d.airline || '';
+    $('#ob-checked').value = a.checked == null ? '' : a.checked;
+    $('#ob-carry').value = a.carry == null ? '' : a.carry;
+    $('#ob-personal').value = a.personal == null ? '' : a.personal;
     renderOnboard();
     $('#onboard-sheet').hidden = false;
   }
@@ -33,40 +39,51 @@
     Array.prototype.forEach.call(document.querySelectorAll('[data-ob-step]'), function (el) {
       el.hidden = +el.getAttribute('data-ob-step') !== step;
     });
-    $('#ob-dots').innerHTML = [1, 2, 3].map(function (i) { return '<i class="' + (i === step ? 'on' : '') + '"></i>'; }).join('');
-    $('#ob-homes').innerHTML = App.homes().map(function (h) {
-      return '<span class="chip on">' + esc(h) + '</span>';
-    }).join('');
+    Array.prototype.forEach.call(document.querySelectorAll('.ob-dots'), function (el) {
+      el.innerHTML = [1, 2, 3].map(function (i) { return '<i class="' + (i === step ? 'on' : '') + '"></i>'; }).join('');
+    });
+    $('#ob-homes').innerHTML = App.homes().map(function (h) { return '<span class="chip on">' + esc(h) + '</span>'; }).join('');
     $('#ob-bags').innerHTML = BAG_PRESETS.map(function (b, i) {
       return '<button type="button" class="chip' + (pickedBags[i] ? ' on' : '') + '" data-ob-bag="' + i + '">' + (pickedBags[i] ? '✓ ' : '') + b[1] + '</button>';
     }).join('');
-    $('#ob-next').hidden = step === 3;
-    $('#ob-skip').textContent = step === 3 ? '關閉' : '跳過';
+    $('#ob-nav').hidden = step === 0;
+    $('#ob-next').textContent = step === 3 ? '完成' : '下一步';
+  }
+
+  function num(v) { var n = parseFloat(v); return isFinite(n) && n >= 0 ? n : ''; }
+
+  // 每一步按「下一步」時存起來；按「跳過」就不存這一步
+  function saveStep() {
+    if (step === 1 && $('#ob-home').value.trim()) { App.addHome($('#ob-home').value.trim().slice(0, 20)); $('#ob-home').value = ''; }
+    if (step === 2) {
+      var d = { airline: $('#ob-airline').value.trim().slice(0, 30), allowance: { checked: num($('#ob-checked').value), carry: num($('#ob-carry').value), personal: num($('#ob-personal').value) } };
+      if (d.airline || d.allowance.checked !== '' || d.allowance.carry !== '' || d.allowance.personal !== '') st().defaults = d;
+    }
+    if (step === 3) {
+      var home = App.homes()[0] || '';
+      Object.keys(pickedBags).forEach(function (i) {
+        if (!pickedBags[i]) return;
+        var p = BAG_PRESETS[i];
+        if (st().bags.some(function (b) { return !b.auto && b.name === p[1]; })) return;
+        st().bags.push(App.normalizeBag({ id: App.uid(), name: p[1], kind: p[0], tare: p[2], size: p[3], home: home }));
+      });
+      pickedBags = {};
+    }
+    App.save();
   }
 
   function finishOnboard() {
     st().onboarded = true;
     App.save();
     $('#onboard-sheet').hidden = true;
+    App.toast('設定好了，先新增一趟旅程吧');
     App.refreshView();
   }
 
-  // 第 2 步選的行李：變成自己的行李箱（放在第一個家）
-  function saveBags() {
-    var home = App.homes()[0] || '';
-    Object.keys(pickedBags).forEach(function (i) {
-      if (!pickedBags[i]) return;
-      var p = BAG_PRESETS[i];
-      if (st().bags.some(function (b) { return !b.auto && b.name === p[1]; })) return;
-      st().bags.push(App.normalizeBag({ id: App.uid(), name: p[1], kind: p[0], tare: p[2], home: home }));
-    });
-    pickedBags = {};
-  }
-
-  function goStep(n) {
-    if (step === 2) saveBags();
-    step = n;
-    App.save();
+  function next(skip) {
+    if (!skip) saveStep();
+    if (step >= 3) { finishOnboard(); return; }
+    step++;
     renderOnboard();
   }
 
@@ -88,196 +105,175 @@
       $('#account-sheet').hidden = false;
       return;
     }
-    if (t.id === 'ob-next') {
-      if (step === 1 && $('#ob-home').value.trim()) { App.addHome($('#ob-home').value.trim().slice(0, 20)); $('#ob-home').value = ''; }
-      goStep(step + 1);
-      return;
-    }
-    if (t.id === 'ob-skip') { if (step < 3) goStep(step + 1); else finishOnboard(); return; }
-    if (t.id === 'ob-start') { finishOnboard(); return; }
-    if (t.id === 'ob-sample') { addSample(); finishOnboard(); App.toast('已放入範例資料，看完可以按最上方的「清除範例」'); location.hash = '#home'; }
+    if (t.id === 'ob-sample') { App.enterSample(); return; }
+    if (t.id === 'ob-setup') { step = 1; renderOnboard(); return; }
+    if (t.id === 'ob-next') { next(false); return; }
+    if (t.id === 'ob-skip') { next(true); }
   });
 
-  // ---------- 範例資料 ----------
-  function addDays(n) {
-    var d = new Date(); d.setDate(d.getDate() + n);
-    return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
-  }
+  // ---------- 範例資料（全部是編的；只在範例模式裡建立） ----------
+  function ymd(d) { return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); }
   var PART = { '上衣': 'top', '下身': 'bottom', '洋裝／連身': 'full', '外套': 'outer', '鞋子': 'shoes', '帽子': 'hat', '配件': 'accessory' };
 
-  function addSample() {
+  function buildSample() {
     var s = st(), today = App.todayStr();
-    // 兩個家：台北、曼谷（已經有的就不重複加）
-    if (!Array.isArray(s.sampleHomes)) s.sampleHomes = [];
-    ['台北', '曼谷'].forEach(function (h) {
-      if (App.homes().indexOf(h) < 0) { s.homes.push(h); if (s.sampleHomes.indexOf(h) < 0) s.sampleHomes.push(h); }
-    });
+    // 下個月 10 號出發，8 天
+    var base = new Date(); base = new Date(base.getFullYear(), base.getMonth() + 1, 10);
+    function day(n) { var d = new Date(base); d.setDate(d.getDate() + n); return ymd(d); }
 
-    // 衣櫃 10 件
-    [['白T', '上衣', 'T 恤', '白', '台北', 0.2, ['夏', '春']], ['藍色襯衫', '上衣', '襯衫', '藍', '曼谷', 0.25, ['夏']],
-     ['灰毛衣', '上衣', '毛衣', '灰', '台北', 0.45, ['冬']], ['牛仔褲', '下身', '牛仔褲', '藍', '台北', 0.6, []],
-     ['米色短褲', '下身', '短褲', '米', '曼谷', 0.3, ['夏']], ['黑色洋裝', '洋裝／連身', '', '黑', '曼谷', 0.35, ['夏']],
-     ['海軍藍外套', '外套', '外套', '海軍藍', '台北', 0.7, ['春', '秋']], ['白球鞋', '鞋子', '', '白', '台北', 0.7, []],
-     ['漁夫帽', '帽子', '漁夫帽', '米', '曼谷', 0.1, ['夏']], ['太陽眼鏡', '配件', '太陽眼鏡', '黑', '台北', 0.05, []]
+    // 範例使用者的家：台北、東京
+    s.homes = ['台北', '東京'];
+
+    // 衣櫃：常見單品（沒有照片，用顏色方塊代替）
+    [['白色 T 恤', '上衣', 'T 恤', '', '白', '台北', 0.2], ['牛仔褲', '下身', '牛仔褲', '', '藍', '台北', 0.6],
+     ['米色針織衫', '上衣', '針織衫', '', '米', '台北', 0.35], ['風衣', '外套', '外套', '', '咖啡', '台北', 0.8],
+     ['白色運動鞋', '鞋子', '運動鞋', '休閒運動鞋', '白', '台北', 0.7], ['黑色樂福鞋', '鞋子', '平底鞋', '樂福鞋', '黑', '東京', 0.6],
+     ['棒球帽', '帽子', '棒球帽', '', '海軍藍', '東京', 0.1], ['金色耳環', '配件', '耳環', '', '金色', '台北', 0.02],
+     ['黑色洋裝', '洋裝／連身', '', '', '黑', '東京', 0.35], ['藍色襯衫', '上衣', '襯衫', '', '藍', '東京', 0.25]
     ].forEach(function (c, i) {
       var tags = window.Clothing.empty();
-      tags.group = c[1]; tags.type = c[2]; tags.home = c[4]; tags.colors = [c[3]]; tags.seasons = c[6]; tags.part = PART[c[1]] || '';
+      tags.group = c[1]; tags.type = c[2]; tags.subtype = c[3]; tags.colors = [c[4]]; tags.home = c[5]; tags.part = PART[c[1]] || '';
       s.memory.push(App.normalizeEntry({
-        id: 'sample-c' + (i + 1), sample: true, name: c[0], weight: c[5], unit: '個', category: '必備品', uses: 1, estimated: true,
-        clothing: tags, location: { state: 'home', home: c[4], since: today }, moves: [{ home: c[4], date: today }]
+        id: 'sample-c' + (i + 1), sample: true, name: c[0], weight: c[6], unit: '個', category: '必備品', uses: 2, estimated: true,
+        clothing: tags, location: { state: 'home', home: c[5], since: today }, moves: [{ home: c[5], date: today }]
       }));
     });
 
-    // 抽屜 10 樣（有數量）
-    [['護照', '必備品', 0.04, '台北', null, '本'], ['充電線', '電線電器', 0.05, '台北', null, '條'], ['行動電源', '電線電器', 0.2, '台北', null, '個'],
-     ['面膜', '保養品', 0.03, '台北', 10, '片'], ['維他命', '保健品', 0.15, '台北', 2, '瓶'], ['泡麵', '食品', 0.1, '曼谷', 5, '包'],
-     ['防曬乳', '保養品', 0.1, '曼谷', 1, '條'], ['牙刷組', '必備品', 0.05, '曼谷', 2, '組'], ['雨傘', '必備品', 0.3, '曼谷', 1, '把'],
-     ['鳳梨酥禮盒', '禮物', 0.5, '台北', 2, '盒']
+    // 抽屜：分別放在台北和東京
+    [['護照', '必備品', 0.04, '台北', null, '本'], ['錢包', '必備品', 0.15, '台北', null, '個'], ['充電線', '電線電器', 0.05, '台北', 1, '包'],
+     ['轉接頭', '電線電器', 0.06, '東京', 2, '個'], ['洗面乳', '保養品', 0.12, '東京', 1, '條'], ['面膜', '保養品', 0.03, '台北', 5, '片'],
+     ['維他命', '保健品', 0.15, '台北', 1, '瓶'], ['牙刷組', '必備品', 0.05, '東京', 1, '組']
     ].forEach(function (d, i) {
       s.memory.push(App.normalizeEntry({
-        id: 'sample-d' + (i + 1), sample: true, name: d[0], weight: d[2], unit: d[5], category: d[1], uses: 1, estimated: true, drawer: true,
+        id: 'sample-d' + (i + 1), sample: true, name: d[0], weight: d[2], unit: d[5], category: d[1], uses: 2, estimated: true, drawer: true,
         home: d[3], count: d[4], countUnit: d[5], stock: d[4] == null ? 'have' : '',
         location: { state: 'home', home: d[3], since: today }, moves: [{ home: d[3], date: today }]
       }));
     });
 
-    // 兩個行李箱＋一個隨身小包
-    [['sample-b1', '範例托運大箱', 'checked', 4.2, '28 吋', '五五開', '硬箱'], ['sample-b2', '範例登機箱', 'carry', 2.6, '20 吋', '五五開', '硬箱'],
-     ['sample-b3', '範例隨身小包', 'pouch', 0.3, '', '', '布箱']].forEach(function (b) {
-      s.bags.push(App.normalizeBag({ id: b[0], sample: true, name: b[1], kind: b[2], tare: b[3], size: b[4], style: b[5], material: b[6], home: '台北' }));
+    // 行李箱：28 吋托運、20 吋手提、背包、隨身小包；東京的家另外放一個托運箱（示範到東京可以換行李箱）
+    [['sample-b1', '28 吋托運箱', 'checked', 4.5, '28 吋', '五五開', '硬箱', '台北'], ['sample-b2', '20 吋登機箱', 'carry', 2.6, '20 吋', '五五開', '硬箱', '台北'],
+     ['sample-b3', '後背包', 'personal', 0.8, '', '', '布箱', '台北'], ['sample-b4', '隨身小包', 'pouch', 0.3, '', '', '布箱', '台北'],
+     ['sample-b5', '東京的托運箱', 'checked', 4.2, '28 吋', '三七開', '硬箱', '東京']
+    ].forEach(function (b) {
+      s.bags.push(App.normalizeBag({ id: b[0], sample: true, name: b[1], kind: b[2], tare: b[3], size: b[4], style: b[5], material: b[6], home: b[7] }));
     });
 
-    // 多城市旅程：台北 → 曼谷（入境停留、行李領出）→ 清邁（入境停留）→ 香港（不入境轉機、行李直掛）→ 台北
+    // 旅程：台北 → 東京（直飛，在東京的家停留）→ 首爾 → 台北（在大阪轉機，行李直掛）
     var trip = App.normalizeTrip({
-      id: 'sample-trip', sample: true, name: '範例：台北・曼谷・清邁', origin: '台北', endHome: '台北', pouchMode: 'personal',
-      seasons: ['夏'], activities: ['登山健行'],
+      id: 'sample-trip', sample: true, name: '台北・東京・首爾', origin: '台北', endHome: '台北', pouchMode: 'personal',
+      seasons: ['冬'], activities: [],
       legs: [
-        { id: 'sample-l1', from: '台北', to: '曼谷', date: addDays(10), depTime: '08:30', arrTime: '11:20', flightNo: 'BR211', airline: '長榮航空',
-          allowance: { checked: 23, carry: 7, personal: 7, pouch: '' }, connection: { baggage: 'recheck', mode: 'enter', stayDays: 4, note: '在曼谷住朋友家' } },
-        { id: 'sample-l2', from: '曼谷', to: '清邁', date: addDays(14), depTime: '10:00', arrTime: '11:15', flightNo: 'TG102', airline: '泰國航空',
-          allowance: { checked: 20, carry: 7, personal: 5, pouch: '' }, connection: { baggage: 'recheck', mode: 'enter', stayDays: 4, note: '清邁健行' } },
-        { id: 'sample-l3', from: '清邁', to: '香港', date: addDays(18), depTime: '12:30', arrTime: '16:40', flightNo: 'CX750', airline: '國泰航空',
-          allowance: { checked: 30, carry: 7, personal: 7, pouch: '' }, connection: { baggage: 'through', mode: 'transit', stayDays: '', note: '' } },
-        { id: 'sample-l4', from: '香港', to: '台北', date: addDays(18), depTime: '18:40', arrTime: '20:25', flightNo: 'CX564', airline: '國泰航空',
-          allowance: { checked: 30, carry: 7, personal: 7, pouch: '' }, connection: {} }
+        { id: 'sample-l1', from: '台北', to: '東京', date: day(0), depTime: '08:50', arrTime: '13:05', flightNo: 'BR198', airline: '長榮航空',
+          allowance: { checked: 23, carry: 7, personal: 5, pouch: '' }, connection: { baggage: 'recheck', mode: 'enter', stayDays: 4, note: '在東京的家停留，可以換行李箱' } },
+        { id: 'sample-l2', from: '東京', to: '首爾', date: day(4), depTime: '10:20', arrTime: '12:50', flightNo: 'JL95', airline: '日本航空',
+          allowance: { checked: 23, carry: 7, personal: 5, pouch: '' }, connection: { baggage: 'recheck', mode: 'enter', stayDays: 3, note: '去首爾找朋友' } },
+        { id: 'sample-l3', from: '首爾', to: '大阪', date: day(7), depTime: '09:10', arrTime: '10:55', flightNo: 'CI171', airline: '中華航空',
+          allowance: { checked: 23, carry: 7, personal: 5, pouch: '' }, connection: { baggage: 'through', mode: 'transit', stayDays: '', note: '' } },
+        { id: 'sample-l4', from: '大阪', to: '台北', date: day(7), depTime: '13:00', arrTime: '15:05', flightNo: 'CI153', airline: '中華航空',
+          allowance: { checked: 23, carry: 7, personal: 5, pouch: '' }, connection: {} }
       ]
     });
     s.trips.push(trip);
 
-    // 打包清單：選好行李箱，幾樣先打勾放進行李
+    // 打包清單：有些已經打勾（放進行李），有些還沒
     if (window.Packing) {
-      window.Packing.prepareTrip(trip, { pouch: 'sample-b3', carry: 'sample-b2', checked: 'sample-b1', personal: 'off' },
-        ['護照', '白T', '牛仔褲', '充電線', '白球鞋']);
+      window.Packing.prepareTrip(trip, { pouch: 'sample-b4', personal: 'sample-b3', carry: 'sample-b2', checked: 'sample-b1' },
+        ['護照', '錢包', '白色 T 恤', '牛仔褲', '充電線', '白色運動鞋']);
     }
 
-    // 一筆購物（放在托運箱）、一份要送朋友的禮物（在行李裡）
-    s.shopping.purchases.push({ id: 'sample-p1', sample: true, tripId: trip.id, name: '泰國香米', weight: 1, qty: 1, price: '฿120', category: '食品',
-      city: '清邁', bagId: 'sample-b1', homeDest: '台北', placedHome: '', planId: null, date: today, createdAt: Date.now(), updatedAt: Date.now() });
-    s.items.push({ id: 'sample-ip1', sample: true, name: '泰國香米', weight: 1, qty: 1, unit: '個', category: '食品', bagId: 'sample-b1', purchaseId: 'sample-p1' });
-    s.gifts.push({ id: 'sample-g1', sample: true, tripId: trip.id, name: '芒果乾', weight: 0.25, qty: 2, to: 'Amy', city: '曼谷', status: 'packed',
-      source: 'home', drawerId: null, bagId: 'sample-b1', home: '', givenDate: '', createdAt: Date.now(), updatedAt: Date.now() });
-    s.items.push({ id: 'sample-ig1', sample: true, name: '芒果乾', weight: 0.25, qty: 2, unit: '份', category: '禮物', bagId: 'sample-b1', giftId: 'sample-g1' });
+    // 在東京買一件衣服；帶一盒鳳梨酥送首爾的朋友（已經放進行李）
+    s.shopping.purchases.push({ id: 'sample-p1', sample: true, tripId: trip.id, name: '羊毛圍巾', weight: 0.2, qty: 1, price: '¥3,990', category: '必備品',
+      city: '東京', bagId: 'sample-b1', homeDest: '台北', placedHome: '', planId: null, date: day(2), createdAt: Date.now(), updatedAt: Date.now() });
+    s.items.push({ id: 'sample-ip1', sample: true, name: '羊毛圍巾', weight: 0.2, qty: 1, unit: '個', category: '必備品', bagId: 'sample-b1', purchaseId: 'sample-p1' });
+    s.gifts.push({ id: 'sample-g1', sample: true, tripId: trip.id, name: '鳳梨酥禮盒', weight: 0.5, qty: 1, to: '首爾的朋友 敏智', city: '首爾', status: 'packed',
+      source: 'drawer', drawerId: 'sample-d9', bagId: 'sample-b1', home: '', givenDate: '', createdAt: Date.now(), updatedAt: Date.now() });
+    s.items.push({ id: 'sample-ig1', sample: true, name: '鳳梨酥禮盒', weight: 0.5, qty: 1, unit: '盒', category: '禮物', bagId: 'sample-b1', giftId: 'sample-g1' });
+
+    s.onboarded = true;
+    s.sampleBuilt = true;
     App.save();
   }
 
+  // 上一版把範例放在自己的資料裡；回到自己的資料時，把那些範例（只有標了範例的）拿掉
   function isSample(x) { return !!(x && (x.sample || String(x.id || '').indexOf('sample-') === 0)); }
-
-  function hasSample() {
+  function stripOldSample() {
     var s = st();
-    return s.trips.some(isSample) || s.memory.some(isSample) || s.bags.some(isSample) ||
-      (s.gifts || []).some(isSample) || ((s.shopping || {}).purchases || []).some(isSample);
-  }
-
-  // 一鍵清掉所有範例資料；使用者自己新增的東西不動
-  function clearSample() {
-    var s = st();
+    var any = s.trips.some(isSample) || s.memory.some(isSample) || s.bags.some(isSample) || (s.gifts || []).some(isSample) || ((s.shopping || {}).purchases || []).some(isSample);
+    if (!any) return;
     var trips = s.trips.filter(isSample).map(function (t) { return t.id; });
     var mem = s.memory.filter(isSample).map(function (m) { return m.id; });
     var bags = s.bags.filter(isSample).map(function (b) { return b.id; });
     var gifts = (s.gifts || []).filter(isSample).map(function (g) { return g.id; });
     var buys = ((s.shopping || {}).purchases || []).filter(isSample).map(function (p) { return p.id; });
     function inA(a, v) { return v && a.indexOf(v) >= 0; }
-    s.items = s.items.filter(function (it) {
-      return !(isSample(it) || inA(mem, it.catalogId) || inA(bags, it.bagId) || inA(gifts, it.giftId) || inA(buys, it.purchaseId));
-    });
+    s.items = s.items.filter(function (it) { return !(isSample(it) || inA(mem, it.catalogId) || inA(bags, it.bagId) || inA(gifts, it.giftId) || inA(buys, it.purchaseId)); });
     s.trips = s.trips.filter(function (t) { return !inA(trips, t.id); });
     s.packLists = (s.packLists || []).filter(function (l) { return !inA(trips, l.id); });
     s.memory = s.memory.filter(function (m) { return !inA(mem, m.id); });
     s.bags = s.bags.filter(function (b) { return !inA(bags, b.id); });
     s.gifts = (s.gifts || []).filter(function (g) { return !inA(gifts, g.id); });
     s.shopping.purchases = s.shopping.purchases.filter(function (p) { return !inA(buys, p.id); });
-    s.shopping.plans = (s.shopping.plans || []).filter(function (p) { return !inA(trips, p.tripId); });
-    trips.forEach(function (id) { if (s.shopping.ratio) delete s.shopping.ratio[id]; });
-    // 自己的打包清單如果選了範例行李箱，改回「尚未選擇」
     (s.packLists || []).forEach(function (l) {
       Object.keys(l.zones || {}).forEach(function (z) { if (inA(bags, l.zones[z].bagId)) l.zones[z].bagId = App.autoBag(z).id; });
     });
-    // 範例加的家：沒有被自己的東西用到才拿掉
     (s.sampleHomes || []).forEach(function (h) { if (!App.homeUsage(h)) s.homes = s.homes.filter(function (x) { return x !== h; }); });
-    s.sampleHomes = [];
+    delete s.sampleHomes;
     App.save();
   }
 
+  // 範例模式：最上方的提示列
+  function renderBar() { $('#sample-bar').hidden = !App.sampleMode(); }
   $('#sample-clear').addEventListener('click', function () {
-    if (!confirm('要清除所有範例資料嗎？你自己新增的東西不會被刪掉。')) return;
-    clearSample();
-    App.toast('範例已清除，可以開始使用了');
-    location.hash = '#home';
-    App.refreshView();
-    renderBar();
+    if (!confirm('要清除範例資料，開始使用嗎？')) return;
+    App.exitSample();
+  });
+  $('#sample-again').addEventListener('click', function () {
+    if (App.sampleMode()) { $('#account-sheet').hidden = true; App.toast('現在就是範例資料'); return; }
+    if (!confirm('要打開範例資料看看嗎？\n範例只在這台裝置，你自己的資料不會受影響；看完按最上方的「清除範例」就回來。')) return;
+    App.enterSample();
   });
 
-  function renderBar() { $('#sample-bar').hidden = !hasSample(); }
-
-  // ---------- 使用提示 ----------
+  // ---------- 範例模式的提示泡泡：每個地方一次，點一下就消失 ----------
   var TIPS = {
-    home: '這裡看這趟旅程還能放幾公斤',
-    trips: '先新增一趟旅程，填好航班的行李額度',
+    home: '這裡看這趟旅程還能放幾公斤，下面是每個行李',
     pack: '打勾就代表已經放進行李，上面的公斤數會自動扣掉',
-    closet: '衣櫃放穿戴的東西，抽屜放其他用品',
+    closet: '衣櫃放穿戴的東西，抽屜放其他用品，行李箱也在這裡',
     plus: '從這裡新增衣服、物品、購物和禮物'
   };
-  var TIP_VIEW = { home: 'home', trips: 'trips', pack: 'pack', closet: 'closet', drawer: 'closet', bags: 'closet' };
-  var TIP_KEY = 'luggage-tips-seen';
+  var TIP_VIEW = { home: 'home', pack: 'pack', closet: 'closet', drawer: 'closet', bags: 'closet' };
+  var TIP_KEY = 'cmo-tips-seen';
   function seen() { try { return JSON.parse(localStorage.getItem(TIP_KEY)) || {}; } catch (e) { return {}; } }
   function markSeen(k) { var o = seen(); o[k] = true; try { localStorage.setItem(TIP_KEY, JSON.stringify(o)); } catch (e) { /* 不影響 */ } }
 
-  function tipHTML(k) {
-    return '<div class="use-tip" data-tip="' + k + '"><span>' + TIPS[k] + '</span><button type="button" class="link small" data-tip-ok="' + k + '">知道了</button></div>';
+  function clearBubbles() { document.querySelectorAll('.tip-bubble').forEach(function (el) { el.remove(); }); }
+  function bubble(k, cls, parent, before) {
+    var b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'tip-bubble ' + cls;
+    b.setAttribute('data-tip', k);
+    b.textContent = TIPS[k];
+    if (before) parent.insertBefore(b, before); else parent.appendChild(b);
   }
-  function showTip(view) {
-    document.querySelectorAll('.view .use-tip').forEach(function (el) { el.remove(); });
+  function showTips(view) {
+    clearBubbles();
+    if (!App.sampleMode() || !$('#onboard-sheet').hidden) return;
     var k = TIP_VIEW[view];
-    if (!k || seen()[k] || !$('#onboard-sheet').hidden) return;
-    var sec = $('#view-' + view);
-    if (!sec) return;
-    var anchor = view === 'home' ? sec.querySelector('.masthead') : null;
-    var div = document.createElement('div');
-    div.innerHTML = tipHTML(k);
-    if (anchor) anchor.after(div.firstChild); else sec.insertBefore(div.firstChild, sec.firstChild);
+    if (k && !seen()[k]) {
+      var sec = $('#view-' + view);
+      var anchor = view === 'home' ? sec.querySelector('.trip-cards') : view === 'pack' ? $('#pack-main') : sec.querySelector('.page-head');
+      if (anchor) bubble(k, 'tip-page', anchor.parentNode, anchor);
+      return;   // 一次只出現一個泡泡
+    }
+    if (view === 'home' && !seen().plus) bubble('plus', 'tip-plus', document.body);
   }
   document.addEventListener('click', function (e) {
-    var b = e.target.closest('[data-tip-ok]');
+    var b = e.target.closest('.tip-bubble');
     if (!b) return;
-    markSeen(b.getAttribute('data-tip-ok'));
-    var t = b.closest('.use-tip'); if (t) t.remove();
+    markSeen(b.getAttribute('data-tip'));
+    b.remove();
+    if (b.getAttribute('data-tip') === 'home') showTips('home');   // 首頁看完再提示中間的＋
   });
-  // 中間的＋：打開選單時顯示
-  $('#plus-btn').addEventListener('click', function () {
-    var panel = $('#plus-sheet .plus-panel');
-    var old = panel.querySelector('.use-tip'); if (old) old.remove();
-    if (seen().plus) return;
-    var div = document.createElement('div');
-    div.innerHTML = tipHTML('plus');
-    panel.insertBefore(div.firstChild, panel.firstChild);
-  });
-  $('#tips-reset').addEventListener('click', function () {
-    try { localStorage.removeItem(TIP_KEY); } catch (e) { /* 不影響 */ }
-    $('#account-sheet').hidden = true;
-    App.toast('使用提示會再顯示一次');
-    showTip(currentView());
-  });
-  function currentView() { return (location.hash.replace(/^#/, '').split('/')[0]) || 'home'; }
 
   // ---------- 帳號選單：我的家（新增、改名、刪除） ----------
   function renderHomes() {
@@ -287,6 +283,7 @@
         '<button type="button" class="link small" data-home-rename="' + esc(h) + '">改名</button>' +
         '<button type="button" class="link small ah-del" data-home-del="' + esc(h) + '">刪除</button></div>';
     }).join('') : '<p class="muted small">還沒有家。</p>';
+    $('#sample-again').textContent = App.sampleMode() ? '現在是範例資料' : '再看一次範例';
   }
   $('#account-btn').addEventListener('click', renderHomes);
   $('#account-home-add').addEventListener('submit', function (e) {
@@ -304,9 +301,9 @@
     if (r) {
       var from = r.getAttribute('data-home-rename');
       window.Clothing.askText('「' + from + '」改成', from).then(function (v) {
-        if (v == null) return;
+        if (v == null || !String(v).trim()) return;
         var msg = App.renameHome(from, v);
-        if (msg) App.toast(msg); else App.toast('已改名');
+        App.toast(msg || '已改名');
         renderHomes();
       });
       return;
@@ -314,18 +311,32 @@
     if (d) {
       var name = d.getAttribute('data-home-del');
       if (!confirm('要刪除「' + name + '」這個家嗎？')) return;
-      var m = App.removeHome(name);
-      App.toast(m || '已刪除');
+      App.toast(App.removeHome(name) || '已刪除');
       renderHomes();
     }
   });
 
   // ---------- 每次換頁 ----------
+  var first = true;
   function afterRoute(view) {
+    if (first) {
+      first = false;
+      if (App.sampleMode()) {
+        if (!st().sampleBuilt) { buildSample(); App.refreshView(); return; }
+      } else {
+        stripOldSample();
+        var after = false;
+        try { after = localStorage.getItem('cmo-after-sample') === '1'; localStorage.removeItem('cmo-after-sample'); } catch (e) { /* 不影響 */ }
+        // 清除範例後：還沒設定過的話，直接進入第一次使用設定
+        if (after && !st().onboarded && App.isEmptyState()) { openOnboard(1); renderBar(); return; }
+      }
+    }
     renderBar();
-    if (!shownThisVisit && needsOnboarding()) { openOnboard(); return; }
-    showTip(view);
+    // 登入後雲端的資料回來了（帳號早就設定過），就不用再顯示第一次使用設定
+    if (!App.sampleMode() && st().onboarded && !$('#onboard-sheet').hidden) $('#onboard-sheet').hidden = true;
+    if (!shownThisVisit && needsOnboarding()) { openOnboard(0); return; }
+    showTips(view);
   }
 
-  window.Onboard = { afterRoute: afterRoute, addSample: addSample, clearSample: clearSample, hasSample: hasSample, open: openOnboard };
+  window.Onboard = { afterRoute: afterRoute, open: openOnboard };
 })();

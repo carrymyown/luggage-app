@@ -160,9 +160,12 @@
 
   function newLeg(prev, from) {
     // 額度不自己預設：第一段空白，之後的段沿用上一段填的
-    var a = prev ? prev.allowance : { checked: '', carry: '', personal: '', pouch: '' };
+    // 第一段：用第一次使用設定裡填的「常搭的航空公司和行李額度」（沒填就空白）
+    var d = st().defaults || {};
+    var da = d.allowance || {};
+    var a = prev ? prev.allowance : { checked: da.checked == null ? '' : da.checked, carry: da.carry == null ? '' : da.carry, personal: da.personal == null ? '' : da.personal, pouch: '' };
     return App.normalizeLeg({
-      from: from || '', to: '', date: '', flightNo: '', airline: prev ? prev.airline : '',
+      from: from || '', to: '', date: '', flightNo: '', airline: prev ? prev.airline : (d.airline || ''),
       allowance: { checked: a.checked, carry: a.carry, personal: a.personal, pouch: a.pouch == null ? '' : a.pouch }
     });
   }

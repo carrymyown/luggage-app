@@ -124,7 +124,8 @@
       var packed = packedItem(m);
       var loc = App.locOf(m);
       return '<div class="cloth"><a class="cloth-link" href="#closet/' + encodeURIComponent(m.id) + '">' +
-        '<div class="ph">' + (m.photoId ? '<img data-photo="' + esc(m.photoId) + '" alt="' + esc(m.name) + '">' : '') +
+        // 範例沒有照片：用衣服顏色的純色方塊代替
+        '<div class="ph' + (!m.photoId && m.sample && (c.colors || [])[0] ? ' swatch" style="--sw:' + C.colorHex(c.colors[0]) : '') + '">' + (m.photoId ? '<img data-photo="' + esc(m.photoId) + '" alt="' + esc(m.name) + '">' : '') +
         (loc.state === 'pending' ? '<span class="packed pending">待確認</span>' : packed ? '<span class="packed">已打包</span>' : '') + '</div>' +
         '<div class="meta"><span class="t">' + esc(m.name) + (m.sample ? '<span class="sample-tag">範例</span>' : '') + '</span><span class="dots">' +
         (c.colors || []).map(function (n) {

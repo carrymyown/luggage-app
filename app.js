@@ -178,9 +178,30 @@
     return Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
   }
 
+  // ---------- 範例模式 ----------
+  // 範例資料放在這台裝置另一個地方（不是 luggage- 開頭，備份也不會帶到），不同步到雲端，
+  // 也完全不讀寫使用者自己的資料；清除範例＝刪掉這份、回到自己的資料
+  var SAMPLE_MODE_KEY = 'cmo-sample-mode', SAMPLE_STATE_KEY = 'cmo-sample-state';
+  function sampleMode() { try { return localStorage.getItem(SAMPLE_MODE_KEY) === '1'; } catch (e) { return false; } }
+  function dataKey() { return sampleMode() ? SAMPLE_STATE_KEY : STORE_KEY; }
+  function enterSample() {
+    try { localStorage.setItem(SAMPLE_MODE_KEY, '1'); localStorage.removeItem(SAMPLE_STATE_KEY); } catch (e) { toast('這台裝置沒辦法開範例（可能是私密瀏覽）'); return; }
+    location.hash = '#home';
+    location.reload();
+  }
+  function exitSample() {
+    try {
+      localStorage.removeItem(SAMPLE_STATE_KEY);
+      localStorage.removeItem(SAMPLE_MODE_KEY);
+      localStorage.setItem('cmo-after-sample', '1');   // 回到自己的資料後，接著進入第一次使用設定
+    } catch (e) { /* 不影響 */ }
+    location.hash = '#home';
+    location.reload();
+  }
+
   function load() {
     try {
-      var raw = localStorage.getItem(STORE_KEY);
+      var raw = localStorage.getItem(dataKey());
       if (raw) {
         var s = JSON.parse(raw);
         if (s && Array.isArray(s.bags) && Array.isArray(s.items) && Array.isArray(s.memory)) return migrate(s);
@@ -264,10 +285,10 @@
 
   function save() {
     delete state.pristine;
-    try { localStorage.setItem(STORE_KEY, JSON.stringify(state)); }
+    try { localStorage.setItem(dataKey(), JSON.stringify(state)); }
     catch (e) { toast('無法儲存（瀏覽器可能在私密模式）'); }
-    // 有登入雲端的話，稍後自動同步
-    if (window.Cloud) window.Cloud.schedule();
+    // 有登入雲端的話，稍後自動同步（範例模式不同步）
+    if (window.Cloud && !sampleMode()) window.Cloud.schedule();
     // 有設購物目標：打包快吃到預留空間就提醒
     clearTimeout(goalTimer);
     goalTimer = setTimeout(function () { checkGoals(false); }, 50);
@@ -276,11 +297,12 @@
 
   // 存檔但不觸發同步（雲端同步自己用）
   function saveQuiet() {
-    try { localStorage.setItem(STORE_KEY, JSON.stringify(state)); } catch (e) { /* 下次再存 */ }
+    try { localStorage.setItem(dataKey(), JSON.stringify(state)); } catch (e) { /* 下次再存 */ }
   }
 
   // 雲端合併後套用到這台裝置（不會再觸發同步）
   function replaceState(next) {
+    if (sampleMode()) return;   // 範例模式中不接收雲端的資料
     state = migrate(JSON.parse(JSON.stringify(next)));
     try { localStorage.setItem(STORE_KEY, JSON.stringify(state)); } catch (e) { /* 下次再存 */ }
     refreshView();
@@ -1621,6 +1643,9 @@
     homes: homes,
     addHome: addHome,
     renameHome: renameHome,
+    sampleMode: sampleMode,
+    enterSample: enterSample,
+    exitSample: exitSample,
     removeHome: removeHome,
     homeUsage: homeUsage,
     isEmptyState: isEmptyState,
@@ -1649,7 +1674,7 @@
   window.addEventListener('hashchange', route);
   // 其他分頁改了資料時同步
   window.addEventListener('storage', function (e) {
-    if (e.key === STORE_KEY) { state = load(); route(); }
+    if (e.key === dataKey()) { state = load(); route(); }
   });
 
   // 啟動時檢查：照片其實不存在的（例如上一版沒拍照的衣服），改成沒有照片
