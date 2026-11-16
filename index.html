@@ -6,18 +6,26 @@
   <meta name="theme-color" content="#FAF7F2">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-title" content="行李規劃">
-  <title>行李規劃</title>
+  <meta name="apple-mobile-web-app-title" content="Carry My Own">
+  <title>Carry My Own</title>
+  <!-- 圖示：瀏覽器分頁（網址前面）、iPad 主畫面、安裝成 app 時用 -->
+  <link rel="icon" href="icons/icon.svg" type="image/svg+xml">
+  <link rel="icon" href="icons/favicon-32.png" sizes="32x32" type="image/png">
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+  <link rel="manifest" href="manifest.webmanifest">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&family=Noto+Serif+TC:wght@300;400;600&display=swap">
-  <link rel="stylesheet" href="style.css?v=20261116g">
+  <link rel="stylesheet" href="style.css?v=20261116h">
 </head>
 <body>
   <main>
     <!-- 首頁 -->
     <section id="view-home" class="view">
-      <button type="button" id="cloud-pill" class="cloud-pill off" onclick="document.getElementById('cloud-card').scrollIntoView({behavior:'smooth'})">☁️ 未登入雲端</button>
+      <header class="masthead">
+        <img class="wordmark" src="icons/wordmark.png" alt="Carry My Own" width="1200" height="86">
+        <button type="button" id="cloud-pill" class="cloud-pill off" onclick="document.getElementById('cloud-card').scrollIntoView({behavior:'smooth'})">☁️ 未登入雲端</button>
+      </header>
       <!-- 旅程卡：每趟旅程一張，可以左右滑；顯示那一趟的剩餘公斤數 -->
       <div id="trip-cards" class="trip-cards" aria-label="接下來的旅程"></div>
       <div id="trip-dots" class="trip-dots" hidden></div>
@@ -754,20 +762,20 @@
     </div>
   </div>
 
-  <script src="weights.js?v=20261116g"></script>
-  <script src="photos.js?v=20261116g"></script>
-  <script src="clothing.js?v=20261116g"></script>
-  <script src="app.js?v=20261116g"></script>
-  <script src="closet.js?v=20261116g"></script>
-  <script src="trips.js?v=20261116g"></script>
-  <script src="organize.js?v=20261116g"></script>
-  <script src="packing.js?v=20261116g"></script>
-  <script src="drawer.js?v=20261116g"></script>
-  <script src="bags.js?v=20261116g"></script>
-  <script src="shop.js?v=20261116g"></script>
-  <script src="nav.js?v=20261116g"></script>
-  <script src="backup.js?v=20261116g"></script>
+  <script src="weights.js?v=20261116h"></script>
+  <script src="photos.js?v=20261116h"></script>
+  <script src="clothing.js?v=20261116h"></script>
+  <script src="app.js?v=20261116h"></script>
+  <script src="closet.js?v=20261116h"></script>
+  <script src="trips.js?v=20261116h"></script>
+  <script src="organize.js?v=20261116h"></script>
+  <script src="packing.js?v=20261116h"></script>
+  <script src="drawer.js?v=20261116h"></script>
+  <script src="bags.js?v=20261116h"></script>
+  <script src="shop.js?v=20261116h"></script>
+  <script src="nav.js?v=20261116h"></script>
+  <script src="backup.js?v=20261116h"></script>
   <script src="vendor/supabase.js"></script>
-  <script src="cloud.js?v=20261116g"></script>
+  <script src="cloud.js?v=20261116h"></script>
 </body>
 </html>
