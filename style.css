@@ -1477,6 +1477,4 @@ button.pk-row.pk-simple { width: 100%; border: 0; background: none; font: inheri
 /* 行程頁：目前所在地、已結束的行程 */
 .trip-here { display: flex; align-items: baseline; gap: 12px; margin: 0 0 14px; }
 .trip-here b { font-family: var(--serif); font-weight: 400; font-size: 1.2rem; letter-spacing: 0.06em; }
-.trip-past { margin-top: 18px; border-top: 1px solid var(--line); padding-top: 12px; }
-.trip-past summary { cursor: pointer; color: var(--muted); font-size: 0.9rem; letter-spacing: 0.08em; padding: 4px 0 10px; }
-.trip-past .trip-card { opacity: 0.7; }
+.trip-hidden-note { margin-top: 16px; }

@@ -69,31 +69,39 @@
   function lastArrival(t) {
     return t.legs.map(function (l) { return arrivalDate(l); }).filter(Boolean).sort().pop() || '';
   }
-  // 這段航班出發了沒（今天的要看起飛時間）
-  function departed(l, today, now) {
-    if (!l.date) return false;
-    if (l.date < today) return true;
-    return l.date === today && !!l.depTime && l.depTime <= now;
+  // 這段航班抵達了沒（今天抵達的要看抵達時間；沒填抵達時間就用起飛時間）
+  function arrived(l, today, now) {
+    var d = arrivalDate(l);
+    if (!d) return false;
+    if (d < today) return true;
+    if (d > today) return false;
+    var t = l.arrTime || l.depTime;
+    return !!t && t <= now;
   }
-  // 1. 今天在某趟行程中：最近一段已出發航班的抵達城市（還沒出發就是那趟的出發地）
-  // 2. 今天沒有行程：最近一趟（接下來的）行程的出發地；只剩過去的行程時，用最後一趟最後抵達的城市
+  function legKey(l) { return (arrivalDate(l) || '') + ' ' + (l.arrTime || l.depTime || ''); }
+
+  // 目前所在地（依今天的日期，不寫死）：
+  // 1. 今天在某趟行程中：這趟最近一段已抵達的城市（還沒抵達任何一段，就是這趟的出發地）
+  // 2. 今天沒有行程：所有行程裡最近一段已抵達的城市
+  // 3. 都還沒出發過：下一趟行程的出發地
   function currentCity() {
     var today = App.todayStr(), now = nowHHMM();
     var trips = st().trips.filter(function (t) { return t.legs.some(function (l) { return l.date; }); });
+    function lastArrivedIn(list) {
+      var legs = [];
+      list.forEach(function (t) { t.legs.forEach(function (l) { if (l.to && arrived(l, today, now)) legs.push(l); }); });
+      legs.sort(function (a, b) { return legKey(a).localeCompare(legKey(b)); });
+      return legs[legs.length - 1] || null;
+    }
     var cur = trips.find(function (t) { return firstDate(t) <= today && lastArrival(t) >= today; });
     if (cur) {
-      var legs = cur.legs.filter(function (l) { return departed(l, today, now); })
-        .sort(function (a, b) { return (a.date + (a.depTime || '')).localeCompare(b.date + (b.depTime || '')); });
-      var last = legs[legs.length - 1];
-      return { city: last ? last.to || last.from : cur.origin || (cur.legs[0] || {}).from || '', trip: cur, how: last ? 'leg' : 'origin' };
+      var l = lastArrivedIn([cur]);
+      return { city: l ? l.to : cur.origin || (cur.legs[0] || {}).from || '', trip: cur };
     }
+    var any = lastArrivedIn(trips);
+    if (any) return { city: any.to };
     var future = trips.filter(function (t) { return firstDate(t) > today; }).sort(function (a, b) { return firstDate(a).localeCompare(firstDate(b)); });
-    if (future.length) return { city: future[0].origin || (future[0].legs[0] || {}).from || '', trip: future[0], how: 'next' };
-    var past = trips.filter(function (t) { return lastArrival(t) < today; }).sort(function (a, b) { return lastArrival(b).localeCompare(lastArrival(a)); });
-    if (past.length) {
-      var p = past[0], lastLeg = p.legs.slice().sort(function (a, b) { return (a.date || '').localeCompare(b.date || ''); }).pop();
-      return { city: (lastLeg && lastLeg.to) || p.origin || '', trip: p, how: 'past' };
-    }
+    if (future.length) return { city: future[0].origin || (future[0].legs[0] || {}).from || '', trip: future[0] };
     return null;
   }
 
@@ -127,17 +135,14 @@
     var today = App.todayStr();
     renderHere();
     var all = st().trips.slice();
-    // 已結束＝最後一段抵達日在今天之前（沒有日期的算還沒結束，排在最後）
-    var past = all.filter(function (t) { var e = lastArrival(t); return e && e < today; })
-      .sort(function (a, b) { return lastArrival(b).localeCompare(lastArrival(a)); });   // 最近結束的在上面
-    var upcoming = all.filter(function (t) { return past.indexOf(t) < 0; })
-      .sort(function (a, b) { return firstDate(a).localeCompare(firstDate(b)); });       // 進行中、最近出發的在上面
-    $('#trip-past').hidden = !past.length;
-    $('#trip-past-title').textContent = '已結束的行程（' + past.length + '）';
-    $('#trip-past-list').innerHTML = past.map(function (t) { return tripCardHTML(t, next); }).join('');
+    // 列表只顯示還沒結束的行程（回程日還沒過；今天回程的還算在旅途中，沒有日期的也列出來）。
+    // 已結束的只是不列出，資料還在，月曆和年度時間軸照常顯示
+    var upcoming = all.filter(function (t) { var e = lastArrival(t); return !e || e >= today; })
+      .sort(function (a, b) { return firstDate(a).localeCompare(firstDate(b)); });       // 最近出發的在最上面
+    var hidden = all.length - upcoming.length;
     $('#trip-empty').hidden = all.length > 0;
-    $('#trip-list').innerHTML = upcoming.map(function (t) { return tripCardHTML(t, next); }).join('') ||
-      (past.length ? '<p class="muted small">沒有接下來的行程。</p>' : '');
+    $('#trip-list').innerHTML = upcoming.map(function (t) { return tripCardHTML(t, next); }).join('') +
+      (hidden ? '<p class="muted small trip-hidden-note">已結束的 ' + hidden + ' 趟行程沒有列出，可以在月曆或年度時間軸查看。</p>' : '');
   }
 
   function firstDate(t) {
