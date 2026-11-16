@@ -1479,15 +1479,11 @@ button.pk-row.pk-simple { width: 100%; border: 0; background: none; font: inheri
 .trip-here b { font-family: var(--serif); font-weight: 400; font-size: 1.2rem; letter-spacing: 0.06em; }
 .trip-hidden-note { margin-top: 16px; }
 
-/* ---------- 品牌字標 ---------- */
-.brand { text-align: center; margin: 0 0 6px; }
-.wordmark {
-  display: inline-block;
-  font-family: "Cormorant Garamond", "Times New Roman", serif;
-  font-weight: 300;
-  font-size: 0.95rem;
-  letter-spacing: 0.3em;
-  padding-left: 0.3em; /* 抵銷最後一個字母後的字距，讓字標視覺置中 */
-  color: #111;
-  line-height: 1;
+/* 首頁刊頭：CARRY MY OWN 文字 logo（小、置中、留白多），雲端狀態放右邊 */
+.masthead { position: relative; display: flex; justify-content: center; align-items: center; padding: 6px 0 18px; margin-bottom: 4px; border-bottom: 1px solid var(--line); }
+.wordmark { display: block; height: 13px; width: auto; }
+.masthead .cloud-pill { position: absolute; right: 0; top: 50%; transform: translateY(-75%); margin: 0; }
+@media (max-width: 560px) {
+  .masthead { flex-direction: column; gap: 10px; }
+  .masthead .cloud-pill { position: static; transform: none; }
 }

@@ -3,11 +3,11 @@
  * 有網路時一律抓最新版（同時更新快取）；沒網路時改用快取。
  * 只處理自己網站的檔案，Supabase 等外部連線不經過這裡。
  */
-var CACHE = 'luggage-app-v16';
+var CACHE = 'luggage-app-v17';
 var ASSETS = [
   './', 'index.html', 'style.css', 'weights.js', 'photos.js', 'clothing.js', 'app.js',
   'closet.js', 'trips.js', 'organize.js', 'packing.js', 'drawer.js', 'bags.js', 'shop.js', 'nav.js', 'backup.js', 'cloud.js', 'vendor/supabase.js',
-  'icons/favicon.svg', 'icons/apple-touch-icon.png'
+  'manifest.webmanifest', 'icons/favicon.svg', 'icons/app-icon.svg', 'icons/favicon-32.png', 'icons/apple-touch-icon.png', 'icons/icon-192.png', 'icons/icon-512.png', 'icons/wordmark.png'
 ];
 
 self.addEventListener('install', function (e) {
