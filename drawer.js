@@ -76,17 +76,18 @@
           var showLoc = !tab || tab === PACKED;
           return '<div class="dr-row' + ((m.count === 0 || m.stock === 'out') ? ' out' : '') + '">' +
             '<button type="button" class="dr-main" data-dr-open="' + esc(m.id) + '">' +
-            '<span class="dr-name">' + esc(m.name) + '</span>' +
+            '<span class="dr-name">' + esc(m.name) + (m.sample ? '<span class="sample-tag">範例</span>' : '') + '</span>' +
             '<span class="muted small">' + esc(weightText(m)) + (showLoc || loc.state !== 'home' ? '・' + esc(App.locText(loc)) : '') + '</span></button>' +
             qtyHTML(m) + '</div>';
         }).join('') + '</div>';
     }).join('');
     $('#dr-list').innerHTML = groups || '<p class="empty-big">' +
-      (drawerItems().length ? '這裡沒有東西。' : '抽屜還是空的。<br>在上面輸入名稱，就能快速新增，例如：泡麵、面膜、護照。') + '</p>';
+      (drawerItems().length ? '這裡沒有東西。' : '抽屜還是空的・<button type="button" class="link" data-dr-first="1">＋新增第一樣</button>') + '</p>';
   }
 
   $('#view-drawer').addEventListener('click', function (e) {
     var t = e.target, el;
+    if (t.closest('[data-dr-first]')) { $('#dr-name').focus(); return; }
     if ((el = t.closest('[data-dr-tab]'))) {
       tab = el.getAttribute('data-dr-tab');
       if (App.homes().indexOf(tab) >= 0) addHome = tab;   // 在哪個家的分頁，新增就預設放那個家

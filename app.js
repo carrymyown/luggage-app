@@ -73,6 +73,8 @@
    * 照片本身存在 IndexedDB（見 photos.js），不放在 localStorage。
    */
   var SCHEMA_VERSION = 2;
+  // 「家」是每個帳號自己的清單（第一次使用時設定，帳號選單裡可以新增、改名、刪除）。
+  // 這三個只用在很舊、還沒有存「家」清單的資料，讓那時候的資料不會遺失；新帳號從空的開始
   var DEFAULT_HOMES = ['曼谷', '台灣', '昆明'];
 
   function defaultState() {
@@ -82,7 +84,7 @@
       items: [],
       memory: [],
       outfits: [],
-      homes: DEFAULT_HOMES.slice(),
+      homes: [],
       trips: [],
       sync: { userId: null, lastSyncedAt: null },
       pristine: true   // 剛裝好、還沒動過：第一次登入雲端時直接用雲端的資料（不會多出預設的行李）
@@ -254,6 +256,8 @@
       s.allowanceMoved = true;
     }
     if (!s.sync) s.sync = { userId: null, lastSyncedAt: null };
+    // 已經有資料的帳號不用再看「第一次使用設定」
+    if (s.onboarded == null) s.onboarded = !isEmptyState(s);
     s.schemaVersion = SCHEMA_VERSION;
     return s;
   }
@@ -999,6 +1003,58 @@
     if (state.homes.indexOf(name) < 0) { state.homes.push(name); save(); }
   }
 
+  // 帳號裡完全沒有自己的資料（新帳號、新裝置）
+  // ignoreSample：範例資料不算（只有範例＝還沒有自己的資料）
+  function isEmptyState(s, ignoreSample) {
+    s = s || state;
+    function mine(x) { return !(ignoreSample && x && (x.sample || String(x.id || '').indexOf('sample-') === 0)); }
+    return !(s.trips || []).filter(mine).length && !(s.memory || []).filter(mine).length && !(s.items || []).filter(mine).filter(function (it) {
+        return !(ignoreSample && String(it.bagId || '').indexOf('sample-') === 0) && !(ignoreSample && String(it.catalogId || '').indexOf('sample-') === 0);
+      }).length &&
+      !(s.gifts || []).filter(mine).length && !((s.shopping || {}).purchases || []).filter(mine).length &&
+      !(s.bags || []).some(function (b) { return !b.auto && mine(b); });
+  }
+
+  // ---------- 家：改名、刪除 ----------
+  // 用到某個家的地方：衣櫃／抽屜物品、行李箱、行程結束後回到的家、禮物、購物
+  function homeUsage(name) {
+    var n = 0;
+    state.memory.forEach(function (m) {
+      if (m.home === name || (m.clothing && m.clothing.home === name) || (m.location && (m.location.home === name || m.location.fromHome === name))) n++;
+    });
+    state.bags.forEach(function (b) { if (b.home === name) n++; });
+    state.trips.forEach(function (t) { if (t.endHome === name) n++; });
+    (state.gifts || []).forEach(function (g) { if (g.home === name) n++; });
+    ((state.shopping || {}).purchases || []).forEach(function (p) { if (p.homeDest === name || p.placedHome === name) n++; });
+    return n;
+  }
+  function renameHome(from, to) {
+    to = String(to || '').trim().slice(0, 20);
+    if (!to || to === from) return '';
+    if (state.homes.indexOf(to) >= 0) return '已經有「' + to + '」這個家了';
+    var i = state.homes.indexOf(from);
+    if (i < 0) return '找不到這個家';
+    state.homes[i] = to;
+    function fix(o, k) { if (o && o[k] === from) o[k] = to; }
+    state.memory.forEach(function (m) {
+      fix(m, 'home'); fix(m.clothing, 'home'); fix(m.location, 'home'); fix(m.location, 'fromHome');
+      (m.moves || []).forEach(function (x) { fix(x, 'home'); });
+    });
+    state.bags.forEach(function (b) { fix(b, 'home'); });
+    state.trips.forEach(function (t) { fix(t, 'endHome'); });
+    (state.gifts || []).forEach(function (g) { fix(g, 'home'); });
+    ((state.shopping || {}).purchases || []).forEach(function (p) { fix(p, 'homeDest'); fix(p, 'placedHome'); });
+    save();
+    return '';
+  }
+  function removeHome(name) {
+    var n = homeUsage(name);
+    if (n) return '還有 ' + n + ' 樣東西、行李箱或行程用到「' + name + '」，先移到別的家再刪除';
+    state.homes = state.homes.filter(function (h) { return h !== name; });
+    save();
+    return '';
+  }
+
   // ---------- 衣櫃與行李共用：打包 ----------
   function isCloth(m) { return !!(m && m.clothing && m.clothing.group); }
 
@@ -1525,6 +1581,7 @@
     else if (view === 'trips') { if (window.Trips) window.Trips.show(decodeURIComponent(parts.slice(1).join('/'))); }
     else if (window.Closet) window.Closet.show(decodeURIComponent(parts.slice(1).join('/')));
     window.scrollTo(0, 0);
+    if (window.Onboard) window.Onboard.afterRoute(view);   // 第一次使用設定、範例提示列、使用提示
   }
 
   // 給衣櫃（closet.js）使用的共用功能
@@ -1563,6 +1620,10 @@
     dropPhotoIfUnused: dropPhotoIfUnused,
     homes: homes,
     addHome: addHome,
+    renameHome: renameHome,
+    removeHome: removeHome,
+    homeUsage: homeUsage,
+    isEmptyState: isEmptyState,
     customs: customs,
     addCustom: addCustom,
     watches: watches,

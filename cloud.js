@@ -291,7 +291,9 @@
         var remote = res.data.data || {};
         var rv = res.data.version;
         // 這台是剛裝好、還沒用過的：直接用雲端的資料
-        var merged = !base && local.pristine ? clone(remote) : base && rv === meta.version ? local : merge3(base, local, remote);
+        // 這台還沒有自己的資料（剛裝好，或只有範例）：直接用雲端的，範例不會混進帳號
+        var fresh = !base && (local.pristine || App.isEmptyState(local, true));
+        var merged = fresh ? clone(remote) : base && rv === meta.version ? local : merge3(base, local, remote);
         delete merged.pristine;
 
         // 合併期間你剛好又改了資料：重來一次，避免蓋掉

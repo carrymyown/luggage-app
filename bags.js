@@ -43,7 +43,7 @@
         var spec = [kindName(b.kind), b.size, b.style, b.material].filter(Boolean).join('・');
         return '<button type="button" class="bg-row" data-bag-edit="' + esc(b.id) + '">' +
           (b.photoId ? '<img class="bg-thumb" data-photo="' + esc(b.photoId) + '" alt="">' : '<span class="bg-thumb none"></span>') +
-          '<span class="bg-info"><b>' + esc(b.name) + '</b><span class="muted small">' + esc(spec) + '</span>' +
+          '<span class="bg-info"><b>' + esc(b.name) + (b.sample ? '<span class="sample-tag">範例</span>' : '') + '</b><span class="muted small">' + esc(spec) + '</span>' +
           '<span class="muted small">' + esc(locText(b)) + '</span></span>' +
           '<span class="bg-tare"><span class="muted small">空箱</span>' + fmt(b.tare) + ' kg</span></button>';
       }).join('') +

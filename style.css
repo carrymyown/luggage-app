@@ -1518,3 +1518,34 @@ button.pk-row.pk-simple { width: 100%; border: 0; background: none; font: inheri
 .account-links { align-items: baseline; }
 .account-links .link { font-size: 0.85rem; padding: 4px 0; margin: 0; }
 .form .account-links label.file-link { display: inline-block; color: var(--primary); font-size: 0.85rem; margin: 0; }
+
+/* 範例資料：最上方一條細細的提示、清單上的「範例」小標 */
+.sample-bar { text-align: center; font-size: 0.8rem; letter-spacing: 0.06em; color: var(--muted); padding: 6px 0 8px; margin-bottom: 8px; border-bottom: 1px solid var(--line); }
+.sample-bar .link { padding: 0; }
+.sample-tag { display: inline-block; font-family: var(--sans); font-size: 0.62rem; font-weight: 400; letter-spacing: 0.08em; color: var(--muted); border: 1px solid var(--line); padding: 0 4px; margin-left: 6px; vertical-align: 2px; }
+
+/* 第一次使用設定 */
+.onboard-panel { max-width: 480px; }
+.ob-wordmark { display: block; height: 11px; width: auto; margin: 4px auto 18px; }
+.ob-dots { display: flex; justify-content: center; gap: 8px; margin-bottom: 18px; }
+.ob-dots i { width: 6px; height: 6px; border-radius: 50%; background: var(--line); }
+.ob-dots i.on { background: var(--text); }
+.ob-title { font-family: var(--serif); font-weight: 400; font-size: 1.5rem; letter-spacing: 0.04em; margin: 6px 0 6px; }
+.onboard-panel #ob-homes { margin: 10px 0 4px; min-height: 8px; }
+.onboard-panel #ob-sample, .onboard-panel #ob-start { width: 100%; margin-top: 10px; }
+.ob-login { display: inline-block; margin-top: 14px; }
+.ob-nav { margin-top: 22px; }
+
+/* 使用提示：一句話＋知道了 */
+.use-tip { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; padding: 8px 12px; margin: 0 0 14px; border-left: 2px solid var(--gold); font-size: 0.88rem; }
+.use-tip .link { flex: none; padding: 0; }
+.plus-panel .use-tip { margin: 0 0 10px; text-align: left; }
+
+/* 帳號選單：我的家 */
+.account-homes { margin-top: 16px; padding-top: 12px; border-top: 1px solid var(--line); }
+.ah-row { display: flex; align-items: baseline; gap: 16px; padding: 6px 0; border-bottom: 1px solid var(--line); }
+.ah-name { flex: 1; }
+.ah-row .link { padding: 0; }
+.ah-del { color: var(--bad); }
+.account-homes .dr-add-row { margin-top: 10px; display: flex; gap: 8px; }
+.account-homes .dr-add-row input { flex: 1; min-width: 0; }

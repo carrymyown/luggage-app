@@ -453,6 +453,21 @@
     render();
   }
 
+  // 範例資料用：產生清單、選好行李箱、把幾樣先打勾（和真的操作走同一套流程）
+  function prepareTrip(t, zones, checkNames) {
+    var list = ensureList(t);
+    if (list.needsGenerate) { delete list.needsGenerate; generate(list, t); }
+    syncTripSettings(t, list);
+    Object.keys(zones).forEach(function (k) { setTripZone(t, k, zones[k]); });
+    reconcile(list);
+    list.entries.forEach(function (e) {
+      if (e.status === 'take' && !e.checked && checkNames.indexOf(e.name) >= 0) setChecked(list, e, true);
+    });
+    touch(list);
+    App.save();
+    return list;
+  }
+
   // 季節與活動在行程裡設定；行程改了，打包清單自動補上需要的物品
   function syncTripSettings(t, list) {
     if (!Array.isArray(t.seasons)) t.seasons = (list.seasons || tripSeasons(t)).slice();      // 舊資料：沿用清單上的設定
@@ -980,6 +995,7 @@
   }
 
   window.Packing = {
+    prepareTrip: prepareTrip,
     show: show, tripBagIds: tripBagIds, openAdd: openAdd, tripZones: tripZones, setTripZone: setTripZone, zoneWeights: zoneWeights,
     seasonOptions: function () { return SEASONS; }, actOptions: function () { return ACTS.map(function (a) { return a.name; }); },
     guessSeasons: tripSeasons, guessActs: guessActs, zones: function () { return ZONES; }, pendingByBag: pendingByBag, bagPending: bagPending, checkEntry: checkEntry, uncheckItem: uncheckItem,

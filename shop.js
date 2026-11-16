@@ -235,7 +235,7 @@
       return '<div class="sr-group"><div class="sr-head"><span>' + esc(x.name || '未命名旅程') + '</span><span class="muted small">' + list.length + ' 件・' + fmt(w) + ' kg</span></div>' +
         (list.length ? list.slice().reverse().map(function (p) {
           return '<button type="button" class="sr-row" data-buy-edit="' + esc(p.id) + '">' +
-            '<span class="sr-info"><b>' + (p.planId ? '' : '<span class="sr-tag">衝動</span>') + esc(p.name) + (p.qty > 1 ? ' × ' + p.qty : '') + '</b>' +
+            '<span class="sr-info"><b>' + esc(p.name) + (p.qty > 1 ? ' × ' + p.qty : '') + '</b>' +
             '<span class="muted small">' + esc([p.city, p.price, purchaseLoc(p), p.homeDest ? '之後放' + p.homeDest : ''].filter(Boolean).join('・')) + '</span></span>' +
             '<span class="bp-w">' + App.fmtWeight(p.weight * p.qty) + '</span></button>';
         }).join('') : '<p class="muted small">這趟還沒有購物紀錄。</p>') + '</div>';

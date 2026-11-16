@@ -19,7 +19,11 @@
     '曼谷': ['曼谷', 'bangkok', 'bkk', 'dmk', '素萬那普', '廊曼', '泰國'],
     '台灣': ['台灣', '臺灣', 'taiwan', '台北', '臺北', 'taipei', '桃園', 'taoyuan', '松山', '高雄', 'kaohsiung',
             '台中', '臺中', 'taichung', '台南', '臺南', 'tainan', '花蓮', 'tpe', 'tsa', 'khh', 'rmq', 'tnn'],
-    '昆明': ['昆明', 'kunming', 'kmg', '長水', '长水', '雲南', '云南']
+    '昆明': ['昆明', 'kunming', 'kmg', '長水', '长水', '雲南', '云南'],
+    '台北': ['台北', '臺北', 'taipei', 'tpe', '桃園', 'taoyuan', '松山', 'tsa'],
+    '清邁': ['清邁', '清迈', 'chiang mai', 'chiangmai', 'cnx'],
+    '東京': ['東京', '东京', 'tokyo', '成田', '羽田', 'nrt', 'hnd'],
+    '香港': ['香港', 'hong kong', 'hongkong', 'hkg']
   };
 
   function homeFor(city) {
@@ -119,7 +123,7 @@
     var cities = [t.origin].concat(t.legs.map(function (l) { return l.to; })).filter(Boolean);
     var isNext = next && next.trip.id === t.id;
     return '<a class="card trip-card" href="#trips/' + encodeURIComponent(t.id) + '">' +
-      '<div class="trip-head"><span class="trip-name">' + esc(t.name) + '</span>' +
+      '<div class="trip-head"><span class="trip-name">' + esc(t.name) + (t.sample ? '<span class="sample-tag">範例</span>' : '') + '</span>' +
       (isNext ? '<span class="next-badge">下一趟</span>' : '') + '</div>' +
       '<div class="muted small">' + (dates.length ? fmtDate(dates[0]) + (dates.length > 1 ? ' ～ ' + fmtDate(dates[dates.length - 1]) : '') : '日期未定') +
       '・' + t.legs.length + ' 段航班</div>' +
