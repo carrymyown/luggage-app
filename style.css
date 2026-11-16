@@ -1403,3 +1403,6 @@ input:focus, select:focus { outline: 1px solid var(--primary); }
 .form input:disabled, .form select:disabled { color: var(--muted); background: transparent; }
 #buy-sheet.locked .chips { opacity: 0.5; pointer-events: none; }
 #buy-sheet.locked #buy-try { display: none; }
+.pk-bags-card .field-title { margin-top: 0; }
+.pk-bag-hint { flex-basis: 100%; }
+.pk-bags-note { margin: 8px 0 4px; }

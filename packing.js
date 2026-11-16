@@ -109,10 +109,11 @@
   function lists() { return st().packLists; }
   function listFor(tripId) { return lists().find(function (l) { return l.id === tripId; }); }
 
-  // 這類行李箱：出發地那個家的排前面
+  // 這類行李箱：已經放了東西的排最前面（你正在用的箱子），再來是出發地那個家的
   function bagsOfKind(kind, originHome) {
+    function used(b) { return st().items.some(function (it) { return it.bagId === b.id; }) ? 1 : 0; }
     return st().bags.filter(function (b) { return b.kind === kind; }).sort(function (a, b) {
-      return (b.home === originHome ? 1 : 0) - (a.home === originHome ? 1 : 0);
+      return used(b) - used(a) || (b.home === originHome ? 1 : 0) - (a.home === originHome ? 1 : 0);
     });
   }
   function originOf(list) {
@@ -455,9 +456,11 @@
             return '<option value="' + esc(b.id) + '"' + (b.id === bag.id ? ' selected' : '') + '>' + esc(b.name) +
               (b.home ? '（' + esc(b.home) + (b.home === origin ? '・出發地' : '') + '）' : '') + '</option>';
           }).join('') + '</select></label>' +
-          '<span class="muted small pk-bag-tare">空箱 ' + fmt(Number(bag.tare) || 0) + ' kg</span>'
+          '<span class="muted small pk-bag-tare">空箱 ' + fmt(Number(bag.tare) || 0) + ' kg</span>' +
+          (choices.length < 2 ? '<span class="muted small pk-bag-hint">只有這一個' + z[1] + '箱</span>' : '')
           : '<span class="muted small">這趟不用</span>') + '</div>';
-    }).join('') + '<a class="link small" href="#bags">管理我的行李箱 ›</a>';
+    }).join('') + '<p class="muted small pk-bags-note">行李箱的類型（托運／手提／背包）決定它出現在哪一區；找不到某個箱子，可以到「我的行李箱」改類型或新增。</p>' +
+      '<a class="link small" href="#bags">管理我的行李箱 ›</a>';
     $('#pack-seasons').innerHTML = SEASONS.map(function (s) {
       return '<button type="button" class="chip' + (list.seasons.indexOf(s) >= 0 ? ' on' : '') + '" data-season="' + s + '">' + s + '</button>';
     }).join('');
