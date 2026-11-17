@@ -25,7 +25,7 @@
   function openOnboard(at) {
     shownThisVisit = true;
     step = at || 0; pickedBags = {};
-    $('#ob-home').value = '';
+    $('#ob-home').value = ''; $('#ob-home-city').value = '';
     var d = st().defaults || {}, a = d.allowance || {};
     $('#ob-airline').value = d.airline || '';
     $('#ob-checked').value = a.checked == null ? '' : a.checked;
@@ -42,7 +42,7 @@
     Array.prototype.forEach.call(document.querySelectorAll('.ob-dots'), function (el) {
       el.innerHTML = [1, 2, 3].map(function (i) { return '<i class="' + (i === step ? 'on' : '') + '"></i>'; }).join('');
     });
-    $('#ob-homes').innerHTML = App.homes().map(function (h) { return '<span class="chip on">' + esc(h) + '</span>'; }).join('');
+    $('#ob-homes').innerHTML = App.homes().map(function (h) { return '<span class="chip on">' + esc(homeLabel(h)) + '</span>'; }).join('');
     $('#ob-bags').innerHTML = BAG_PRESETS.map(function (b, i) {
       return '<button type="button" class="chip' + (pickedBags[i] ? ' on' : '') + '" data-ob-bag="' + i + '">' + (pickedBags[i] ? '✓ ' : '') + b[1] + '</button>';
     }).join('');
@@ -60,7 +60,9 @@
 
   // 每一步按「下一步」時存起來；按「跳過」就不存這一步
   function saveStep() {
-    if (step === 1 && $('#ob-home').value.trim()) { App.addHome($('#ob-home').value.trim().slice(0, 20)); $('#ob-home').value = ''; }
+    if (step === 1 && ($('#ob-home-city').value.trim() || $('#ob-home').value.trim())) {
+      if (!addHomeFrom($('#ob-home-city'), $('#ob-home'))) return false;   // 要填所在城市
+    }
     if (step === 2) setDefaults($('#ob-airline').value, $('#ob-checked').value, $('#ob-carry').value, $('#ob-personal').value);
     if (step === 3) {
       var home = App.homes()[0] || '';
@@ -73,6 +75,23 @@
       pickedBags = {};
     }
     App.save();
+    return true;
+  }
+
+  // 新增一個家：所在城市一定要填；家的名字可以自由取，沒填就用城市名稱（設定畫面和帳號選單都用這裡）
+  function addHomeFrom(cityEl, nameEl) {
+    var city = cityEl.value.trim().slice(0, 30);
+    var name = nameEl.value.trim().slice(0, 20) || city.slice(0, 20);
+    if (!city) { App.toast('請填這個家的所在城市'); cityEl.focus(); return null; }
+    if (App.homes().indexOf(name) >= 0) { App.toast('已經有「' + name + '」這個家了'); return null; }
+    App.addHome(name, city);
+    cityEl.value = ''; nameEl.value = '';
+    return name;
+  }
+  // 家的顯示：名字和城市一樣就只顯示一次，例如「我的公寓・東京」「台北」
+  function homeLabel(h) {
+    var c = App.homeCity(h);
+    return c && c !== h ? h + '・' + c : h;
   }
 
   function finishOnboard() {
@@ -84,7 +103,7 @@
   }
 
   function next(skip) {
-    if (!skip) saveStep();
+    if (!skip && saveStep() === false) return;
     if (step >= 3) { finishOnboard(); return; }
     step++;
     renderOnboard();
@@ -92,12 +111,9 @@
 
   $('#ob-home-form').addEventListener('submit', function (e) {
     e.preventDefault();
-    var v = $('#ob-home').value.trim().slice(0, 20);
-    if (!v) return;
-    App.addHome(v);
-    $('#ob-home').value = '';
+    if (!addHomeFrom($('#ob-home-city'), $('#ob-home'))) return;
     renderOnboard();
-    $('#ob-home').focus();
+    $('#ob-home-city').focus();
   });
   $('#onboard-sheet').addEventListener('click', function (e) {
     var t = e.target, el;
@@ -202,8 +218,9 @@
   function renderHomes() {
     var homes = App.homes();
     $('#account-home-list').innerHTML = homes.length ? homes.map(function (h) {
-      return '<div class="ah-row"><span class="ah-name">' + esc(h) + '</span>' +
+      return '<div class="ah-row"><span class="ah-name">' + esc(h) + '<span class="muted small ah-city">📍 ' + esc(App.homeCity(h)) + '</span></span>' +
         '<button type="button" class="link small" data-home-rename="' + esc(h) + '">改名</button>' +
+        '<button type="button" class="link small" data-home-city="' + esc(h) + '">城市</button>' +
         '<button type="button" class="link small ah-del" data-home-del="' + esc(h) + '">刪除</button></div>';
     }).join('') : '<p class="muted small">還沒有家。</p>';
     $('#sample-again').textContent = App.sampleMode() ? '現在是範例資料' : '再看一次範例';
@@ -211,16 +228,23 @@
   $('#account-btn').addEventListener('click', renderHomes);
   $('#account-home-add').addEventListener('submit', function (e) {
     e.preventDefault();
-    var v = $('#account-home-name').value.trim().slice(0, 20);
+    var v = addHomeFrom($('#account-home-city'), $('#account-home-name'));
     if (!v) return;
-    if (App.homes().indexOf(v) >= 0) { App.toast('已經有「' + v + '」了'); return; }
-    App.addHome(v);
-    $('#account-home-name').value = '';
     renderHomes();
     App.toast('已新增家：' + v);
   });
   $('#account-home-list').addEventListener('click', function (e) {
-    var r = e.target.closest('[data-home-rename]'), d = e.target.closest('[data-home-del]');
+    var r = e.target.closest('[data-home-rename]'), d = e.target.closest('[data-home-del]'), c = e.target.closest('[data-home-city]');
+    if (c) {
+      var hn = c.getAttribute('data-home-city');
+      window.Clothing.askText('「' + hn + '」在哪個城市？（用來判斷抵達哪個家）', App.homeCity(hn)).then(function (v) {
+        if (v == null || !String(v).trim()) return;
+        var msg = App.setHomeCity(hn, v);
+        App.toast(msg || '所在城市：' + String(v).trim());
+        renderHomes();
+      });
+      return;
+    }
     if (r) {
       var from = r.getAttribute('data-home-rename');
       window.Clothing.askText('「' + from + '」改成', from).then(function (v) {

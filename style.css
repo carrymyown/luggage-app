@@ -1559,3 +1559,15 @@ button.pk-row.pk-simple { width: 100%; border: 0; background: none; font: inheri
 .tip-bubble::after { content: ''; position: absolute; left: 50%; bottom: -6px; margin-left: -6px; border: 6px solid transparent; border-bottom: 0; border-top-color: var(--text); }
 .tip-plus { position: fixed; left: 50%; transform: translateX(-50%); bottom: calc(var(--tab-h, 64px) + 26px + env(safe-area-inset-bottom, 0px)); z-index: 60; margin: 0; width: max-content; max-width: calc(100% - 32px); }
 .nw {white-space:nowrap}
+
+/* 新增家：所在城市＋家的名字（選填） */
+.home-add-form { display: grid; grid-template-columns: 1fr 1fr auto; gap: 8px; align-items: center; margin: 10px 0 8px; }
+.home-add-form input { margin: 0; min-width: 0; }
+@media (max-width: 420px) {
+  .home-add-form { grid-template-columns: 1fr 1fr; }
+  .home-add-form button { grid-column: 1 / -1; }
+}
+.ah-city { margin-left: 8px; }
+/* 新增衣服／抽屜物品：加入下一趟的打包清單 */
+.next-pack { margin: 12px 0 4px; }
+.next-pack[hidden] { display: none !important; }

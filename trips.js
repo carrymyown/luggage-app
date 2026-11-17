@@ -14,7 +14,7 @@
   function tripById(id) { return st().trips.find(function (t) { return t.id === id; }); }
 
   // ---------- 城市 → 家 ----------
-  // 預設的三個家，常見的城市、機場寫法也認得
+  // 家的所在城市：常見的城市、機場寫法也認得（用所在城市查，不是家的名字）
   var HOME_ALIASES = {
     '曼谷': ['曼谷', 'bangkok', 'bkk', 'dmk', '素萬那普', '廊曼', '泰國'],
     '台灣': ['台灣', '臺灣', 'taiwan', '台北', '臺北', 'taipei', '桃園', 'taoyuan', '松山', '高雄', 'kaohsiung',
@@ -32,7 +32,9 @@
     var homes = App.homes();
     for (var i = 0; i < homes.length; i++) {
       var h = homes[i];
-      var keys = (HOME_ALIASES[h] || []).concat(h).map(App.norm).filter(Boolean);
+      // 用家的「所在城市」比對（家的名字可以自由取，例如「我的公寓」）
+      var city = App.homeCity(h);
+      var keys = (HOME_ALIASES[city] || []).concat(city).map(App.norm).filter(Boolean);
       for (var j = 0; j < keys.length; j++) {
         var k = keys[j];
         // 英文代碼（BKK、TPE）要完全相同，避免誤判
@@ -529,10 +531,14 @@
 
   $('#tf-delete').addEventListener('click', function () {
     var t = tripById(editingId);
-    if (!t || !confirm('要刪除旅程「' + t.name + '」嗎？所有航班段都會一起刪除。')) return;
-    var s = st();
-    s.trips = s.trips.filter(function (x) { return x !== t; });
-    App.save();
+    if (!t) return;
+    // 列出這趟會一起刪除的資料
+    var n = App.tripDataCounts(t);
+    var msg = '要刪除旅程「' + t.name + '」嗎？\n所有航班段都會一起刪除，這趟的資料也會一起刪除：\n' +
+      '・購物 ' + n.purchases + ' 筆\n・禮物 ' + n.gifts + ' 份\n・打包清單 ' + n.pack + ' 項\n' +
+      '（已經放進某個家的購物和禮物，物品會留在那個家；已經放進行李的衣服和抽屜物品會留在行李裡）';
+    if (!confirm(msg)) return;
+    App.deleteTrip(t);
     App.toast('已刪除旅程');
     location.hash = '#trips';
   });

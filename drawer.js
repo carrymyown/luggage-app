@@ -143,7 +143,9 @@
   var fromRef = false;
   $('#dr-name').addEventListener('input', function () {
     var name = this.value.trim();
+    var wasHidden = $('#dr-add-more').hidden;
     $('#dr-add-more').hidden = !name;
+    if (wasHidden && name) App.renderNextPack('dr');   // 開始輸入時才決定要不要顯示（預設不勾）
     if (!name) { $('#dr-dup').hidden = true; return; }
     // 先用自己記過的，沒有再用參考重量表
     var same = drawerItems().find(function (m) { return norm(m.name) === norm(name); });
@@ -200,34 +202,18 @@
     $('#dr-add-weight').value = '';
     $('#dr-add-qty').value = '';
     $('#dr-add-more').hidden = true;
+    $('#dr-next').checked = false;
     $('#dr-dup').hidden = true;
     $('#dr-add-approx').hidden = true;
   }
 
   // ---------- 新增一筆抽屜用品（表單和範例資料都用這裡，格式才會一樣） ----------
-  // o：{ name, weight(kg), unit, category, estimated, home, count（數量，可空白）, id?, extra? }
+  // o：{ name, weight(kg), unit, category, estimated, home, count（數量，可空白）, id?, extra?,
+  //      packTrip?（要加進打包清單的旅程：畫面上勾了「加入下一趟的打包清單」） }
   function create(o) {
-    var today = App.todayStr();
-    var hasCount = o.count != null && o.count !== '';
-    var base = {
-      name: o.name,
-      weight: o.weight,
-      unit: o.unit || '個',
-      category: o.category,
-      bagId: st().bags[0] && st().bags[0].id,
-      uses: 0,
-      estimated: !!o.estimated,
-      home: o.home,
-      count: hasCount ? o.count : null,
-      countUnit: o.unit || '個',
-      stock: hasCount ? '' : 'have',
-      drawer: true,
-      location: { state: 'home', home: o.home, since: today },
-      moves: [{ home: o.home, date: today }]
-    };
-    if (o.id) base.id = o.id;
-    var m = App.normalizeEntry(Object.assign(base, o.extra || {}));
+    var m = App.makeDrawerEntry(o);
     st().memory.push(m);
+    if (o.packTrip && window.Packing) window.Packing.addToTrip(o.packTrip, m);
     return m;
   }
 
@@ -247,7 +233,8 @@
       category: $('#dr-add-cat').value,
       estimated: fromRef || !(isFinite(g) && g >= 0),
       home: addHome,
-      count: isFinite(qty) && $('#dr-add-qty').value !== '' ? qty : null
+      count: isFinite(qty) && $('#dr-add-qty').value !== '' ? qty : null,
+      packTrip: $('#dr-next').checked ? App.nextTrip() : null
     });
     App.save();
     App.toast('已放進' + addHome + '的抽屜：' + name);

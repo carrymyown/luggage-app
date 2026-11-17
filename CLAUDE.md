@@ -3,8 +3,9 @@
 ## 範例資料要跟著功能一起更新
 - 試用範例集中在 `sample-data.js`。上半部是範例內容，下半部用各功能自己的新增函式產生資料。
 - 範例**一律**透過正式功能的新增函式產生，跟使用者在畫面上新增的資料格式完全一樣，不要另外手寫資料結構：
+  - 家 `App.addHome(名字, 所在城市)`（判斷抵達哪個家一律用所在城市）
   - 衣櫃 `Closet.create`
-  - 抽屜 `Drawer.create`
+  - 抽屜 `Drawer.create`（底層是 `App.makeDrawerEntry`；`packTrip` 等於畫面上勾「加入下一趟的打包清單」）
   - 行李箱 `Bags.create`
   - 旅程 `Trips.create`
   - 打包清單 `Packing.prepareTrip`（裡面走「＋ 加入」的 `addToList`）

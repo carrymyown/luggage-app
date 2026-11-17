@@ -4,7 +4,7 @@
  * ⚠ 維護規則：每次新增或修改功能、欄位、選項，都要回來檢查這個檔案，
  *   讓範例能示範到最新的功能。範例一律透過各功能「自己的新增函式」產生
  *   （Closet.create、Drawer.create、Bags.create、Trips.create、Packing.prepareTrip、
- *   Shop.writePurchase、Shop.writeGift、Onboard.setDefaults），跟使用者在畫面上新增的資料格式完全一樣，
+ *   Shop.writePurchase、Shop.writeGift、Onboard.setDefaults、App.addHome），跟使用者在畫面上新增的資料格式完全一樣，
  *   不要在這裡另外手寫資料結構。
  *
  * 內容都是虛構的；使用台灣用語，不出現中國大陸的城市名稱。
@@ -16,7 +16,9 @@
   // ================= 範例內容（要改範例，改這一段就好） =================
 
   // 範例使用者的家
-  var HOMES = ['台北', '東京'];
+  // 範例使用者的家：家的名字可以自由取，判斷抵達哪個家用「所在城市」
+  var HOMES = [{ name: '台北', city: '台北' }, { name: '東京的公寓', city: '東京' }];
+  var TOKYO = '東京的公寓';   // 下面「放在哪個家」用的是家的名字
 
   // 第一次使用設定裡的「常搭的航空公司和行李額度」：新增旅程時第一段會自動帶入
   var DEFAULTS = { airline: '長榮航空', checked: 23, carry: 7, personal: '' };
@@ -29,23 +31,23 @@
     { name: '米色針織衫', group: '上衣', type: '針織衫', colors: ['米'], home: '台北', weight: 0.35 },
     { name: '風衣', group: '外套', type: '外套', colors: ['咖啡'], home: '台北', weight: 0.8 },
     { name: '白色運動鞋', group: '鞋子', type: '運動鞋', subtype: '休閒運動鞋', colors: ['白'], home: '台北', weight: 0.7 },
-    { name: '黑色樂福鞋', group: '鞋子', type: '平底鞋', subtype: '樂福鞋', colors: ['黑'], home: '東京', weight: 0.6 },
-    { name: '棒球帽', group: '帽子', type: '棒球帽', colors: ['海軍藍'], home: '東京', weight: 0.1 },
+    { name: '黑色樂福鞋', group: '鞋子', type: '平底鞋', subtype: '樂福鞋', colors: ['黑'], home: TOKYO, weight: 0.6 },
+    { name: '棒球帽', group: '帽子', type: '棒球帽', colors: ['海軍藍'], home: TOKYO, weight: 0.1 },
     { name: '金色耳環', group: '配件', type: '耳環', colors: ['金色'], home: '台北', weight: 0.02 },
-    { name: '黑色洋裝', group: '洋裝／連身', type: '', colors: ['黑'], home: '東京', weight: 0.35 },
-    { name: '藍色襯衫', group: '上衣', type: '襯衫', colors: ['藍'], home: '東京', weight: 0.25 }
+    { name: '黑色洋裝', group: '洋裝／連身', type: '', colors: ['黑'], home: TOKYO, weight: 0.35 },
+    { name: '藍色襯衫', group: '上衣', type: '襯衫', colors: ['藍'], home: TOKYO, weight: 0.25 }
   ];
 
-  // 抽屜：分別放在台北和東京；count 空白代表「有，不記數量」
+  // 抽屜：分別放在台北和東京的公寓；count 空白代表「有，不記數量」
   var DRAWER = [
     { key: 'passport', name: '護照', category: '必備品', weight: 0.04, home: '台北', unit: '本' },
     { name: '錢包', category: '必備品', weight: 0.15, home: '台北', unit: '個' },
     { name: '充電線', category: '電線電器', weight: 0.05, home: '台北', count: 1, unit: '包' },
-    { name: '轉接頭', category: '電線電器', weight: 0.06, home: '東京', count: 2, unit: '個' },
-    { name: '洗面乳', category: '保養品', weight: 0.12, home: '東京', count: 1, unit: '條' },
+    { name: '轉接頭', category: '電線電器', weight: 0.06, home: TOKYO, count: 2, unit: '個' },
+    { name: '洗面乳', category: '保養品', weight: 0.12, home: TOKYO, count: 1, unit: '條' },
     { name: '面膜', category: '保養品', weight: 0.03, home: '台北', count: 5, unit: '片' },
     { name: '維他命', category: '保健品', weight: 0.15, home: '台北', count: 1, unit: '瓶' },
-    { name: '牙刷組', category: '必備品', weight: 0.05, home: '東京', count: 1, unit: '組' },
+    { name: '牙刷組', category: '必備品', weight: 0.05, home: TOKYO, count: 1, unit: '組' },
     { key: 'cake', name: '鳳梨酥禮盒', category: '禮物', weight: 0.5, home: '台北', count: 1, unit: '盒' }
   ];
 
@@ -56,7 +58,7 @@
     { key: 'carry', name: '20 吋登機箱', kind: 'carry', tare: 2.6, size: '20 吋', style: '五五開', material: '硬箱', home: '台北' },
     { key: 'personal', name: '後背包', kind: 'personal', tare: 0.8, material: '布箱', home: '台北' },
     { key: 'pouch', name: '隨身小包', kind: 'pouch', tare: 0.3, material: '布箱', home: '台北' },
-    { key: 'tokyo', name: '東京的托運箱', kind: 'checked', tare: 4.2, size: '28 吋', style: '三七開', material: '硬箱', home: '東京' }
+    { key: 'tokyo', name: '東京的托運箱', kind: 'checked', tare: 4.2, size: '28 吋', style: '三七開', material: '硬箱', home: TOKYO }
   ];
 
   // 旅程：下個月 10 號出發，大約 8 天（day = 第幾天出發）
@@ -103,7 +105,8 @@
     var now = new Date(), base = new Date(now.getFullYear(), now.getMonth() + 1, 10);
     function day(n) { var d = new Date(base); d.setDate(d.getDate() + n); return ymd(d); }
 
-    s.homes = HOMES.slice();
+    s.homes = []; s.homeCities = {};
+    HOMES.forEach(function (h) { App.addHome(h.name, h.city); });
     window.Onboard.setDefaults(DEFAULTS.airline, DEFAULTS.checked, DEFAULTS.carry, DEFAULTS.personal);
 
     CLOSET.forEach(function (c) {
@@ -157,5 +160,5 @@
     App.save();
   }
 
-  window.SampleData = { build: build, homes: HOMES };
+  window.SampleData = { build: build, homes: HOMES.map(function (h) { return h.name; }) };
 })();

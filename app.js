@@ -260,6 +260,20 @@
     if (!Array.isArray(s.gifts)) s.gifts = [];
     if (!Array.isArray(s.trips)) s.trips = [];
     s.trips.forEach(normalizeTrip);
+    // 家的所在城市：以前沒有這個欄位，所在城市先用家的名字（例如曼谷、台北），不會遺失
+    if (!s.homeCities || typeof s.homeCities !== 'object' || Array.isArray(s.homeCities)) s.homeCities = {};
+    s.homes.forEach(function (h) { if (!s.homeCities[h]) s.homeCities[h] = h; });
+    // 旅程已經刪掉、畫面上看不到的購物、禮物、打包清單：一併清理（放進家裡的物品會留著）
+    var tripIds = {};
+    s.trips.forEach(function (t) { tripIds[t.id] = true; });
+    var orphan = {};
+    function lost(id) { if (id && !tripIds[id]) orphan[id] = true; }
+    s.shopping.purchases.forEach(function (x) { lost(x.tripId); });
+    s.shopping.plans.forEach(function (x) { lost(x.tripId); });
+    s.gifts.forEach(function (x) { lost(x.tripId); });
+    s.packLists.forEach(function (x) { lost(x.id); });
+    Object.keys(s.shopping.ratio).forEach(lost);
+    Object.keys(orphan).forEach(function (id) { purgeTripData(s, id); });
     s.bags.forEach(function (b) { if (!b.kind) b.kind = guessBagKind(b.name); });
     // 首頁原本填的額度：搬到行程裡還沒填的航班段（只做一次；填過或填 0 的不動）
     if (!s.allowanceMoved) {
@@ -1006,6 +1020,95 @@
     return out;
   }
 
+  // ---------- 抽屜：新增一筆（抽屜表單、範例資料、刪除旅程時留下的禮物都用這裡，格式才會一樣） ----------
+  // o：{ name, weight(kg), unit, category, estimated, home, count（數量，可空白）, id?, extra? }
+  function makeDrawerEntry(o, s) {
+    s = s || state;
+    var today = todayStr();
+    var hasCount = o.count != null && o.count !== '';
+    var base = {
+      name: o.name,
+      weight: o.weight,
+      unit: o.unit || '個',
+      category: o.category,
+      bagId: s.bags[0] && s.bags[0].id,
+      uses: 0,
+      estimated: !!o.estimated,
+      home: o.home,
+      count: hasCount ? o.count : null,
+      countUnit: o.unit || '個',
+      stock: hasCount ? '' : 'have',
+      drawer: true,
+      location: { state: 'home', home: o.home, since: today },
+      moves: [{ home: o.home, date: today }]
+    };
+    if (o.id) base.id = o.id;
+    return normalizeEntry(Object.assign(base, o.extra || {}));
+  }
+
+  // ---------- 刪除旅程：這趟的購物、禮物、打包清單 ----------
+  function tripRecords(s, id) {
+    var sh = s.shopping || {};
+    return {
+      purchases: (sh.purchases || []).filter(function (p) { return p.tripId === id; }),
+      plans: (sh.plans || []).filter(function (p) { return p.tripId === id; }),
+      gifts: (s.gifts || []).filter(function (g) { return g.tripId === id; }),
+      list: (s.packLists || []).find(function (l) { return l.id === id; }) || null
+    };
+  }
+  // 刪除前的確認視窗用：這趟有幾筆購物、幾份禮物、打包清單幾項
+  function tripDataCounts(t) {
+    var r = tripRecords(state, t.id);
+    return {
+      purchases: r.purchases.length,
+      gifts: r.gifts.length,
+      pack: r.list ? (r.list.entries || []).filter(function (e) { return e.status === 'take'; }).length : 0
+    };
+  }
+  // 刪掉這趟的購物、禮物、打包清單。
+  // 已經放進某個家的購物和禮物：物品本身留在那個家（抽屜裡），只刪掉這趟的紀錄。
+  // 已經放進行李的衣櫃／抽屜物品留在行李裡；這趟買的、這趟的禮物（不是抽屜裡的）從行李拿掉。
+  function purgeTripData(s, id) {
+    var r = tripRecords(s, id);
+    var pIds = r.purchases.map(function (p) { return p.id; });
+    var gIds = r.gifts.map(function (g) { return g.id; });
+    s.items = (s.items || []).filter(function (it) {
+      var mine = (it.purchaseId && pIds.indexOf(it.purchaseId) >= 0) || (it.giftId && gIds.indexOf(it.giftId) >= 0);
+      if (!mine) return true;
+      if (it.catalogId) { delete it.purchaseId; delete it.giftId; return true; }   // 衣櫃／抽屜裡的那件：留在行李裡
+      return false;
+    });
+    // 禮物已經放在某個家（不是從抽屜挑的）：在那個家的抽屜留一筆，物品不會不見
+    r.gifts.forEach(function (g) {
+      var fromDrawer = g.drawerId && (s.memory || []).some(function (m) { return m.id === g.drawerId; });
+      if (g.status === 'bought' && g.home && !fromDrawer) {
+        s.memory.push(makeDrawerEntry({ name: g.name, weight: Number(g.weight) || 0, unit: '份', category: '禮物', home: g.home,
+          count: g.qty || 1, estimated: false }, s));
+      }
+    });
+    var sh = s.shopping || {};
+    sh.purchases = (sh.purchases || []).filter(function (p) { return p.tripId !== id; });
+    sh.plans = (sh.plans || []).filter(function (p) { return p.tripId !== id; });
+    if (sh.ratio) delete sh.ratio[id];
+    s.gifts = (s.gifts || []).filter(function (g) { return g.tripId !== id; });
+    s.packLists = (s.packLists || []).filter(function (l) { return l.id !== id; });
+  }
+  function deleteTrip(t) {
+    purgeTripData(state, t.id);
+    state.trips = state.trips.filter(function (x) { return x !== t && x.id !== t.id; });
+    save();
+  }
+  // 下一趟旅程（還沒結束的，最早出發的那一趟）
+  function nextTrip() { return upcomingTrips()[0] || null; }
+  // 新增衣服／抽屜物品時的「加入下一趟的打包清單」：有下一趟才出現，預設不勾
+  function renderNextPack(prefix) {
+    var t = nextTrip(), wrap = $('#' + prefix + '-next-wrap');
+    if (!wrap) return;
+    wrap.hidden = !t;
+    $('#' + prefix + '-next').checked = false;
+    $('#' + prefix + '-next-trip').textContent = t ? '（' + (t.name || '下一趟') + '）' : '';
+  }
+
   // ---------- 家 ----------
   function homes() { return state.homes; }
 
@@ -1022,8 +1125,30 @@
     var i = list.indexOf(value);
     if (i >= 0) { list.splice(i, 1); save(); }
   }
-  function addHome(name) {
-    if (state.homes.indexOf(name) < 0) { state.homes.push(name); save(); }
+  // 每個家的所在城市：state.homeCities = { 家的名字: 城市 }
+  // 家的名字可以自由取（例如「我的公寓」「爸媽家」）；判斷抵達哪個家一律用所在城市
+  function homeCity(name) {
+    var c = state.homeCities && state.homeCities[name];
+    return c || name || '';
+  }
+  function setHomeCity(name, city) {
+    city = String(city || '').trim().slice(0, 30);
+    if (!city) return '請輸入所在城市';
+    if (state.homes.indexOf(name) < 0) return '找不到這個家';
+    if (!state.homeCities) state.homeCities = {};
+    state.homeCities[name] = city;
+    save();
+    return '';
+  }
+  // city 沒給：所在城市先用家的名字（之後可以在帳號選單裡改）
+  function addHome(name, city) {
+    name = String(name || '').trim().slice(0, 20);
+    city = String(city || '').trim().slice(0, 30) || name;
+    if (!name || state.homes.indexOf(name) >= 0) return;
+    state.homes.push(name);
+    if (!state.homeCities) state.homeCities = {};
+    state.homeCities[name] = city;
+    save();
   }
 
   // 帳號裡完全沒有自己的資料（新帳號、新裝置）
@@ -1058,6 +1183,9 @@
     var i = state.homes.indexOf(from);
     if (i < 0) return '找不到這個家';
     state.homes[i] = to;
+    if (!state.homeCities) state.homeCities = {};
+    state.homeCities[to] = state.homeCities[from] || from;   // 改名不改所在城市
+    delete state.homeCities[from];
     function fix(o, k) { if (o && o[k] === from) o[k] = to; }
     state.memory.forEach(function (m) {
       fix(m, 'home'); fix(m.clothing, 'home'); fix(m.location, 'home'); fix(m.location, 'fromHome');
@@ -1074,6 +1202,7 @@
     var n = homeUsage(name);
     if (n) return '還有 ' + n + ' 樣東西、行李箱或行程用到「' + name + '」，先移到別的家再刪除';
     state.homes = state.homes.filter(function (h) { return h !== name; });
+    if (state.homeCities) delete state.homeCities[name];
     save();
     return '';
   }
@@ -1201,6 +1330,13 @@
     brands: allBrands,
     homes: homes,
     addHome: addHome,
+    homeCity: homeCity,
+    setHomeCity: setHomeCity,
+    makeDrawerEntry: makeDrawerEntry,
+    tripDataCounts: tripDataCounts,
+    deleteTrip: deleteTrip,
+    nextTrip: nextTrip,
+    renderNextPack: renderNextPack,
     customs: customs,
     addCustom: addCustom,
     watches: watches,
@@ -1643,6 +1779,13 @@
     dropPhotoIfUnused: dropPhotoIfUnused,
     homes: homes,
     addHome: addHome,
+    homeCity: homeCity,
+    setHomeCity: setHomeCity,
+    makeDrawerEntry: makeDrawerEntry,
+    tripDataCounts: tripDataCounts,
+    deleteTrip: deleteTrip,
+    nextTrip: nextTrip,
+    renderNextPack: renderNextPack,
     renameHome: renameHome,
     sampleMode: sampleMode,
     enterSample: enterSample,

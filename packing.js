@@ -718,6 +718,13 @@
     return e;
   }
 
+  // 新增衣服／抽屜物品時勾了「加入下一趟的打包清單」：加進那趟的清單，放在它預設的行李區
+  function addToTrip(t, m) {
+    if (!t || !m) return null;
+    var list = ensureList(t);
+    return addToList(list, m);
+  }
+
   function pickToList(id) {
     var m = App.entryById(id);
     if (!m) return;
@@ -1006,7 +1013,7 @@
   }
 
   window.Packing = {
-    prepareTrip: prepareTrip,
+    prepareTrip: prepareTrip, addToTrip: addToTrip,
     show: show, tripBagIds: tripBagIds, openAdd: openAdd, tripZones: tripZones, setTripZone: setTripZone, zoneWeights: zoneWeights,
     seasonOptions: function () { return SEASONS; }, actOptions: function () { return ACTS.map(function (a) { return a.name; }); },
     guessSeasons: tripSeasons, guessActs: guessActs, zones: function () { return ZONES; }, pendingByBag: pendingByBag, bagPending: bagPending, checkEntry: checkEntry, uncheckItem: uncheckItem,

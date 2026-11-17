@@ -9,14 +9,14 @@
   <meta name="apple-mobile-web-app-title" content="Carry My Own">
   <title>Carry My Own</title>
   <!-- 圖示：瀏覽器分頁（網址前面）、iPad 主畫面、安裝成 app 時用 -->
-  <link rel="icon" type="image/svg+xml" href="icons/favicon.svg?v=20261117f">
-  <link rel="icon" href="icons/favicon-32.png?v=20261117f" sizes="32x32" type="image/png">
-  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png?v=20261117f">
+  <link rel="icon" type="image/svg+xml" href="icons/favicon.svg?v=20261117g">
+  <link rel="icon" href="icons/favicon-32.png?v=20261117g" sizes="32x32" type="image/png">
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png?v=20261117g">
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&family=Noto+Serif+TC:wght@300;400;600&display=swap">
-  <link rel="stylesheet" href="style.css?v=20261117f">
+  <link rel="stylesheet" href="style.css?v=20261117g">
 </head>
 <body>
   <main>
@@ -287,6 +287,7 @@
             </label>
             <label>單位<select id="dr-add-unit"></select></label>
           </div>
+          <label id="dr-next-wrap" class="pk-only next-pack" hidden><input id="dr-next" type="checkbox"><span>加入下一趟的打包清單 <span id="dr-next-trip" class="muted small"></span></span></label>
         </div>
       </form>
 
@@ -395,6 +396,7 @@
             </div>
             <span id="cf-heavy-tip" class="heavy-tip" hidden>👟 鞋子比較重，建議秤一下實際重量再填</span>
           </label>
+          <label id="cf-next-wrap" class="pk-only next-pack" hidden><input id="cf-next" type="checkbox"><span>加入下一趟的打包清單 <span id="cf-next-trip" class="muted small"></span></span></label>
         </div>
 
         <button type="submit" class="btn primary">儲存</button>
@@ -720,8 +722,9 @@
       <div class="account-homes">
         <div class="field-title">我的家</div>
         <div id="account-home-list"></div>
-        <form id="account-home-add" class="dr-add-row" autocomplete="off">
-          <input id="account-home-name" maxlength="20" placeholder="新增一個家，例如：東京">
+        <form id="account-home-add" class="home-add-form" autocomplete="off">
+          <input id="account-home-city" maxlength="30" placeholder="所在城市">
+          <input id="account-home-name" maxlength="20" placeholder="名字（選填）">
           <button type="submit" class="btn ghost dr-add-btn">新增</button>
         </form>
       </div>
@@ -754,9 +757,10 @@
         <div id="ob-dots" class="ob-dots"></div>
         <div class="eyebrow">STEP 1</div>
         <h2 class="ob-title">你有哪些家？</h2>
-        <p class="muted small">輸入城市名稱，可以新增多個，例如「台北」「東京」。之後也能在右上角帳號裡修改。</p>
-        <form id="ob-home-form" class="dr-add-row" autocomplete="off">
-          <input id="ob-home" maxlength="20" placeholder="城市名稱" enterkeyhint="done">
+        <p class="muted small">輸入家的所在城市，可以新增多個，例如「台北」「東京」。家的名字可以自己取（例如「我的公寓」「爸媽家」），不填就用城市名稱。之後也能在右上角帳號裡修改。</p>
+        <form id="ob-home-form" class="home-add-form" autocomplete="off">
+          <input id="ob-home-city" maxlength="30" placeholder="所在城市">
+          <input id="ob-home" maxlength="20" placeholder="名字（選填）" enterkeyhint="done">
           <button type="submit" class="btn ghost dr-add-btn">新增</button>
         </form>
         <div id="ob-homes" class="chips"></div>
@@ -831,22 +835,22 @@
     </div>
   </div>
 
-  <script src="weights.js?v=20261117f"></script>
-  <script src="photos.js?v=20261117f"></script>
-  <script src="clothing.js?v=20261117f"></script>
-  <script src="app.js?v=20261117f"></script>
-  <script src="closet.js?v=20261117f"></script>
-  <script src="trips.js?v=20261117f"></script>
-  <script src="organize.js?v=20261117f"></script>
-  <script src="packing.js?v=20261117f"></script>
-  <script src="drawer.js?v=20261117f"></script>
-  <script src="bags.js?v=20261117f"></script>
-  <script src="shop.js?v=20261117f"></script>
-  <script src="sample-data.js?v=20261117f"></script>
-  <script src="onboard.js?v=20261117f"></script>
-  <script src="nav.js?v=20261117f"></script>
-  <script src="backup.js?v=20261117f"></script>
+  <script src="weights.js?v=20261117g"></script>
+  <script src="photos.js?v=20261117g"></script>
+  <script src="clothing.js?v=20261117g"></script>
+  <script src="app.js?v=20261117g"></script>
+  <script src="closet.js?v=20261117g"></script>
+  <script src="trips.js?v=20261117g"></script>
+  <script src="organize.js?v=20261117g"></script>
+  <script src="packing.js?v=20261117g"></script>
+  <script src="drawer.js?v=20261117g"></script>
+  <script src="bags.js?v=20261117g"></script>
+  <script src="shop.js?v=20261117g"></script>
+  <script src="sample-data.js?v=20261117g"></script>
+  <script src="onboard.js?v=20261117g"></script>
+  <script src="nav.js?v=20261117g"></script>
+  <script src="backup.js?v=20261117g"></script>
   <script src="vendor/supabase.js"></script>
-  <script src="cloud.js?v=20261117f"></script>
+  <script src="cloud.js?v=20261117g"></script>
 </body>
 </html>

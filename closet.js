@@ -336,6 +336,8 @@
     });
 
     $('#cf-extra').hidden = !m;
+    // 新增衣服：有下一趟旅程時，可以勾「加入下一趟的打包清單」（預設不勾）
+    if (!m) App.renderNextPack('cf'); else $('#cf-next-wrap').hidden = true;
     if (m) renderPack();
     renderStraps(m);
     renderLocation(m);
@@ -353,7 +355,7 @@
     else if (m.unit === '套') m.unit = '個';
     m.updatedAt = Date.now();
   }
-  // o：{ name, weight(kg), estimated, tags（Clothing 的標籤，含 home）, id?, extra? }
+  // o：{ name, weight(kg), estimated, tags（Clothing 的標籤，含 home）, id?, extra?, packTrip?（要加進打包清單的旅程） }
   function create(o) {
     var base = { unit: '個', category: '必備品', bagId: st().bags[0] && st().bags[0].id, uses: 0 };
     if (o.id) base.id = o.id;
@@ -361,6 +363,7 @@
     fillCloth(m, o);
     st().memory.push(m);
     if (o.tags.home) { m.moves = [{ home: o.tags.home, date: App.todayStr() }]; m.location = { state: 'home', home: o.tags.home, since: App.todayStr() }; }
+    if (o.packTrip && window.Packing) window.Packing.addToTrip(o.packTrip, m);   // 勾了「加入下一趟的打包清單」
     return m;
   }
 
@@ -374,7 +377,8 @@
 
     var isNew = !editing;
     var before = isNew ? null : App.locOf(App.entryById(editing));
-    var fields = { name: name, weight: weight, estimated: !weightByUser, tags: tags };
+    var fields = { name: name, weight: weight, estimated: !weightByUser, tags: tags,
+      packTrip: isNew && $('#cf-next').checked ? App.nextTrip() : null };
     var m;
     if (isNew) m = create(fields);
     else {
