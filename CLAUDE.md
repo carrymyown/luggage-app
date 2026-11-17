@@ -12,6 +12,7 @@
   - 購物 `Shop.writePurchase`
   - 禮物 `Shop.writeGift`
   - 常搭航空公司與額度 `Onboard.setDefaults`
+  - 必帶清單 `App.addMust(名字, 預設行李, 重量)`（預設內容在 app.js 的 `DEFAULT_MUST`）
   - 購物目標：`Trips.create` 的 `shopGoal`
   - 表單存檔時也呼叫同一個函式，所以兩邊不會分岔。新增功能時，請照這個做法，把「新增一筆」寫成函式，表單和範例共用。
 - **每次新增或修改功能、欄位、選項時**，都要一起檢查並更新 `sample-data.js`，讓範例能示範到最新的功能。在回報裡寫明「範例改了什麼」；沒改也要說明為什麼不需要改。

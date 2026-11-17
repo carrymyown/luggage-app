@@ -1753,3 +1753,50 @@ img.bp-thumb.no-photo, img.bg-thumb.no-photo, img.org-thumb.no-photo, img.chip-t
   padding: 10px 20px; border-radius: var(--radius); cursor: pointer; white-space: nowrap; animation: cmo-up .22s var(--ease);
 }
 .app-version { text-align: center; margin: 14px 0 0; font-family: var(--num); letter-spacing: 0.12em; }
+
+/* ---------- 打包：兩個分頁（要帶什麼／行李箱） ---------- */
+.pk-tabs { margin: var(--sp-3) 0 var(--sp-2); border-bottom: 1px solid var(--line); gap: 28px; }
+.pk-tabs button { font-size: 0.95rem; letter-spacing: 0.14em; padding: 8px 0 10px; margin-bottom: -1px; }
+.pk-tabs small { font-family: var(--num); font-size: 0.8rem; margin-left: 4px; color: var(--muted); letter-spacing: 0; }
+.pk-add-btn { margin: 4px 0 var(--sp-2); }
+
+/* 分頁一：一列＝打勾框＋品名，下面一行小字：重量、放哪個行李（顯示還能放多少） */
+.pk-todo { display: flex; align-items: flex-start; gap: 14px; padding: 14px 0; border-top: 1px solid var(--line); transition: opacity .2s var(--ease), transform .2s var(--ease); }
+.pk-todo .pk-check { flex: none; margin-top: 2px; }
+.pk-todo-main { flex: 1; min-width: 0; }
+.pk-todo .pk-name { display: block; width: 100%; text-align: left; border: 0; background: none; padding: 0; font: inherit; color: var(--text); cursor: pointer; }
+.pk-todo-sub { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 12px; margin-top: 4px; }
+.pk-zone-pick {
+  width: auto; max-width: 100%; min-height: 0; margin: 0; padding: 2px 22px 2px 0; border: 0; border-bottom: 1px solid var(--line);
+  background: transparent; font-size: var(--fs-meta); letter-spacing: 0.04em; color: var(--text); border-radius: 0;
+}
+.pk-over { font-size: var(--fs-meta); color: var(--bad); letter-spacing: 0.04em; }
+.pk-must { display: inline-block; margin-left: 8px; padding: 0 6px; border: 1px solid var(--gold); color: var(--gold); font-size: 0.62rem; letter-spacing: 0.16em; vertical-align: 2px; line-height: 1.6; }
+.pk-todo.leaving { opacity: 0; transform: translateX(16px); }
+.pk-todo.leaving .pk-name { text-decoration: line-through; text-decoration-color: var(--muted); }
+.pk-done-note { margin: var(--sp-2) 0 0; }
+.pk-all-done { font-family: var(--serif); font-weight: 300; font-size: var(--fs-sub); text-align: center; padding: var(--sp-3) 0; margin: 0; }
+
+/* 分頁二：每個行李箱標題旁顯示還能放多少（快滿變黃、超重變紅） */
+.pk-zone .pk-zone-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 12px; padding-bottom: 8px; }
+.pk-bag-name { flex: 1; min-width: 0; }
+.pk-box-remain { font-size: var(--fs-meta); letter-spacing: 0.06em; color: var(--ok); }
+.pk-box-remain b { font-family: var(--num); font-weight: 500; font-size: 1.05rem; }
+.pk-box-remain.warn { color: var(--warn); }
+.pk-box-remain.bad { color: var(--bad); }
+.pk-box-remain.none { color: var(--muted); }
+.pk-in { display: flex; align-items: center; gap: 12px; padding: 10px 0; border-top: 1px solid var(--line); }
+.pk-in .pk-name { flex: 1; min-width: 0; text-align: left; border: 0; background: none; padding: 0; font: inherit; color: var(--text); cursor: pointer; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pk-handle { flex: none; color: var(--muted); cursor: grab; touch-action: none; display: inline-flex; padding: 4px 0; }
+.pk-uncheck { flex: none; padding: 0; color: var(--muted); }
+.pk-box-empty { padding: 10px 0; margin: 0; border-top: 1px solid var(--line); }
+.pk-zone.over { background: rgba(201, 164, 92, .08); }
+
+/* 必帶清單 */
+.must-row { display: flex; align-items: center; gap: 12px; padding: 8px 0; border-top: 1px solid var(--line); }
+.must-name { flex: 1; min-width: 0; }
+.must-row select { width: auto; margin: 0; min-height: 0; padding: 4px 22px 4px 6px; font-size: var(--fs-meta); }
+.must-add { display: grid; grid-template-columns: 1fr auto auto; gap: 8px; align-items: center; margin: var(--sp-2) 0; }
+.must-add input, .must-add select { margin: 0; min-width: 0; }
+.pk-bag-name { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+@media (max-width: 599px) { .pk-zone .pk-box-remain { flex-basis: 100%; } }

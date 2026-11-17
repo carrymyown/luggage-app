@@ -26,12 +26,19 @@
   var ZONES = [['pouch', '隨身小包'], ['personal', '背包'], ['carry', '手提'], ['checked', '托運']];
   function zoneName(z) { return (ZONES.find(function (x) { return x[0] === z; }) || [, ''])[1]; }
 
-  // 每趟都要提醒的東西
-  var MUST = [
-    { key: '護照', kw: ['護照', 'passport'] },
-    { key: '錢包', kw: ['錢包', '皮夾'] },
-    { key: '充電線', kw: ['充電線', '傳輸線', '充電器'] }
-  ];
+  // 每趟必帶：改成讀帳號選單裡的「必帶清單」（App.mustList）
+  // 比對名稱：一邊包含另一邊就算同一樣（例如抽屜的「充電線」＝必帶的「充電線一包」）
+  function sameThing(a, b) {
+    var x = norm(a), y = norm(b);
+    return !!x && !!y && (x === y || (Math.min(x.length, y.length) >= 2 && (x.indexOf(y) >= 0 || y.indexOf(x) >= 0)));
+  }
+  function mustFor(name) { return App.mustList().find(function (m) { return sameThing(m.name, name); }) || null; }
+  function isMust(e) { return !!(e.must || mustFor(e.name)); }
+  // 預設放哪個行李（那個行李這趟沒帶時，依序改放下一個）
+  var PREFER = {
+    pouch: ['pouch', 'personal', 'carry', 'checked'], personal: ['personal', 'carry', 'checked', 'pouch'],
+    carry: ['carry', 'personal', 'pouch', 'checked'], checked: ['checked', 'personal', 'carry', 'pouch']
+  };
   // 最貼身、最常拿的：新產生的清單預設放隨身小包
   var POUCH = ['護照', 'passport', '錢包', '皮夾', '手機', 'iphone', '簽證'];
   // 只能手提（不能託運或不該託運）
@@ -180,7 +187,9 @@
 
   function defaultZone(list, e) {
     var act = activeZones(list);
-    var order = has(e.name, POUCH) ? ['pouch', 'personal', 'carry', 'checked']
+    var mu = mustFor(e.name);
+    var pz = e.prefer || (mu && mu.zone);
+    var order = pz && PREFER[pz] ? PREFER[pz] : has(e.name, POUCH) ? ['pouch', 'personal', 'carry', 'checked']
       : e.carryOnly ? ['carry', 'personal', 'pouch', 'checked']
       : e.category === '電線電器' ? ['carry', 'personal', 'checked', 'pouch'] : ['checked', 'carry', 'personal', 'pouch'];
     return order.find(function (z) { return act.indexOf(z) >= 0; }) || act[0] || 'carry';
@@ -255,30 +264,31 @@
       }
     });
 
-    // 每趟必帶：護照、錢包、充電線、睡衣
-    MUST.forEach(function (mu) {
-      var inList = list.entries.some(function (e) { return e.status !== 'removed' && has(e.name, mu.kw); });
-      if (inList || have['must:' + mu.key]) return;
-      var m = st().memory.find(function (x) { return !App.isCloth(x) && has(x.name, mu.kw); });
-      if (m && !have['c:' + m.id]) { var e = fromCatalog(m, 'must'); add(e); return; }
-      if (m) return;
-      var ref = App.findRef(mu.key);
-      add(mkEntry({ key: 'must:' + mu.key, name: mu.key, weight: ref ? ref.weight : 0.1,
-        category: ref ? ref.category : '必備品', carryOnly: has(mu.key, CARRY_ONLY), source: 'must' }));
-    });
-    var isSleep = function (e) {
-      var m = e.catalogId && App.entryById(e.catalogId);
-      return (m && m.clothing && m.clothing.group === '睡衣') || e.key === 'must:睡衣';
-    };
-    if (!list.entries.some(isSleep)) {
-      var pj = st().memory.find(function (m) {
-        if (!(m.clothing && m.clothing.group === '睡衣')) return false;
-        var loc = App.locOf(m);
-        return !(loc.state === 'home' && rh.origin && loc.home !== rh.origin);
+    // 每趟必帶清單（帳號選單裡可以改）：產生新清單時加進「要帶什麼」，放在預設的行李
+    App.mustList().forEach(function (mu) {
+      var key = 'must:' + mu.name;
+      if (have[key]) return;
+      var same = list.entries.filter(function (e) { return e.status !== 'removed' && sameThing(e.name, mu.name); });
+      if (same.length) { same.forEach(function (e) { e.must = true; }); return; }
+      // 衣櫃／抽屜裡有同樣的東西：用那一件（重量、照片一致）；放在別的家、這趟帶不到的不算
+      var m = st().memory.find(function (x) {
+        var match = sameThing(x.name, mu.name) || (mu.name === '睡衣' && x.clothing && x.clothing.group === '睡衣');
+        if (!match) return false;
+        var loc = App.locOf(x);
+        return !(loc && loc.state === 'home' && rh.origin && loc.home !== rh.origin);
       });
-      if (pj) add(fromCatalog(pj, 'must'));
-      else add(mkEntry({ key: 'must:睡衣', name: '睡衣', weight: 0.35, unit: '套', source: 'must' }));
-    }
+      var e;
+      if (m) {
+        if (have['c:' + m.id]) return;
+        e = fromCatalog(m, 'must');
+      } else {
+        var ref = App.findRef(mu.name);
+        e = mkEntry({ key: key, name: mu.name, weight: Number(mu.weight) || (ref ? ref.weight : 0.1),
+          category: ref ? ref.category : '必備品', carryOnly: has(mu.name, CARRY_ONLY), source: 'must' });
+      }
+      e.must = true; e.prefer = mu.zone;
+      add(e);
+    });
     touch(list);
     return added;
   }
@@ -493,36 +503,109 @@
   }
 
   // 每個物品只顯示：打勾框、品名、重量；點品名可以移到別區或刪除
-  function rowHTML(e) {
-    return '<div class="pk-row pk-simple' + (e.checked ? ' done' : '') + '" data-e="' + esc(e.id) + '">' +
-      '<button type="button" class="pk-check" data-check="' + esc(e.id) + '" aria-label="' + (e.checked ? '取消收好' : '收好了') + '">' + (e.checked ? '✓' : '') + '</button>' +
-      '<button type="button" class="pk-name" data-row="' + esc(e.id) + '">' + esc(e.name) + (e.qty > 1 ? ' × ' + e.qty : '') + '</button>' +
-      '<span class="pk-w-item">' + esc(App.fmtWeight(e.weight * e.qty)) + '</span></div>';
+  // ---------- 每個行李箱還能放多少 ----------
+  // 隨身小包算在背包額度時，兩個一起算（顯示「和背包共用」）
+  function boxRemains() {
+    var gr = App.groupRemains(curTrip);
+    var out = {};
+    activeZones(curList).forEach(function (z) {
+      var g = App.groupOf(z, curTrip);
+      if (!g) { out[z] = { none: true, label: '不計算重量' }; return; }
+      var x = gr[g] || { allow: null, load: 0, remain: null };
+      out[z] = { group: g, allow: x.allow, remain: x.remain, shared: g !== z || (z === 'personal' && activeZones(curList).indexOf('pouch') >= 0 && App.groupOf('pouch', curTrip) === 'personal') };
+    });
+    return out;
   }
+  function boxText(b) {
+    if (b.none) return '不計算重量';
+    if (b.allow == null) return '尚未設定額度';
+    return b.remain < 0 ? '超重 ' + fmt(-b.remain) + ' kg' : '還能放 ' + fmt(b.remain) + ' kg';
+  }
+  function boxLevel(b) { return b.none || b.allow == null ? 'none' : level(b.remain, b.allow); }
+
+  // 分頁一「要帶什麼」：打勾框、品名、重量，下面一行選放哪個行李（顯示那個行李還能放多少）
+  function todoRowHTML(e, boxes, act) {
+    var b = boxes[e.zone] || {};
+    var w = e.weight * e.qty;
+    var over = !b.none && b.allow != null && b.remain - w < 0;
+    return '<div class="pk-row pk-todo" data-e="' + esc(e.id) + '">' +
+      '<button type="button" class="pk-check" data-check="' + esc(e.id) + '" aria-label="放進去了"></button>' +
+      '<div class="pk-todo-main">' +
+        '<button type="button" class="pk-name" data-row="' + esc(e.id) + '">' + esc(e.name) + (e.qty > 1 ? ' × ' + e.qty : '') +
+          (isMust(e) ? '<span class="pk-must">必帶</span>' : '') + '</button>' +
+        '<div class="pk-todo-sub"><span class="pk-w-item">' + esc(App.fmtWeight(w)) + '</span>' +
+          '<select class="pk-zone-pick" data-zone-pick="' + esc(e.id) + '" aria-label="放哪個行李">' + act.map(function (z) {
+            return '<option value="' + z + '"' + (z === e.zone ? ' selected' : '') + '>' + zoneName(z) + '・' + boxText(boxes[z]) + '</option>';
+          }).join('') + '</select>' +
+          (over ? '<span class="pk-over">放進去會超重 ' + fmt(w - b.remain) + ' kg</span>' : '') +
+        '</div>' +
+      '</div></div>';
+  }
+
+  // 分頁二「行李箱」：每個箱子裡已經放進去的東西；可以拖到別的箱子，或取消打勾移回分頁一
+  function boxRowHTML(e) {
+    return '<div class="pk-row pk-in" data-e="' + esc(e.id) + '">' +
+      '<span class="pk-handle" data-handle="' + esc(e.id) + '" aria-label="拖到別的行李"><svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor" aria-hidden="true">' +
+        '<circle cx="9" cy="6" r="1.2"/><circle cx="15" cy="6" r="1.2"/><circle cx="9" cy="12" r="1.2"/><circle cx="15" cy="12" r="1.2"/><circle cx="9" cy="18" r="1.2"/><circle cx="15" cy="18" r="1.2"/></svg></span>' +
+      '<button type="button" class="pk-name" data-row="' + esc(e.id) + '">' + esc(e.name) + (e.qty > 1 ? ' × ' + e.qty : '') + '</button>' +
+      '<span class="pk-w-item">' + esc(App.fmtWeight(e.weight * e.qty)) + '</span>' +
+      '<button type="button" class="link small pk-uncheck" data-uncheck="' + esc(e.id) + '">取消</button></div>';
+  }
+
+  var packTab = 'todo';
+  try { packTab = localStorage.getItem('luggage-pack-tab') === 'bags' ? 'bags' : 'todo'; } catch (e) { /* 不影響 */ }
 
   function render() {
     var list = curList;
     // 只有一趟旅程時不顯示選旅程
     $('#pack-trip-wrap').hidden = st().trips.length < 2;
     renderRemain();
-
-    // 依隨身小包、背包、手提、托運分組；打勾的變淡、排到該組最下面
     var act = activeZones(list);
+    var boxes = boxRemains();
+    var take = list.entries.filter(function (e) { return e.status === 'take' && act.indexOf(e.zone) >= 0; });
+    var todo = take.filter(function (e) { return !e.checked; });
+    var done = take.filter(function (e) { return e.checked; });
+
+    document.querySelectorAll('[data-pack-tab]').forEach(function (b) { b.classList.toggle('on', b.getAttribute('data-pack-tab') === packTab); });
+    $('#pk-todo-n').textContent = todo.length;
+    $('#pk-bags-n').textContent = done.length;
+    $('#pack-tab-todo').hidden = packTab !== 'todo';
+    $('#pack-tab-bags').hidden = packTab !== 'bags';
+
+    // 分頁一：要帶但還沒放進去的；必帶的排前面，再依預設行李
+    var order = { pouch: 0, personal: 1, carry: 2, checked: 3 };
+    todo.sort(function (a, b) { return (isMust(b) ? 1 : 0) - (isMust(a) ? 1 : 0) || order[a.zone] - order[b.zone]; });
+    $('#pack-todo').innerHTML = todo.length ? todo.map(function (e) { return todoRowHTML(e, boxes, act); }).join('') :
+      (done.length ? '<p class="pk-all-done">全部都放進去了</p>' : '<p class="muted small">清單是空的。點「＋ 新增」從衣櫃、抽屜挑，或直接輸入。</p>');
+    $('#pack-done-note').innerHTML = done.length ? '<button type="button" class="link small" data-pack-tab="bags">已經放進行李 ' + done.length + ' 項・看行李箱 ›</button>' : '';
+
+    // 分頁二：依隨身小包、背包、手提、托運分組
     $('#pack-zones').innerHTML = act.map(function (z) {
-      var rows = list.entries.filter(function (e) { return e.status === 'take' && e.zone === z; })
-        .sort(function (a, b) { return (a.checked ? 1 : 0) - (b.checked ? 1 : 0); });
-      if (!rows.length) return '';
+      var rows = done.filter(function (e) { return e.zone === z; });
+      var b = boxes[z];
+      var bag = App.bagById(list.zones[z].bagId);
       return '<div class="pk-zone" data-zone="' + z + '">' +
-        '<div class="pk-zone-head"><b>' + zoneName(z) + '</b></div>' +
-        rows.map(rowHTML).join('') + '</div>';
-    }).join('') || '<p class="muted small">清單是空的。點「＋ 新增」從衣櫃、抽屜挑，或直接輸入。</p>';
+        '<div class="pk-zone-head"><b>' + zoneName(z) + '</b>' +
+          '<span class="pk-bag-name muted small">' + esc(bag && !bag.auto ? bag.name : '尚未選擇行李箱') + '</span>' +
+          '<span class="pk-box-remain ' + boxLevel(b) + '">' + (b.shared && !b.none ? '和' + (z === 'pouch' ? '背包' : '隨身小包') + '共用・' : '') +
+            (b.none || b.allow == null ? boxText(b) : b.remain < 0 ? '這個箱子超重 <b>' + fmt(-b.remain) + '</b> kg' : '這個箱子還能放 <b>' + fmt(b.remain) + '</b> kg') + '</span></div>' +
+        (rows.length ? rows.map(boxRowHTML).join('') : '<p class="pk-box-empty muted small">還沒有放東西</p>') + '</div>';
+    }).join('');
 
     var home = list.entries.filter(function (e) { return e.status === 'home'; });
-    $('#pack-home-wrap').hidden = !home.length;
+    $('#pack-home-wrap').hidden = !home.length || packTab !== 'todo';
     $('#pack-home').innerHTML = home.map(function (e) {
       return '<button type="button" class="pk-row pk-simple gray" data-take="' + esc(e.id) + '" aria-label="改成要帶：' + esc(e.name) + '">' +
         '<span class="pk-name">' + esc(e.name) + '</span><span class="pk-w-item">' + esc(App.fmtWeight(e.weight * e.qty)) + '</span></button>';
     }).join('');
+  }
+
+  // 放進去會不會超重：會的話先問一下
+  function okToPut(e, z) {
+    var b = boxRemains()[z];
+    var w = e.weight * e.qty;
+    if (!b || b.none || b.allow == null || b.remain - w >= 0) return true;
+    return confirm('「' + e.name + '」放進' + zoneName(z) + '會超重 ' + fmt(w - b.remain) + ' kg。\n還是要放進去嗎？');
   }
 
   // 最上方一行：還能放幾公斤（和首頁旅程卡的剩餘公斤數同一個計算；打勾就扣、取消打勾就加回來）
@@ -541,15 +624,47 @@
 
   // ---------- 操作 ----------
   $('#pack-trip').addEventListener('change', function () { var t = tripById(this.value); if (t) open(t); });
+  // 分頁一：改放哪個行李（會超重就先提醒）
+  $('#view-pack').addEventListener('change', function (ev) {
+    var el = ev.target.closest('[data-zone-pick]');
+    if (!el || !curList) return;
+    var e = entryById(el.getAttribute('data-zone-pick'));
+    var z = el.value;
+    if (!e || z === e.zone) return;
+    var b = boxRemains()[z], w = e.weight * e.qty;
+    if (b && !b.none && b.allow != null && b.remain - w < 0) App.toast('提醒：放進' + zoneName(z) + '會超重 ' + fmt(w - b.remain) + ' kg');
+    moveEntry(curList, e, z);
+    commit();
+  });
 
   $('#view-pack').addEventListener('click', function (ev) {
     if (!curList) return;
     var t = ev.target, el;
+    if ((el = t.closest('[data-pack-tab]'))) {
+      packTab = el.getAttribute('data-pack-tab');
+      try { localStorage.setItem('luggage-pack-tab', packTab); } catch (e0) { /* 不影響 */ }
+      render();
+      window.scrollTo(0, 0);
+      return;
+    }
     if ((el = t.closest('[data-check]'))) {
       var e = entryById(el.getAttribute('data-check'));
+      if (!e.checked && !okToPut(e, e.zone)) return;
+      // 打勾的小動畫，接著這項從「要帶什麼」劃掉、移到「行李箱」
+      if (!e.checked && window.UI) window.UI.pop(el);
+      var row = el.closest('.pk-row');
+      if (row) row.classList.add('leaving');
       setChecked(curList, e, !e.checked);
+      App.save();
+      setTimeout(function () { render(); }, row && !matchMedia('(prefers-reduced-motion: reduce)').matches ? 220 : 0);
+      App.toast('已放進' + zoneName(e.zone));
+      return;
+    }
+    if ((el = t.closest('[data-uncheck]'))) {
+      var eu = entryById(el.getAttribute('data-uncheck'));
+      setChecked(curList, eu, false);
       commit();
-      if (e.checked && window.UI) window.UI.pop(document.querySelector('#view-pack [data-check="' + e.id + '"]'));   // 打勾的小動畫
+      App.toast('已移回「要帶什麼」：' + eu.name);
       return;
     }
     if ((el = t.closest('[data-row]'))) { openMove(entryById(el.getAttribute('data-row'))); return; }
@@ -641,6 +756,7 @@
   function tryMove(e, z) {
     if (e.zone === z) return;
     if (e.carryOnly && z === 'checked' && !confirm('「' + e.name + '」標記為只能手提，確定要放到托運嗎？')) return;
+    if (e.checked && !okToPut(e, z)) return;   // 已經放進去的搬到別的箱子：會超重先提醒
     moveEntry(curList, e, z);
     App.toast('已移到' + zoneName(z) + '：' + e.name);
     commit();
@@ -652,7 +768,8 @@
     $('#pk-move-title').textContent = '「' + e.name + '」';
     $('#pk-move-list').innerHTML = activeZones(curList).map(function (z) {
       return '<button type="button" class="btn ghost sheet-bag' + (z === e.zone ? ' cur' : '') + '" data-move-zone="' + z + '">' +
-        (z === e.zone ? '放在' + zoneName(z) + '（目前）' : '移到' + zoneName(z)) + '</button>';
+        (z === e.zone ? '放在' + zoneName(z) + '（目前）' : '移到' + zoneName(z)) +
+        '<span class="muted small">' + boxText(boxRemains()[z]) + '</span></button>';
     }).join('') + '<button type="button" class="btn danger" data-move-remove="1">從清單刪除</button>';
     $('#pk-move-sheet').hidden = false;
   }
@@ -673,7 +790,8 @@
   function openAdd() {
     if (!curList || $('#pack-main').hidden) return;
     $('#pk-add-name').value = ''; $('#pk-add-weight').value = ''; $('#pk-add-qty').value = 1; $('#pk-add-only').checked = false;
-    $('#pk-add-zone').innerHTML = activeZones(curList).map(function (z) { return '<option value="' + z + '">' + zoneName(z) + '</option>'; }).join('');
+    var bx = boxRemains();
+    $('#pk-add-zone').innerHTML = activeZones(curList).map(function (z) { return '<option value="' + z + '">' + zoneName(z) + '・' + boxText(bx[z]) + '</option>'; }).join('');
     var names = [];
     st().memory.forEach(function (m) { if (names.indexOf(m.name) < 0) names.push(m.name); });
     (window.REFERENCE_WEIGHTS || []).forEach(function (r) { if (names.indexOf(r.name) < 0) names.push(r.name); });
@@ -802,6 +920,17 @@
     var over = zoneStats(list, curTrip).filter(function (s) { return s.level === 'bad'; });
 
     var html = '';
+    // 必帶清單裡還沒打勾的：放最上面特別提醒
+    var mustTodo = todo.filter(isMust);
+    var mustMissing = App.mustList().filter(function (mu) { return !take.some(function (e) { return sameThing(e.name, mu.name); }); });
+    html += '<div class="ck-block' + (mustTodo.length || mustMissing.length ? ' bad' : '') + '"><b>必帶清單</b>' +
+      (mustTodo.length || mustMissing.length ? mustTodo.map(function (e) {
+        return '<div class="ck-row"><span><b>' + esc(e.name) + '</b> 還沒放進去 <span class="muted small">' + zoneName(e.zone) + '</span></span>' +
+          '<button type="button" class="link" data-ck-done="' + esc(e.id) + '">放進去了</button></div>';
+      }).join('') + mustMissing.map(function (mu) {
+        return '<div class="ck-row"><span><b>' + esc(mu.name) + '</b> 不在這趟的清單上</span>' +
+          '<button type="button" class="link" data-ck-must="' + esc(mu.id) + '">加入清單</button></div>';
+      }).join('') : '<div class="muted small">必帶的東西都放進去了。</div>') + '</div>';
     // 護照、錢包：特別確認在隨身小包裡
     var pouchOn = act.indexOf('pouch') >= 0;
     var pw = [['護照', ['護照', 'passport']], ['錢包', ['錢包', '皮夾']]].map(function (x) {
@@ -846,6 +975,19 @@
       curList.entries.push(ne); touch(curList); App.save(); render(); openCheck(); return;
     }
     if ((id = t.getAttribute('data-ck-done'))) { setChecked(curList, entryById(id), true); App.save(); render(); openCheck(); return; }
+    if ((id = t.getAttribute('data-ck-must'))) {
+      // 必帶清單上有、這趟清單上沒有：加進「要帶什麼」，放在預設的行李
+      var mu = App.mustList().find(function (x) { return x.id === id; });
+      if (mu) {
+        var dead = curList.entries.find(function (x) { return x.status === 'removed' && sameThing(x.name, mu.name); });
+        var mref = App.findRef(mu.name);
+        var me = dead || mkEntry({ key: 'must:' + mu.name, name: mu.name, weight: Number(mu.weight) || (mref ? mref.weight : 0.1), category: mref ? mref.category : '必備品', carryOnly: has(mu.name, CARRY_ONLY), source: 'must' });
+        me.must = true; me.prefer = mu.zone; me.status = 'take'; me.zone = defaultZone(curList, me);
+        if (!dead) curList.entries.push(me);
+        touch(curList); App.save(); render(); openCheck();
+      }
+      return;
+    }
     if ((id = t.getAttribute('data-ck-drop'))) { removeEntry(curList, entryById(id)); App.save(); render(); openCheck(); return; }
     if ((id = t.getAttribute('data-ck-add'))) {
       var m = App.entryById(id);
@@ -1013,6 +1155,46 @@
     App.save();
     return '';
   }
+
+  // ---------- 必帶清單（帳號選單 → 必帶清單） ----------
+  function zoneOptions(sel) {
+    return ZONES.map(function (z) { return '<option value="' + z[0] + '"' + (z[0] === sel ? ' selected' : '') + '>' + z[1] + '</option>'; }).join('');
+  }
+  function renderMust() {
+    var list = App.mustList();
+    $('#must-list').innerHTML = list.length ? list.map(function (m) {
+      return '<div class="must-row"><span class="must-name">' + esc(m.name) + '</span>' +
+        '<select data-must-zone="' + esc(m.id) + '" aria-label="預設行李">' + zoneOptions(m.zone) + '</select>' +
+        '<button type="button" class="link small ah-del" data-must-del="' + esc(m.id) + '">刪除</button></div>';
+    }).join('') : '<p class="muted small">必帶清單是空的。</p>';
+    $('#must-zone').innerHTML = zoneOptions('checked');
+  }
+  $('#must-open').addEventListener('click', function () {
+    $('#account-sheet').hidden = true;
+    renderMust();
+    $('#must-sheet').hidden = false;
+  });
+  $('#must-sheet').addEventListener('click', function (ev) {
+    var t = ev.target, d = t.closest('[data-must-del]');
+    if (d) {
+      var m = App.mustList().find(function (x) { return x.id === d.getAttribute('data-must-del'); });
+      if (m && confirm('要把「' + m.name + '」從必帶清單刪除嗎？\n（已經產生的打包清單不會變）')) { App.removeMust(m.id); renderMust(); }
+      return;
+    }
+    if (t.id === 'must-sheet' || t.id === 'must-close') $('#must-sheet').hidden = true;
+  });
+  $('#must-sheet').addEventListener('change', function (ev) {
+    var z = ev.target.closest('[data-must-zone]');
+    if (z) { App.setMustZone(z.getAttribute('data-must-zone'), z.value); App.toast('預設放' + zoneName(z.value)); }
+  });
+  $('#must-add').addEventListener('submit', function (ev) {
+    ev.preventDefault();
+    var msg = App.addMust($('#must-name').value, $('#must-zone').value);
+    if (msg) { App.toast(msg); return; }
+    App.toast('已加進必帶清單：' + $('#must-name').value.trim());
+    $('#must-name').value = '';
+    renderMust();
+  });
 
   window.Packing = {
     prepareTrip: prepareTrip, addToTrip: addToTrip,

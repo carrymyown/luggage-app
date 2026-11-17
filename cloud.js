@@ -482,11 +482,23 @@
       return sync().then(unsynced).then(function (why2) {
         if (!why2) return true;
         busy(btn, false, '登出');
-        alert('同步沒有完成，先不登出：\n' + why2 + (status.text ? '\n（' + status.text + '）' : '') + '\n\n請確認網路正常後再試一次。');
+        // 一直同步不了（例如某張照片傳不上去）：可以選擇仍然登出，沒同步的資料先鎖在這台裝置，不會遺失
+        if (confirm('同步沒有完成：' + why2 + (status.text ? '\n（' + status.text + '）' : '') +
+          '\n\n按「確定」仍然登出：還沒同步的資料會先保留在這台裝置（畫面不會顯示），下次在這台裝置登入時自動同步，不會遺失。\n按「取消」不登出。')) return 'keep';
         return false;
       });
     }).then(function (ok) {
       if (!ok) return;
+      if (ok === 'keep') {
+        // 只登出、不清資料（資料鎖在這台裝置；沒登入時畫面一律是範例）
+        loggingOut = true;
+        return Promise.resolve().then(function () { return client.auth.signOut(); }).catch(function () {})
+          .then(function () {
+            try { localStorage.removeItem('sb-luggage-auth'); localStorage.removeItem('cmo-sample-state'); localStorage.removeItem('cmo-sample-mode'); } catch (e) { /* 不影響 */ }
+            location.hash = '#home';
+            location.reload();
+          });
+      }
       if (!confirm('資料都已經同步到雲端。\n要登出嗎？\n登出後會清掉這台裝置上的資料和照片暫存，畫面改成範例資料；雲端的資料會保留，重新登入就會全部回來。')) {
         busy(btn, false, '登出');
         return;

@@ -76,6 +76,16 @@
   // 「家」是每個帳號自己的清單（第一次使用時設定，帳號選單裡可以新增、改名、刪除）。
   // 這三個只用在很舊、還沒有存「家」清單的資料，讓那時候的資料不會遺失；新帳號從空的開始
   var DEFAULT_HOMES = ['曼谷', '台灣', '昆明'];
+  // 每趟必帶清單（預設內容；帳號選單裡可以增加、刪除、改預設行李）
+  // id 固定：兩台裝置各自建立預設清單時，雲端合併不會重複
+  // zone：pouch 隨身小包／personal 背包／carry 手提／checked 托運（這趟沒帶托運時會改放背包）
+  var DEFAULT_MUST = [
+    ['must-passport', '護照', 'pouch', 0.04], ['must-wallet', '錢包', 'pouch', 0.15], ['must-phone', '手機', 'pouch', 0.2], ['must-card', '信用卡／現金', 'pouch', 0.05],
+    ['must-powerbank', '行動電源', 'carry', 0.2], ['must-cable', '充電線一包', 'carry', 0.15], ['must-earphone', '耳機', 'carry', 0.05],
+    ['must-adapter', '轉接頭', 'checked', 0.1], ['must-toothbrush', '牙刷', 'checked', 0.03], ['must-pajamas', '睡衣', 'checked', 0.35],
+    ['must-underwear', '內衣褲', 'checked', 0.2], ['must-socks', '襪子', 'checked', 0.1], ['must-medicine', '常備藥', 'checked', 0.1], ['must-skincare', '基本保養品', 'checked', 0.3]
+  ];
+  function defaultMust() { return DEFAULT_MUST.map(function (x) { return { id: x[0], name: x[1], zone: x[2], weight: x[3] }; }); }
 
   function defaultState() {
     return {
@@ -291,6 +301,8 @@
     if (!Array.isArray(s.gifts)) s.gifts = [];
     if (!Array.isArray(s.trips)) s.trips = [];
     s.trips.forEach(normalizeTrip);
+    // 必帶清單：以前沒有 → 用預設內容（之後你刪光了也不會再自動加回來）
+    if (!Array.isArray(s.mustList)) s.mustList = defaultMust();
     // 家的所在城市：以前沒有這個欄位，所在城市先用家的名字（例如曼谷、台北），不會遺失
     if (!s.homeCities || typeof s.homeCities !== 'object' || Array.isArray(s.homeCities)) s.homeCities = {};
     s.homes.forEach(function (h) { if (!s.homeCities[h]) s.homeCities[h] = h; });
@@ -1088,6 +1100,40 @@
     return normalizeEntry(Object.assign(base, o.extra || {}));
   }
 
+  // ---------- 必帶清單（帳號選單、打包清單、範例資料都用這裡） ----------
+  var MUST_ZONES = ['pouch', 'personal', 'carry', 'checked'];
+  function mustList() { return state.mustList || []; }
+  function addMust(name, zone, weight) {
+    name = String(name || '').trim().slice(0, 30);
+    if (!name) return '請輸入名稱';
+    if (mustList().some(function (m) { return norm(m.name) === norm(name); })) return '必帶清單裡已經有「' + name + '」了';
+    var ref = findRef(name);
+    state.mustList = mustList().concat([{ id: uid(), name: name, zone: MUST_ZONES.indexOf(zone) >= 0 ? zone : 'checked',
+      weight: weight != null && weight !== '' ? Number(weight) : (ref ? ref.weight : 0.1) }]);
+    save();
+    return '';
+  }
+  function removeMust(id) { state.mustList = mustList().filter(function (m) { return m.id !== id; }); save(); }
+  function setMustZone(id, zone) {
+    var m = mustList().find(function (x) { return x.id === id; });
+    if (m && MUST_ZONES.indexOf(zone) >= 0) { m.zone = zone; save(); }
+  }
+
+  // 每個行李（依額度分組）還能放多少：和整趟的剩餘公斤數同一個計算（最緊的那段）
+  // 回傳 { 組別: { allow（null＝尚未設定額度）, load, remain } }
+  function groupRemains(trip) {
+    var r = tripRemain(trip), out = {};
+    ['pouch', 'personal', 'carry', 'checked'].forEach(function (k) {
+      var g = groupOf(k, trip);
+      if (!g || out[g]) return;
+      var gr = r.groups[g];
+      var allow = gr ? gr.allow : (r.leg ? allowanceOf(r.leg, g) : null);
+      var load = gr ? gr.load : 0;
+      out[g] = { allow: allow, load: load, remain: allow == null ? null : allow - load };
+    });
+    return out;
+  }
+
   // ---------- 刪除旅程：這趟的購物、禮物、打包清單 ----------
   function tripRecords(s, id) {
     var sh = s.shopping || {};
@@ -1378,6 +1424,11 @@
     tripDataCounts: tripDataCounts,
     deleteTrip: deleteTrip,
     nextTrip: nextTrip,
+    mustList: mustList,
+    addMust: addMust,
+    removeMust: removeMust,
+    setMustZone: setMustZone,
+    groupRemains: groupRemains,
     renderNextPack: renderNextPack,
     customs: customs,
     addCustom: addCustom,
@@ -1827,6 +1878,11 @@
     tripDataCounts: tripDataCounts,
     deleteTrip: deleteTrip,
     nextTrip: nextTrip,
+    mustList: mustList,
+    addMust: addMust,
+    removeMust: removeMust,
+    setMustZone: setMustZone,
+    groupRemains: groupRemains,
     renderNextPack: renderNextPack,
     renameHome: renameHome,
     sampleMode: sampleMode,

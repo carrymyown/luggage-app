@@ -4,7 +4,7 @@
  * ⚠ 維護規則：每次新增或修改功能、欄位、選項，都要回來檢查這個檔案，
  *   讓範例能示範到最新的功能。範例一律透過各功能「自己的新增函式」產生
  *   （Closet.create、Drawer.create、Bags.create、Trips.create、Packing.prepareTrip、
- *   Shop.writePurchase、Shop.writeGift、Onboard.setDefaults、App.addHome），跟使用者在畫面上新增的資料格式完全一樣，
+ *   Shop.writePurchase、Shop.writeGift、Onboard.setDefaults、App.addHome、App.addMust），跟使用者在畫面上新增的資料格式完全一樣，
  *   不要在這裡另外手寫資料結構。
  *
  * 內容都是虛構的；使用台灣用語，不出現中國大陸的城市名稱。
@@ -78,9 +78,13 @@
     ]
   };
 
+  // 必帶清單：預設內容（護照、錢包、手機、行動電源…）之外，示範自己加一樣
+  var MUST_EXTRA = [{ name: '眼罩', zone: 'personal', weight: 0.02 }];
+
   // 這趟用哪幾個行李箱（對應上面 BAGS 的 key）
   var PACK_ZONES = { pouch: 'pouch', personal: 'personal', carry: 'carry', checked: 'checked' };
-  // 打包清單：會依照衣櫃、季節自動列出；另外用「＋ 加入」加進這幾樣抽屜裡的東西
+  // 打包清單：會依照衣櫃、季節和必帶清單自動列出（分頁一「要帶什麼」）；另外用「＋ 加入」加進這幾樣抽屜裡的東西
+  // 打勾的會移到分頁二「行李箱」，每個箱子標題旁顯示還能放多少
   var ADD_TO_LIST = ['面膜', '維他命'];
   // 已經打勾（放進行李）的東西，其他的還沒打勾
   var PACKED = ['護照', '錢包', '白色 T 恤', '牛仔褲', '充電線', '白色運動鞋'];
@@ -128,6 +132,9 @@
       bagIds[b.key] = window.Bags.create({ name: b.name, kind: b.kind, tare: b.tare, size: b.size || '', style: b.style || '',
         material: b.material || '', home: b.home, extra: { sample: true } }).id;
     });
+
+    // 必帶清單（產生打包清單前先加好，才會自動放進「要帶什麼」）
+    MUST_EXTRA.forEach(function (m) { App.addMust(m.name, m.zone, m.weight); });
 
     var trip = window.Trips.create({
       id: 'sample-trip', name: TRIP.name, origin: TRIP.origin, endHome: TRIP.endHome, pouchMode: TRIP.pouchMode,
