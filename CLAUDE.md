@@ -9,7 +9,7 @@
   - 行李箱 `Bags.create`
   - 旅程 `Trips.create`
   - 打包清單 `Packing.prepareTrip`（裡面走「＋ 加入」的 `addToList`）
-  - 購物 `Shop.writePurchase`
+  - 購物 `Shop.writePurchase`（`purpose`：own 自己會帶出門／souvenir 紀念品；「送人」用 `Shop.writeGift`，source 'trip'）
   - 禮物 `Shop.writeGift`
   - 常搭航空公司與額度 `Onboard.setDefaults`
   - 必帶清單 `App.addMust(名字, 預設行李, 重量)`（預設內容在 app.js 的 `DEFAULT_MUST`）

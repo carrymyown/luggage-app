@@ -132,7 +132,8 @@
   function pathFor(uid, id) { return uid + '/' + id + '.jpg'; }
   function tagFor(path) { return BUCKET + '/' + path; }   // 暫存裡記下「已在新空間」
   // 有照片的資料：衣櫃／抽屜物品，加上行李箱
-  function withPhoto() { return App.state().memory.concat(App.state().bags || []).filter(function (m) { return m.photoId; }); }
+  // 有照片的：衣櫃／抽屜物品、行李箱、購物紀錄（自己會帶出門的）
+  function withPhoto() { var s = App.state(); return s.memory.concat(s.bags || [], (s.shopping || {}).purchases || []).filter(function (m) { return m.photoId; }); }
 
   // 確認照片真的在雲端、而且大小正確
   function verify(path, size) {

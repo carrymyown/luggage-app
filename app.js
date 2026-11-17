@@ -1658,6 +1658,7 @@
   function dropPhotoIfUnused(photoId) {
     if (!photoId) return;
     if (state.memory.some(function (m) { return m.photoId === photoId; })) return;
+    if (((state.shopping || {}).purchases || []).some(function (p) { return p.photoId === photoId; })) return;   // 購物紀錄還在用
     Photos.del(photoId).catch(function () {});
     // 雲端的照片也一起刪掉（沒網路時等有網路再刪）
     if (window.Cloud) window.Cloud.queueDelete(photoId);

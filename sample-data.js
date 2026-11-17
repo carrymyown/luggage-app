@@ -90,8 +90,19 @@
   var PACKED = ['護照', '錢包', '白色 T 恤', '牛仔褲', '充電線', '白色運動鞋'];
 
   // 在東京買一件衣服（第 2 天）
+  // 購物：記一筆購物時先選「這是什麼」，三種各示範一筆
+  //   own 自己會帶出門（之後放到哪個家）／souvenir 紀念品、放家裡就好（到家自動拿出行李）
   var PURCHASES = [
-    { day: 2, name: '羊毛圍巾', weight: 0.2, qty: 1, price: '¥3,990', category: '必備品', city: '東京', homeDest: '台北', bag: 'checked' }
+    { day: 2, purpose: 'own', name: '羊毛圍巾', weight: 0.2, qty: 1, price: '¥3,990', category: '必備品', city: '東京', homeDest: '台北', bag: 'checked' },
+    { day: 3, purpose: 'souvenir', name: '招財貓擺飾', weight: 0.35, qty: 1, price: '¥1,500', city: '東京', bag: 'checked' }
+  ];
+  // 送人：存成一份禮物（旅途中買的，會列在購物紀錄的「送人」）
+  var GIFT_BUYS = [
+    { name: '首爾的人蔘茶', weight: 0.4, qty: 1, to: '媽媽', city: '台北', status: 'packed', bag: 'checked' }
+  ];
+  // 已經送出的禮物：從行李拿掉、重量加回來，只在送禮紀錄留一行
+  var GIFTS_GIVEN = [
+    { name: '抹茶點心禮盒', weight: 0.3, qty: 1, to: '東京的朋友 小林', city: '東京', bag: 'checked' }
   ];
 
   // 帶一盒鳳梨酥（抽屜裡的那盒）送首爾的朋友，已經放進行李
@@ -152,8 +163,20 @@
     window.Packing.prepareTrip(trip, zones, PACKED, ADD_TO_LIST);
 
     PURCHASES.forEach(function (p) {
-      window.Shop.writePurchase(null, { tripId: trip.id, date: day(p.day), name: p.name, weight: p.weight, qty: p.qty, price: p.price,
-        category: p.category, city: p.city, homeDest: p.homeDest, bagId: bagIds[p.bag] });
+      window.Shop.writePurchase(null, { tripId: trip.id, date: day(p.day), purpose: p.purpose, name: p.name, weight: p.weight, qty: p.qty, price: p.price,
+        category: p.category || '必備品', city: p.city, homeDest: p.homeDest || '', bagId: bagIds[p.bag] });
+    });
+
+    GIFT_BUYS.forEach(function (g) {
+      window.Shop.writeGift(null, { tripId: trip.id, name: g.name, weight: g.weight, qty: g.qty, to: g.to, city: g.city,
+        source: 'trip', status: g.status, bagId: bagIds[g.bag] });
+    });
+    // 已送出：先放進行李，再按「已送出」（和真的操作一樣）
+    GIFTS_GIVEN.forEach(function (g) {
+      var gg = window.Shop.writeGift(null, { tripId: trip.id, name: g.name, weight: g.weight, qty: g.qty, to: g.to, city: g.city,
+        source: 'trip', status: 'packed', bagId: bagIds[g.bag] });
+      window.Shop.writeGift(gg, { tripId: trip.id, name: g.name, weight: g.weight, qty: g.qty, to: g.to, city: g.city,
+        source: 'trip', status: 'given', bagId: bagIds[g.bag] });
     });
 
     GIFTS.forEach(function (g) {

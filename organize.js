@@ -87,6 +87,7 @@
     // 回到旅程終點的家：預設全部留下；中途：預設繼續帶走
     // 購物時選了「之後放到這個家」的，預設留下
     st().items.forEach(function (it) {
+      if (souv(it)) return;
       var info = window.Shop && window.Shop.itemInfo(it);
       choice[it.id] = cur.last || (info && info.homeDest === cur.home) ? 'stay' : 'go';
     });
@@ -100,9 +101,14 @@
     $('#org-sheet .org-panel').scrollTop = 0;
   }
 
+  function souv(it) { return !!(window.Shop && window.Shop.isSouvenirItem && window.Shop.isSouvenirItem(it)); }
   function render() {
-    var items = st().items;
-    $('#org-packed').innerHTML = items.length ? items.map(function (it) {
+    // 紀念品：抵達任何一個家都會自動從行李拿出來，不用選
+    var souvenirs = st().items.filter(souv);
+    var items = st().items.filter(function (it) { return !souv(it); });
+    $('#org-packed').innerHTML = (souvenirs.length ? '<p class="org-souv muted small">紀念品 ' + souvenirs.length + ' 件（' +
+      souvenirs.map(function (it) { return esc(it.name); }).join('、') + '）會自動從行李拿出來，不放進衣櫃或抽屜。</p>' : '') +
+      (items.length ? items.map(function (it) {
       var m = it.catalogId && App.entryById(it.catalogId);
       var bag = App.bagById(it.bagId);
       var c = choice[it.id];
@@ -116,7 +122,7 @@
         '<button type="button" data-org-item="' + esc(it.id) + '" data-choice="stay" class="' + (c === 'stay' ? 'on' : '') + '">留在' + esc(cur.home) + '</button>' +
         '<button type="button" data-org-item="' + esc(it.id) + '" data-choice="go" class="' + (c === 'go' ? 'on' : '') + '">繼續帶走</button>' +
         '</div></div>';
-    }).join('') : '<p class="muted small">行李裡沒有東西。</p>';
+    }).join('') : (souvenirs.length ? '' : '<p class="muted small">行李裡沒有東西。</p>'));
 
     renderSwap();
 
@@ -192,6 +198,8 @@
     var stayed = 0, added = 0;
     var bagId = $('#org-bag').value;
     var hadItems = s.bags.filter(function (b) { return s.items.some(function (it) { return it.bagId === b.id; }); });
+    // 0. 紀念品：自動從行李拿出來（只留購物紀錄）
+    var souvN = window.Shop && window.Shop.dropSouvenirs ? window.Shop.dropSouvenirs(cur.home, cur.date) : 0;
     // 1. 行李裡的物品：留下的拿出行李、放在這個家；帶走的維持在行李裡
     var stayIds = Object.keys(choice).filter(function (k) { return choice[k] === 'stay'; });
     var stayItems = s.items.filter(function (it) { return stayIds.indexOf(it.id) >= 0; });
@@ -230,7 +238,7 @@
     cur.leg.arrivalPrompted = true;
     App.save();
     $('#org-sheet').hidden = true;
-    App.toast('整理好了：留下 ' + stayed + ' 件、新放進行李 ' + added + ' 件' + (swapped ? '、換了 ' + swapped + ' 個行李箱' : ''));
+    App.toast('整理好了：留下 ' + stayed + ' 件、新放進行李 ' + added + ' 件' + (swapped ? '、換了 ' + swapped + ' 個行李箱' : '') + (souvN ? '、拿出紀念品 ' + souvN + ' 件' : ''));
     App.refreshView();
   }
 
@@ -243,6 +251,7 @@
         var loc = App.locOf(m);
         if (loc && loc.state === 'pending') m.location.state = 'packed';
       });
+      if (window.Shop && window.Shop.dropSouvenirs) window.Shop.dropSouvenirs(a.home, a.date);   // 紀念品還是會自動拿出來
       a.leg.arrivalDone = true;
       App.save();
       App.refreshView();
