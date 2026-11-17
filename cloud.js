@@ -382,7 +382,8 @@
         '<button type="button" id="cl-logout" class="btn ghost">登出</button></div>' +
         '<p class="muted small">登出時會先確認資料都已同步，再清掉這台裝置上的資料；雲端的資料會保留。</p>';
     }
-    if (App.sampleMode()) box.innerHTML += '<p class="muted small">現在是範例資料，不會同步到雲端；清除範例後就會同步你自己的資料。</p>';
+    if (App.sampleMode()) box.innerHTML += '<p class="muted small">' + (user ? '現在是範例資料，不會同步到雲端；清除範例後就會回到你自己的資料。' :
+      '現在顯示的是範例資料；登入後會換成你自己的資料，範例不會上傳。') + '</p>';
     renderStatus();
   }
 
@@ -445,8 +446,8 @@
 
   // ---------- 登出 ----------
   // 先確認資料、照片都已經在雲端，才清掉這台裝置的資料和照片暫存；沒同步完就不登出，避免資料遺失
+  // 還有什麼沒同步到雲端（沒有就回傳空字串）
   function unsynced() {
-    if (status.state !== 'ok') return Promise.resolve(status.text || '同步沒有完成');
     var meta = loadMeta();
     if (!user || meta.userId !== user.id || !meta.base) return Promise.resolve('這台裝置還沒有和雲端同步過');
     if (!eq(JSON.parse(meta.base), App.state())) return Promise.resolve('還有修改沒有上傳到雲端');
@@ -463,22 +464,31 @@
     });
   }
 
+  // 登出：先確認都已同步（沒同步就讓你選「先同步」或「取消登出」），
+  // 確認後才清掉這台裝置上的個人資料和照片暫存；雲端資料完全不動
   function logout(btn) {
     if (App.sampleMode()) {
-      alert('現在是範例資料。\n請先按最上方的「清除範例，開始使用」回到你的資料，確認同步完成後再登出。');
+      alert('現在是範例資料。\n請先按最上方的「清除範例，開始使用」回到你的資料，再登出。');
       return;
     }
-    if (!navigator.onLine) {
-      alert('現在沒有網路，沒辦法確認資料都已經同步到雲端。\n請連上網路後再登出，避免資料遺失。');
-      return;
-    }
-    if (!confirm('要登出嗎？\n登出前會先確認資料和照片都已經同步到雲端，接著清掉這台裝置上的資料和照片暫存。\n雲端的資料會保留，重新登入就會全部回來。')) return;
-    busy(btn, true, '確認同步中…');
+    busy(btn, true, '檢查同步中…');
     clearTimeout(timer);
-    Promise.resolve(syncing).then(function () { return sync(); }).then(unsynced).then(function (why) {
-      if (why) {
+    Promise.resolve(syncing).then(unsynced).then(function (why) {
+      if (!why) return true;
+      busy(btn, false, '登出');
+      if (!confirm('還有資料沒有同步到雲端：' + why + '\n\n按「確定」先同步，同步完成後再登出；\n按「取消」取消登出。')) return false;
+      if (!navigator.onLine) { alert('現在沒有網路，沒辦法同步。\n請連上網路後再登出，避免資料遺失。'); return false; }
+      busy(btn, true, '同步中…');
+      return sync().then(unsynced).then(function (why2) {
+        if (!why2) return true;
         busy(btn, false, '登出');
-        alert('還沒同步完成，先不登出：\n' + why + '\n\n請確認網路正常，按「立即同步」後再試一次。');
+        alert('同步沒有完成，先不登出：\n' + why2 + (status.text ? '\n（' + status.text + '）' : '') + '\n\n請確認網路正常後再試一次。');
+        return false;
+      });
+    }).then(function (ok) {
+      if (!ok) return;
+      if (!confirm('資料都已經同步到雲端。\n要登出嗎？\n登出後會清掉這台裝置上的資料和照片暫存，畫面改成範例資料；雲端的資料會保留，重新登入就會全部回來。')) {
+        busy(btn, false, '登出');
         return;
       }
       busy(btn, true, '登出中…');
@@ -491,6 +501,7 @@
           location.reload();
         });
     }).catch(function (err) {
+      loggingOut = false;
       busy(btn, false, '登出');
       alert('登出失敗：' + friendly(err));
     });
@@ -556,6 +567,8 @@
           if (user) onSignedIn();
         }
         if (!user && !loggingOut) markFirst();   // 沒有登入：不用等雲端
+        // 登入過期或在別處被登出：畫面不能再顯示你的資料 → 重新載入成範例（你的資料留在這台裝置，下次登入會合併回去）
+        if (!user && !loggingOut && !App.sampleMode() && !App.signedIn()) { loggingOut = true; location.reload(); }
         // 確認信、重設密碼連結回來時，網址會帶一串登入資訊，清掉
         if (/access_token|refresh_token|type=/.test(location.hash)) history.replaceState(null, '', location.pathname + '#home');
       }, 0);

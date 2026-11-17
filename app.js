@@ -182,7 +182,14 @@
   // 範例資料放在這台裝置另一個地方（不是 luggage- 開頭，備份也不會帶到），不同步到雲端，
   // 也完全不讀寫使用者自己的資料；清除範例＝刪掉這份、回到自己的資料
   var SAMPLE_MODE_KEY = 'cmo-sample-mode', SAMPLE_STATE_KEY = 'cmo-sample-state';
-  function sampleMode() { try { return localStorage.getItem(SAMPLE_MODE_KEY) === '1'; } catch (e) { return false; } }
+  var AUTH_KEY = 'sb-luggage-auth';   // 雲端登入（Supabase）存在這台裝置的登入資訊
+  function signedIn() { try { return !!localStorage.getItem(AUTH_KEY); } catch (e) { return false; } }
+  // 這次打開時顯示範例嗎？沒有登入 → 一律顯示範例；已登入但選了「再看一次範例」→ 也是範例。
+  // 重新載入前不會變（畫面上的資料和存檔位置一致）；你自己的資料留在原處、不會顯示也不會被改動
+  var BOOT_SAMPLE = (function () {
+    try { return localStorage.getItem(SAMPLE_MODE_KEY) === '1' || !localStorage.getItem(AUTH_KEY); } catch (e) { return false; }
+  })();
+  function sampleMode() { return BOOT_SAMPLE; }
   function dataKey() { return sampleMode() ? SAMPLE_STATE_KEY : STORE_KEY; }
   function enterSample() {
     try { localStorage.setItem(SAMPLE_MODE_KEY, '1'); localStorage.removeItem(SAMPLE_STATE_KEY); } catch (e) { toast('這台裝置沒辦法開範例（可能是私密瀏覽）'); return; }
@@ -200,6 +207,9 @@
         if (k && (k.indexOf('luggage-') === 0 || k === 'cmo-after-sample')) keys.push(k);
       }
       keys.forEach(function (k) { localStorage.removeItem(k); });
+      // 範例也重新產生一份乾淨的（範例裡不會留下任何你自己輸入的東西）
+      localStorage.removeItem(SAMPLE_STATE_KEY);
+      localStorage.removeItem(SAMPLE_MODE_KEY);
     } catch (e) { /* 不影響 */ }
     return (window.Photos && window.Photos.clearAll ? window.Photos.clearAll() : Promise.resolve()).catch(function () {});
   }
@@ -1820,6 +1830,8 @@
     renderNextPack: renderNextPack,
     renameHome: renameHome,
     sampleMode: sampleMode,
+    signedIn: signedIn,
+    checkVersion: checkVersion,
     enterSample: enterSample,
     exitSample: exitSample,
     clearLocalData: clearLocalData,
@@ -1885,6 +1897,34 @@
     checkPhotos();
     checkGoals(true);   // 記下目前的狀態，打開 app 時不跳提醒
   });
+
+  // ---------- 新版本提示 ----------
+  // 每次打開或回到前景時，向網站要 version.json（不用暫存）和目前的版本比對；
+  // 有新版就在下方顯示「有新版本・點一下更新」。更新只換程式檔案，localStorage／IndexedDB 裡的資料都不動。
+  var APP_VERSION = (document.querySelector('meta[name="app-version"]') || {}).content || '';
+  $('#app-version').textContent = '版本 ' + (APP_VERSION || '—');
+  var checkingVersion = false;
+  function checkVersion() {
+    if (checkingVersion || !navigator.onLine || !APP_VERSION) return;
+    checkingVersion = true;
+    fetch('version.json?t=' + Date.now(), { cache: 'no-store' }).then(function (r) { return r.ok ? r.json() : null; }).then(function (v) {
+      if (v && v.version && v.version !== APP_VERSION) $('#update-bar').hidden = false;
+    }).catch(function () { /* 沒網路就下次再看 */ }).then(function () { checkingVersion = false; });
+  }
+  function applyUpdate() {
+    $('#update-bar').textContent = '更新中…';
+    var sw = navigator.serviceWorker;
+    // 1. 請 Service Worker 抓新版；2. 清掉舊的程式快取（只有程式檔案，不是你的資料）；3. 重新載入
+    Promise.resolve(sw ? sw.getRegistration().then(function (reg) { return reg && reg.update(); }) : null).catch(function () {})
+      .then(function () { return window.caches ? caches.keys().then(function (keys) { return Promise.all(keys.map(function (k) { return caches.delete(k); })); }) : null; })
+      .catch(function () {})
+      .then(function () { location.reload(); });
+  }
+  $('#update-bar').addEventListener('click', applyUpdate);
+  window.addEventListener('load', function () { setTimeout(checkVersion, 1500); });
+  document.addEventListener('visibilitychange', function () { if (document.visibilityState === 'visible') checkVersion(); });
+  window.addEventListener('pageshow', function (e) { if (e.persisted) checkVersion(); });   // Safari 從記憶體還原頁面時
+  window.addEventListener('online', checkVersion);
 
   // 讓 app 沒有網路時也能打開
   if ('serviceWorker' in navigator) {

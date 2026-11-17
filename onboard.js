@@ -166,7 +166,18 @@
   }
 
   // 範例模式：最上方的提示列
-  function renderBar() { $('#sample-bar').hidden = !App.sampleMode(); }
+  // 範例提示條：沒有登入 →「登入開始使用」；已登入、正在看範例 →「清除範例，開始使用」
+  function renderBar() {
+    var on = App.sampleMode(), inAcc = App.signedIn();
+    $('#sample-bar').hidden = !on;
+    $('#sample-login').hidden = !on || inAcc;
+    $('#sample-clear').hidden = !on || !inAcc;
+  }
+  $('#sample-login').addEventListener('click', function () {
+    var b = $('#account-btn');
+    if (b) b.click(); else $('#account-sheet').hidden = false;
+    setTimeout(function () { var em = $('#cl-email'); if (em) em.focus(); }, 300);
+  });
   $('#sample-clear').addEventListener('click', function () {
     if (!confirm('要清除範例資料，開始使用嗎？')) return;
     App.exitSample();
@@ -278,14 +289,15 @@
         stripOldSample();
         var after = false;
         try { after = localStorage.getItem('cmo-after-sample') === '1'; localStorage.removeItem('cmo-after-sample'); } catch (e) { /* 不影響 */ }
-        // 清除範例後：這台裝置沒有自己的資料（沒登入、還沒設定）→ 回到歡迎畫面（先看範例／登入／直接開始設定）
-        if (after && needsOnboarding()) { openOnboard(0); renderBar(); return; }
+        // 清除範例後：帳號裡還沒有資料 → 直接進入第一次使用設定
+        if (after && needsOnboarding()) { openOnboard(1); renderBar(); return; }
       }
     }
     renderBar();
     // 登入後雲端的資料回來了（帳號早就設定過），就不用再顯示第一次使用設定
     if (!App.sampleMode() && st().onboarded && !$('#onboard-sheet').hidden) $('#onboard-sheet').hidden = true;
-    if (!shownThisVisit && needsOnboarding()) { openOnboard(0); return; }
+    // 已登入、雲端也沒有資料（新帳號第一次登入）→ 第一次使用設定（沒登入時一律顯示範例，不會走到這裡）
+    if (!shownThisVisit && needsOnboarding()) { openOnboard(1); return; }
     showTips(view);
   }
 

@@ -21,4 +21,5 @@
 ## 其他固定要求
 - 其他功能不要動。不要清掉瀏覽器或雲端已存的資料。風格維持極簡雜誌感。
 - 程式裡只能放 Supabase 的 publishable key，不要放 service_role key。
-- 每次改完：告訴使用者怎麼在 iPad 上測試，然後 commit 並更新 GitHub Pages（push 到 `main`）。改了檔案要更新 `index.html` 的 `?v=` 和 `sw.js` 的 `CACHE` 版本。
+- 每次改完：告訴使用者怎麼在 iPad 上測試，然後 commit 並更新 GitHub Pages（push 到 `main`）。改了檔案要更新 `index.html` 的 `?v=`、`<meta name="app-version">`、`version.json`（三個用同一個版本號，新版本提示靠這個比對）和 `sw.js` 的 `CACHE` 版本。
+- 沒有登入時一律顯示範例（`App.sampleMode()` 在打開時決定，重新載入前不變）；自己的資料只在登入後顯示。

@@ -7,21 +7,23 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-title" content="Carry My Own">
+  <!-- 目前的版本（發布時更新；和 version.json 比對，有新版就提示更新） -->
+  <meta name="app-version" content="20261117j">
   <title>Carry My Own</title>
   <!-- 圖示：瀏覽器分頁（網址前面）、iPad 主畫面、安裝成 app 時用 -->
-  <link rel="icon" type="image/svg+xml" href="icons/favicon.svg?v=20261117i">
-  <link rel="icon" href="icons/favicon-32.png?v=20261117i" sizes="32x32" type="image/png">
-  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png?v=20261117i">
+  <link rel="icon" type="image/svg+xml" href="icons/favicon.svg?v=20261117j">
+  <link rel="icon" href="icons/favicon-32.png?v=20261117j" sizes="32x32" type="image/png">
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png?v=20261117j">
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:opsz,wght@6..96,400;6..96,500&family=Noto+Sans+TC:wght@400;500;700&family=Noto+Serif+TC:wght@300;400;600&display=swap">
-  <link rel="stylesheet" href="style.css?v=20261117i">
+  <link rel="stylesheet" href="style.css?v=20261117j">
 </head>
 <body>
   <main>
     <!-- 有範例資料時：最上方一條細細的提示 -->
-    <div id="sample-bar" class="sample-bar" hidden>現在是範例資料・<button type="button" id="sample-clear" class="link small">清除範例，開始使用</button></div>
+    <div id="sample-bar" class="sample-bar" hidden>現在是範例資料・<button type="button" id="sample-login" class="link small">登入開始使用</button><button type="button" id="sample-clear" class="link small" hidden>清除範例，開始使用</button></div>
     <!-- 首頁 -->
     <section id="view-home" class="view">
       <header class="masthead">
@@ -430,6 +432,9 @@
     </section>
   </main>
 
+  <!-- 有新版本時的提示（點一下更新；只更新程式，不會動到資料） -->
+  <button type="button" id="update-bar" class="update-bar" hidden>有新版本・點一下更新</button>
+
   <nav class="tabbar">
     <a href="#home" data-views="home shop">
       <svg class="ico" viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3.5 10.5 12 3.5l8.5 7"/><path d="M5.5 9v11h13V9"/><path d="M10 20v-5.5h4V20"/></svg><span>首頁</span>
@@ -737,6 +742,7 @@
       </div>
       <a id="backup-download" class="btn primary download-btn" hidden>下載備份檔</a>
       <button type="button" id="account-close" class="btn ghost">關閉</button>
+      <p id="app-version" class="app-version muted small"></p>
     </div>
   </div>
 
@@ -836,23 +842,23 @@
     </div>
   </div>
 
-  <script src="weights.js?v=20261117i"></script>
-  <script src="photos.js?v=20261117i"></script>
-  <script src="clothing.js?v=20261117i"></script>
-  <script src="ui.js?v=20261117i"></script>
-  <script src="app.js?v=20261117i"></script>
-  <script src="closet.js?v=20261117i"></script>
-  <script src="trips.js?v=20261117i"></script>
-  <script src="organize.js?v=20261117i"></script>
-  <script src="packing.js?v=20261117i"></script>
-  <script src="drawer.js?v=20261117i"></script>
-  <script src="bags.js?v=20261117i"></script>
-  <script src="shop.js?v=20261117i"></script>
-  <script src="sample-data.js?v=20261117i"></script>
-  <script src="onboard.js?v=20261117i"></script>
-  <script src="nav.js?v=20261117i"></script>
-  <script src="backup.js?v=20261117i"></script>
+  <script src="weights.js?v=20261117j"></script>
+  <script src="photos.js?v=20261117j"></script>
+  <script src="clothing.js?v=20261117j"></script>
+  <script src="ui.js?v=20261117j"></script>
+  <script src="app.js?v=20261117j"></script>
+  <script src="closet.js?v=20261117j"></script>
+  <script src="trips.js?v=20261117j"></script>
+  <script src="organize.js?v=20261117j"></script>
+  <script src="packing.js?v=20261117j"></script>
+  <script src="drawer.js?v=20261117j"></script>
+  <script src="bags.js?v=20261117j"></script>
+  <script src="shop.js?v=20261117j"></script>
+  <script src="sample-data.js?v=20261117j"></script>
+  <script src="onboard.js?v=20261117j"></script>
+  <script src="nav.js?v=20261117j"></script>
+  <script src="backup.js?v=20261117j"></script>
   <script src="vendor/supabase.js"></script>
-  <script src="cloud.js?v=20261117i"></script>
+  <script src="cloud.js?v=20261117j"></script>
 </body>
 </html>

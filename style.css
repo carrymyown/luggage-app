@@ -1745,3 +1745,11 @@ img.bp-thumb.no-photo, img.bg-thumb.no-photo, img.org-thumb.no-photo, img.chip-t
 /* 行程編輯的「有家」「行李要領出」提示：不用框線，只留細線圖示和文字 */
 .home-badge, .recheck-badge { border: 0 !important; background: transparent !important; padding: 2px 0 !important; border-radius: 0 !important; font-size: var(--fs-meta); letter-spacing: 0.06em; }
 .recheck-badge { color: var(--gold); }
+
+/* 新版本提示：畫面下方、導覽列上面的一條細提示 */
+.update-bar {
+  position: fixed; left: 50%; transform: translateX(-50%); bottom: calc(var(--tab-h) + 18px + env(safe-area-inset-bottom, 0px));
+  z-index: 40; border: 0; background: var(--primary); color: #fff; font: inherit; font-size: var(--fs-meta); letter-spacing: 0.14em;
+  padding: 10px 20px; border-radius: var(--radius); cursor: pointer; white-space: nowrap; animation: cmo-up .22s var(--ease);
+}
+.app-version { text-align: center; margin: 14px 0 0; font-family: var(--num); letter-spacing: 0.12em; }
