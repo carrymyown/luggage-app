@@ -134,5 +134,11 @@
     });
   }
 
-  window.Photos = { compress: compress, put: put, get: get, del: del, url: url, fillThumbs: fillThumbs, list: list };
+  // 登出時清掉這台裝置上的照片暫存（雲端的照片不動）
+  function clearAll() {
+    Object.keys(urlCache).forEach(function (id) { forget(id); });
+    return tx('readwrite', function (s) { return s.clear(); });
+  }
+
+  window.Photos = { compress: compress, put: put, get: get, del: del, url: url, fillThumbs: fillThumbs, list: list, clearAll: clearAll };
 })();

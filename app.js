@@ -189,6 +189,27 @@
     location.hash = '#home';
     location.reload();
   }
+  // 登出：清掉這台裝置上這個帳號的本機資料（localStorage 的 luggage- 開頭資料）和照片暫存（IndexedDB）
+  // 雲端資料不動；範例資料不是帳號的資料，不在這裡清
+  function clearLocalData() {
+    locked = true;
+    try {
+      var keys = [];
+      for (var i = 0; i < localStorage.length; i++) {
+        var k = localStorage.key(i);
+        if (k && (k.indexOf('luggage-') === 0 || k === 'cmo-after-sample')) keys.push(k);
+      }
+      keys.forEach(function (k) { localStorage.removeItem(k); });
+    } catch (e) { /* 不影響 */ }
+    return (window.Photos && window.Photos.clearAll ? window.Photos.clearAll() : Promise.resolve()).catch(function () {});
+  }
+  // 登入時裝置上有範例：先清掉範例再重新載入，雲端的資料才不會跟範例混在一起
+  function dropSample() {
+    try { localStorage.removeItem(SAMPLE_MODE_KEY); localStorage.removeItem(SAMPLE_STATE_KEY); } catch (e) { /* 不影響 */ }
+    locked = true;
+    location.hash = '#home';
+    location.reload();
+  }
   function exitSample() {
     try {
       localStorage.removeItem(SAMPLE_STATE_KEY);
@@ -297,7 +318,10 @@
     return s;
   }
 
+  // 登出清資料後到重新載入前，不再寫入任何資料（避免把剛清掉的資料又存回去）
+  var locked = false;
   function save() {
+    if (locked) return;
     delete state.pristine;
     try { localStorage.setItem(dataKey(), JSON.stringify(state)); }
     catch (e) { toast('無法儲存（瀏覽器可能在私密模式）'); }
@@ -311,6 +335,7 @@
 
   // 存檔但不觸發同步（雲端同步自己用）
   function saveQuiet() {
+    if (locked) return;
     try { localStorage.setItem(dataKey(), JSON.stringify(state)); } catch (e) { /* 下次再存 */ }
   }
 
@@ -1790,6 +1815,8 @@
     sampleMode: sampleMode,
     enterSample: enterSample,
     exitSample: exitSample,
+    clearLocalData: clearLocalData,
+    dropSample: dropSample,
     removeHome: removeHome,
     homeUsage: homeUsage,
     isEmptyState: isEmptyState,

@@ -20,7 +20,11 @@
   var BAG_PRESETS = [['checked', '28 吋托運箱', 4.5, '28 吋'], ['carry', '20 吋登機箱', 2.6, '20 吋'], ['personal', '後背包', 0.8, ''], ['pouch', '隨身小包', 0.3, '']];
   var pickedBags = {};
 
-  function needsOnboarding() { return !App.sampleMode() && !st().onboarded && App.isEmptyState(); }
+  // 這台裝置沒有資料（新裝置、登出後）：顯示歡迎畫面
+  // 已登入、資料還在從雲端載回來時先不要顯示
+  function needsOnboarding() {
+    return !App.sampleMode() && !st().onboarded && App.isEmptyState() && !(window.Cloud && window.Cloud.waitingForData());
+  }
 
   function openOnboard(at) {
     shownThisVisit = true;
@@ -274,8 +278,8 @@
         stripOldSample();
         var after = false;
         try { after = localStorage.getItem('cmo-after-sample') === '1'; localStorage.removeItem('cmo-after-sample'); } catch (e) { /* 不影響 */ }
-        // 清除範例後：還沒設定過的話，直接進入第一次使用設定
-        if (after && !st().onboarded && App.isEmptyState()) { openOnboard(1); renderBar(); return; }
+        // 清除範例後：這台裝置沒有自己的資料（沒登入、還沒設定）→ 回到歡迎畫面（先看範例／登入／直接開始設定）
+        if (after && needsOnboarding()) { openOnboard(0); renderBar(); return; }
       }
     }
     renderBar();

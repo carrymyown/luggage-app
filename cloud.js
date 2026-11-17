@@ -252,7 +252,7 @@
   function sync() {
     if (!client || !user) return Promise.resolve();
     if (App.sampleMode()) return Promise.resolve();   // 範例模式：不同步，範例不會進雲端
-    if (!navigator.onLine) { setStatus('offline'); return Promise.resolve(); }
+    if (!navigator.onLine) { setStatus('offline'); markFirst(); return Promise.resolve(); }
     if (syncing) { again = true; return syncing; }
     setStatus('syncing');
     syncing = run(user.id).then(function () {
@@ -261,6 +261,7 @@
       setStatus(navigator.onLine ? 'error' : 'offline', friendly(err));
     }).then(function () {
       syncing = null;
+      markFirst();
       if (again) { again = false; schedule(500); }
     });
     return syncing;
@@ -365,7 +366,6 @@
     if (!client) {
       box.innerHTML = '<p class="muted small">雲端功能暫時無法使用（可能沒有網路）。資料仍安全地存在這台裝置，有網路後重新整理即可。</p>';
     } else if (!user) {
-      var meta = loadMeta();
       box.innerHTML =
         '<div class="field-title">登入雲端</div>' +
         '<p class="muted small">登入後，資料和照片會存到雲端，換裝置也看得到。第一次登入時，這台裝置的資料會自動上傳，不會遺失。</p>' +
@@ -373,14 +373,14 @@
         '<label>密碼<input id="cl-pass" type="password" autocomplete="current-password" placeholder="至少 6 個字"></label>' +
         '<div class="cloud-btns"><button type="button" id="cl-login" class="btn primary">登入</button>' +
         '<button type="button" id="cl-signup" class="btn ghost">註冊新帳號</button></div>' +
-        '<button type="button" id="cl-forgot" class="link small">忘記密碼</button>' +
-        (meta.userId ? '<p class="muted small">登出後，資料仍保留在這台裝置。</p>' : '');
+        '<button type="button" id="cl-forgot" class="link small">忘記密碼</button>';
     } else {
       box.innerHTML =
         '<div class="cloud-user">已登入：<b>' + esc(user.email || '') + '</b></div>' +
         '<div id="cloud-status" class="cloud-status"></div>' +
         '<div class="cloud-btns"><button type="button" id="cl-sync" class="btn ghost">立即同步</button>' +
-        '<button type="button" id="cl-logout" class="btn ghost">登出</button></div>';
+        '<button type="button" id="cl-logout" class="btn ghost">登出</button></div>' +
+        '<p class="muted small">登出時會先確認資料都已同步，再清掉這台裝置上的資料；雲端的資料會保留。</p>';
     }
     if (App.sampleMode()) box.innerHTML += '<p class="muted small">現在是範例資料，不會同步到雲端；清除範例後就會同步你自己的資料。</p>';
     renderStatus();
@@ -410,6 +410,7 @@
     if (id === 'cl-login') {
       var c = creds(); if (!c) return;
       busy(e.target, true, '登入中…');
+      justLoggedIn = true;
       client.auth.signInWithPassword(c).then(function (res) {
         if (res.error) throw res.error;
         App.toast('登入成功，開始同步');
@@ -421,6 +422,7 @@
     if (id === 'cl-signup') {
       var c2 = creds(); if (!c2) return;
       busy(e.target, true, '註冊中…');
+      justLoggedIn = true;
       client.auth.signUp({ email: c2.email, password: c2.password, options: { emailRedirectTo: redirectURL() } }).then(function (res) {
         if (res.error) throw res.error;
         if (res.data && res.data.session) App.toast('註冊成功，已登入');
@@ -438,17 +440,85 @@
       }).catch(function (err) { App.toast(friendly(err)); });
     }
     if (id === 'cl-sync') sync();
-    if (id === 'cl-logout') {
-      if (!confirm('要登出嗎？\n登出後資料仍保留在這台裝置，但不會再和雲端同步。')) return;
-      Promise.resolve(syncing).then(function () { return client.auth.signOut(); }).then(function () {
-        App.toast('已登出');
-      });
-    }
+    if (id === 'cl-logout') logout(e.target);
   });
+
+  // ---------- 登出 ----------
+  // 先確認資料、照片都已經在雲端，才清掉這台裝置的資料和照片暫存；沒同步完就不登出，避免資料遺失
+  function unsynced() {
+    if (status.state !== 'ok') return Promise.resolve(status.text || '同步沒有完成');
+    var meta = loadMeta();
+    if (!user || meta.userId !== user.id || !meta.base) return Promise.resolve('這台裝置還沒有和雲端同步過');
+    if (!eq(JSON.parse(meta.base), App.state())) return Promise.resolve('還有修改沒有上傳到雲端');
+    if (loadDel().length) return Promise.resolve('還有照片沒從雲端刪除');
+    var uid = user.id, missing = 0;
+    return withPhoto().reduce(function (chain, m) {
+      return chain.then(function () {
+        return Photos.get(m.photoId).then(function (p) {
+          if (p && p.blob && p.cloudUrl !== tagFor(pathFor(uid, m.photoId))) missing++;
+        });
+      });
+    }, Promise.resolve()).then(function () {
+      return missing ? '還有 ' + missing + ' 張照片沒上傳到雲端' : '';
+    });
+  }
+
+  function logout(btn) {
+    if (App.sampleMode()) {
+      alert('現在是範例資料。\n請先按最上方的「清除範例，開始使用」回到你的資料，確認同步完成後再登出。');
+      return;
+    }
+    if (!navigator.onLine) {
+      alert('現在沒有網路，沒辦法確認資料都已經同步到雲端。\n請連上網路後再登出，避免資料遺失。');
+      return;
+    }
+    if (!confirm('要登出嗎？\n登出前會先確認資料和照片都已經同步到雲端，接著清掉這台裝置上的資料和照片暫存。\n雲端的資料會保留，重新登入就會全部回來。')) return;
+    busy(btn, true, '確認同步中…');
+    clearTimeout(timer);
+    Promise.resolve(syncing).then(function () { return sync(); }).then(unsynced).then(function (why) {
+      if (why) {
+        busy(btn, false, '登出');
+        alert('還沒同步完成，先不登出：\n' + why + '\n\n請確認網路正常，按「立即同步」後再試一次。');
+        return;
+      }
+      busy(btn, true, '登出中…');
+      loggingOut = true;
+      return Promise.resolve().then(function () { return client.auth.signOut(); }).catch(function () { /* 沒網路也照樣清掉本機的登入 */ })
+        .then(function () { return App.clearLocalData(); })
+        .then(function () {
+          try { localStorage.removeItem('sb-luggage-auth'); } catch (e) { /* 不影響 */ }
+          location.hash = '#home';
+          location.reload();
+        });
+    }).catch(function (err) {
+      busy(btn, false, '登出');
+      alert('登出失敗：' + friendly(err));
+    });
+  }
+  var loggingOut = false;
+  var justLoggedIn = false;   // 這次是自己按了登入／註冊（不是重新整理後自動恢復登入）
+
+  // 登入後第一次同步完成前，畫面先不要顯示歡迎畫面（資料還在從雲端載回來）
+  var firstDone = false;
+  function markFirst() {
+    if (firstDone) return;
+    firstDone = true;
+    App.refreshView();
+  }
+  function waitingForData() {
+    if (firstDone) return false;
+    try { return !!localStorage.getItem('sb-luggage-auth'); } catch (e) { return false; }
+  }
 
   // ---------- 登入狀態 ----------
   var lastUserId = null;
   function onSignedIn() {
+    // 範例模式中自己按了「登入」：先清掉範例再載入你的資料（範例不會跟你的資料混在一起，也不會上傳）
+    // （已登入的人看「再看一次範例」時，重新整理會自動恢復登入，那不算，範例照常看）
+    if (App.sampleMode()) {
+      if (justLoggedIn) App.dropSample();
+      return;
+    }
     var meta = loadMeta();
     if (meta.userId && meta.userId !== user.id) {
       var ok = confirm('這台裝置上的資料，之前是和另一個帳號同步的。\n要把這些資料合併到目前登入的帳號（' + (user.email || '') + '）嗎？\n\n按「取消」會登出。');
@@ -485,6 +555,7 @@
           render();
           if (user) onSignedIn();
         }
+        if (!user && !loggingOut) markFirst();   // 沒有登入：不用等雲端
         // 確認信、重設密碼連結回來時，網址會帶一串登入資訊，清掉
         if (/access_token|refresh_token|type=/.test(location.hash)) history.replaceState(null, '', location.pathname + '#home');
       }, 0);
@@ -500,6 +571,6 @@
     render();
   }
 
-  window.Cloud = { schedule: schedule, sync: sync, queueDelete: queueDelete, merge3: merge3, render: render, status: function () { return status; } };
+  window.Cloud = { waitingForData: waitingForData, schedule: schedule, sync: sync, queueDelete: queueDelete, merge3: merge3, render: render, status: function () { return status; } };
   init();
 })();

@@ -1534,7 +1534,7 @@ button.pk-row.pk-simple { width: 100%; border: 0; background: none; font: inheri
 .ob-dots i.on { background: var(--text); }
 .ob-title { font-family: var(--serif); font-weight: 400; font-size: 1.5rem; letter-spacing: 0.04em; margin: 6px 0 6px; }
 .onboard-panel #ob-homes { margin: 10px 0 4px; min-height: 8px; }
-.onboard-panel #ob-sample, .onboard-panel #ob-start { width: 100%; margin-top: 10px; }
+.onboard-panel #ob-sample, .onboard-panel #ob-start, .onboard-panel #ob-login, .onboard-panel #ob-setup { width: 100%; margin-top: 10px; }
 .ob-login { display: inline-block; margin-top: 14px; }
 .ob-nav { margin-top: 22px; }
 
