@@ -1571,3 +1571,177 @@ button.pk-row.pk-simple { width: 100%; border: 0; background: none; font: inheri
 /* 新增衣服／抽屜物品：加入下一趟的打包清單 */
 .next-pack { margin: 12px 0 4px; }
 .next-pack[hidden] { display: none !important; }
+
+/* =====================================================================
+   第三版：時尚雜誌大片（只改外觀）
+   - 固定幾種字級、間距；每頁一個最大的主角標題
+   - 英文欄目名全大寫加寬字距；數字統一用 Bodoni Moda（細緻的時尚雜誌數字）
+   - 細線分隔、不用框線與陰影；照片是主角；動畫 0.2 秒，減少動態效果時關閉
+   ===================================================================== */
+:root {
+  --num: "Bodoni Moda", "Noto Serif TC", serif;
+  --fs-eyebrow: 0.66rem;   /* 英文欄目名 */
+  --fs-meta: 0.78rem;      /* 小字、說明 */
+  --fs-body: 0.95rem;      /* 內文 */
+  --fs-sub: 1.2rem;        /* 區塊標題（襯線） */
+  --fs-title: clamp(2.5rem, 10vw, 3.4rem);   /* 每頁的大標題 */
+  --fs-hero: clamp(6.5rem, 34vw, 11rem);     /* 剩餘公斤數 */
+  --sp-1: 8px;
+  --sp-2: 16px;
+  --sp-3: 32px;
+  --sp-4: 56px;
+  --placeholder: #F1EDE6;
+  --ease: cubic-bezier(.2, .7, .2, 1);
+  --hanger: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23B8AF9F' stroke-width='1' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M10.2 6.6a1.8 1.8 0 1 1 1.8 1.8c-.5 0-.9.4-.9.9v1.2'/%3E%3Cpath d='M11.1 10.5 3.6 16c-.6.4-.3 1.3.4 1.3h16c.7 0 1-.9.4-1.3l-7.5-5.5'/%3E%3C/svg%3E");
+}
+body { font-size: var(--fs-body); line-height: 1.65; }
+main { padding-top: var(--sp-3); }
+@media (min-width: 760px) { main { max-width: 720px; padding-left: 24px; padding-right: 24px; } }
+
+/* ---------- 字級：每頁一個主角 ---------- */
+h1 {
+  font-size: var(--fs-title); font-weight: 300; line-height: 1.12; letter-spacing: 0.02em;
+  margin: 4px 0 var(--sp-3);
+}
+h1[data-en]::before {
+  font-size: var(--fs-eyebrow); letter-spacing: 0.38em; text-transform: uppercase; font-weight: 500;
+  margin-bottom: 14px; color: var(--muted);
+}
+.eyebrow { font-size: var(--fs-eyebrow); letter-spacing: 0.38em; text-transform: uppercase; }
+.page-head { margin-bottom: 0; }
+.page-head h1 { margin-bottom: var(--sp-3); }
+.small, .muted.small, .link.small { font-size: var(--fs-meta); }
+.sheet-title, .card-head, .sec-title, .trip-name, .bag-row-name b, .plus-item > span:first-child,
+.pk-zone-head b, .dr-group-head b, .next-name, .trip-here b, .ob-title {
+  font-family: var(--serif); font-weight: 400; font-size: var(--fs-sub); letter-spacing: 0.05em;
+}
+.sheet-title { margin-bottom: var(--sp-2); }
+.field-title { font-size: var(--fs-meta); letter-spacing: 0.14em; color: var(--muted); font-weight: 500; }
+label { font-size: var(--fs-meta); letter-spacing: 0.06em; }
+
+/* ---------- 數字：統一一套細緻的數字字型 ---------- */
+.tc-value span, .pk-remain b, .shop-remain, .total-value, .allow-item b, .bp-progress b, .bag-row .bag-w b,
+.pk-w-item, .tc-date, .trip-dates, .dr-qty input, .stepper input, .tc-goal, .bp-w, .bg-tare, .cloth .t small,
+.tab small, .pk-zone-head .muted, .dr-group-head .muted, .tp-preview, .leg-no {
+  font-family: var(--num); font-variant-numeric: lining-nums tabular-nums; font-optical-sizing: auto;
+}
+.tc-value {
+  font-family: var(--num); font-weight: 400; font-size: var(--fs-hero); line-height: .92;
+  letter-spacing: -0.035em; margin: var(--sp-2) 0 var(--sp-2);
+}
+.tc-value small { font-family: var(--sans); font-size: 0.11em; letter-spacing: 0.24em; margin-left: 10px; }
+.tc-label { font-size: var(--fs-eyebrow); letter-spacing: 0.38em; color: var(--muted); margin-top: var(--sp-3); }
+.tc-date { font-size: var(--fs-meta); letter-spacing: 0.12em; }
+.tc-route { font-size: var(--fs-sub); letter-spacing: 0.08em; margin-top: 10px; }
+.tc-note { font-size: var(--fs-meta); }
+.trip-cards .trip-card { padding: var(--sp-3) 8px var(--sp-4); }
+.pk-remain b { font-weight: 400; font-size: 3.4rem; letter-spacing: -0.02em; }
+.shop-card .shop-remain { font-weight: 400; font-size: 3.4rem; letter-spacing: -0.02em; }
+.pk-w-item, .bp-w { font-size: var(--fs-meta); }
+
+/* ---------- 留白與細線：不用框線、卡片、陰影 ---------- */
+.card { padding: var(--sp-3) 0; }
+.home-sec { padding: var(--sp-3) 0; }
+.sec-head { margin-bottom: var(--sp-2); }
+.masthead { padding: 4px 0 var(--sp-2); margin-bottom: 0; }
+.pk-zone, .dr-group { margin-top: var(--sp-3); }
+.bag-row, .bp-row, .dr-row, .bg-row, .more-row, .pk-row { border-top-color: var(--line); }
+.leg-card { border: 0; border-top: 1px solid var(--line); padding-top: var(--sp-3); }
+.conn-box { border: 0; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); padding: var(--sp-2) 0; }
+.sheet-panel { padding-top: 26px; }
+.arrival-banner { border-left-width: 1px; }
+
+/* ---------- 按鈕：主要＝深海軍藍，次要＝文字或細框 ---------- */
+.btn { min-height: 48px; font-size: 0.86rem; letter-spacing: 0.16em; transition: opacity .2s var(--ease), background-color .2s var(--ease); }
+.btn.primary { background: var(--primary); color: #fff; border: 1px solid var(--primary); }
+.btn.ghost { background: transparent; border: 1px solid var(--primary); color: var(--primary); }
+.btn:active { opacity: .8; }
+.btn.danger { color: var(--bad); letter-spacing: 0.12em; }
+.chip { transition: background-color .2s var(--ease), color .2s var(--ease); }
+.plus-btn { background: var(--gold); width: 52px; height: 52px; }
+.plus-btn svg { stroke-width: 1.4; }
+
+/* ---------- 圖示：同一套細線條，粗細一致 ---------- */
+.tabbar .ico, .account-btn svg, .gift-ico, .ico-i { stroke-width: 1.4; }
+.ico-wrap { display: inline-flex; vertical-align: -0.14em; margin-right: 0.3em; line-height: 1; }
+.ico-i { width: 1.05em; height: 1.05em; }
+.icon-btn .ico-wrap { margin: 0; }
+.icon-btn .ico-i { width: 18px; height: 18px; }
+
+/* ---------- 照片的統一占位：淡色方塊＋細線衣架 ---------- */
+.cloth .ph, .bp-thumb, .bg-thumb, .org-thumb, .chip-thumb, .pick-ph {
+  background-color: var(--placeholder);
+  background-image: var(--hanger); background-repeat: no-repeat; background-position: center; background-size: 42%;
+  border: 0;
+}
+.cloth .ph.swatch { background-image: none; background-color: var(--sw); }
+.cloth .ph img { background: #fff; }
+.cloth .ph img.no-photo { display: none; }
+img.bp-thumb.no-photo, img.bg-thumb.no-photo, img.org-thumb.no-photo, img.chip-thumb.no-photo {
+  visibility: visible; content: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23B8AF9F' stroke-width='1' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M10.2 6.6a1.8 1.8 0 1 1 1.8 1.8c-.5 0-.9.4-.9.9v1.2'/%3E%3Cpath d='M11.1 10.5 3.6 16c-.6.4-.3 1.3.4 1.3h16c.7 0 1-.9.4-1.3l-7.5-5.5'/%3E%3C/svg%3E");
+  padding: 6px;
+}
+.chip-thumb { border-radius: 0; }
+
+/* ---------- 衣櫃：大圖格子（手機 2 張、iPad 3～4 張） ---------- */
+.closet-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--sp-3) var(--sp-2); margin-top: var(--sp-3); }
+@media (min-width: 700px) { .closet-grid { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 40px 20px; } }
+.cloth .ph { aspect-ratio: 4 / 5; }
+.cloth .ph img { width: 100%; height: 100%; object-fit: cover; }
+.cloth .meta { padding: 12px 0 0; display: block; }
+.cloth .t {
+  display: block; font-size: var(--fs-meta); font-weight: 400; letter-spacing: 0.08em; color: var(--text);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.cloth .home, .cloth .dots, .cloth .brand, .cloth .sample-tag { display: none; }
+.cloth .packed {
+  top: 10px; left: 10px; background: rgba(255, 255, 255, .92); border: 0; color: var(--primary);
+  font-size: 0.6rem; letter-spacing: 0.22em; padding: 4px 8px; border-radius: 0; font-weight: 500;
+}
+.cloth .packed.pending { color: var(--warn); }
+.cloth-link { display: block; text-decoration: none; color: inherit; }
+
+/* 單品頁：大圖置頂，資訊用細線分隔 */
+#closet-form .photo-box { aspect-ratio: 4 / 5; max-height: 72vh; border: 0; background: var(--placeholder); margin-bottom: var(--sp-3) !important; }
+#closet-form .photo-box.has-photo { background: #fff; }
+#closet-form .photo-box img { object-fit: contain; }
+#cf-tags .field-title, #closet-form .form > label, #cf-loc, #cf-straps, #cf-extra {
+  border-top: 1px solid var(--line); padding-top: var(--sp-2); margin-top: var(--sp-2);
+}
+
+/* 首頁「我的行李」展開的物品：縮圖排列整齊 */
+.bp-row { gap: 12px; padding: 10px 0; }
+.bp-thumb { width: 40px; height: 40px; flex: none; object-fit: cover; }
+
+/* ---------- 打勾框：細線方框，勾選時填滿深海軍藍 ---------- */
+.pk-check, .bp-check {
+  border: 1px solid var(--primary); border-radius: 0; background: transparent; color: #fff;
+  transition: background-color .2s var(--ease), border-color .2s var(--ease);
+}
+.pk-row.done .pk-check, .bp-row.done .bp-check { background: var(--primary); border-color: var(--primary); color: #fff; }
+.pk-simple.done .pk-name { color: var(--muted); text-decoration: line-through; text-decoration-thickness: 1px; text-decoration-color: var(--line); }
+@keyframes cmo-pop { 0% { transform: scale(.82); } 60% { transform: scale(1.08); } 100% { transform: scale(1); } }
+.just-checked { animation: cmo-pop .22s var(--ease); }
+
+/* ---------- 空白狀態：一句話＋一個按鈕 ---------- */
+.empty-state, .trip-none { text-align: center; padding: var(--sp-4) 0; }
+.empty-line { font-family: var(--serif); font-weight: 300; font-size: var(--fs-sub); letter-spacing: 0.08em; color: var(--text); margin: 0 0 var(--sp-2); }
+.empty-state .btn, .trip-none .btn { display: inline-flex; align-items: center; justify-content: center; width: auto; padding: 0 32px; text-decoration: none; }
+.empty-big { font-family: var(--serif); font-weight: 300; font-size: var(--fs-sub); color: var(--text); padding: var(--sp-4) 0; }
+
+/* ---------- 很輕的動畫：換頁淡入、視窗滑入（0.2 秒） ---------- */
+@keyframes cmo-fade { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+@keyframes cmo-up { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
+@keyframes cmo-dim { from { opacity: 0; } to { opacity: 1; } }
+.view:not([hidden]) { animation: cmo-fade .22s var(--ease); }
+.sheet:not([hidden]) { animation: cmo-dim .2s var(--ease); }
+.sheet:not([hidden]) > .sheet-panel { animation: cmo-up .22s var(--ease); }
+.tabbar a { transition: color .2s var(--ease); }
+
+/* iPad 開啟「減少動態效果」：不要動畫 */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation: none !important; transition: none !important; scroll-behavior: auto !important; }
+}
+/* 行程編輯的「有家」「行李要領出」提示：不用框線，只留細線圖示和文字 */
+.home-badge, .recheck-badge { border: 0 !important; background: transparent !important; padding: 2px 0 !important; border-radius: 0 !important; font-size: var(--fs-meta); letter-spacing: 0.06em; }
+.recheck-badge { color: var(--gold); }

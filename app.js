@@ -681,7 +681,7 @@
       '<div class="tc-date">' + esc(tripDates(t)) + '<span class="tc-name">' + esc(t.name || '') + '</span></div>' +
       '<div class="tc-route">' + tripRoute(t) + '</div>' +
       '<div class="tc-label">剩餘公斤數</div>' +
-      '<div class="tc-value' + (r.remain == null ? ' none' : '') + '"><span>' + (r.remain == null ? '—' : fmt(r.remain)) + '</span><small> kg' +
+      '<div class="tc-value' + (r.remain == null ? ' none' : '') + '"><span data-roll="tc:' + esc(t.id) + '">' + (r.remain == null ? '—' : fmt(r.remain)) + '</span><small> kg' +
       '<i class="tc-dot ' + lv + '" title="' + (lv === 'bad' ? '超重' : lv === 'warn' ? '快滿了' : lv === 'ok' ? '充裕' : '尚未設定額度') + '"></i></small></div>' +
       (r.remain == null ? '<div class="tc-note">尚未設定額度</div>' :
         r.tight && r.leg ? '<div class="tc-note">最緊：' + esc(r.leg.from || '?') + ' → ' + esc(r.leg.to || '?') + '</div>' : '') +
@@ -725,6 +725,7 @@
     box.scrollLeft = idx * box.clientWidth;   // 停在目前看的那一趟
     renderDots(trips, idx);
     renderBags();
+    if (window.UI) window.UI.rollAll(box);   // 剩餘公斤數改變時平滑滾動
   }
 
   function renderDots(trips, idx) {
@@ -865,7 +866,7 @@
         var m = r.catalogId && entryById(r.catalogId);
         return '<div class="bp-row' + (r.done ? ' done' : '') + '">' +
           '<button type="button" class="bp-check" data-bp-check="' + r.kind + ':' + esc(r.id) + '" aria-label="' + (r.done ? '取消收好' : '收好了') + '">' + (r.done ? '✓' : '') + '</button>' +
-          (m && m.photoId ? '<img class="bp-thumb" data-photo="' + esc(m.photoId) + '" alt="">' : '') +
+          (m && m.photoId ? '<img class="bp-thumb" data-photo="' + esc(m.photoId) + '" alt="">' : '<span class="bp-thumb none" aria-hidden="true"></span>') +
           '<span class="bp-name">' + (r.gift ? GIFT_ICON : '') + (r.buy ? '<span class="bp-buy" title="旅途中買的">購</span>' : '') + esc(r.name) + (r.qty > 1 ? ' <span class="muted">× ' + r.qty + ' ' + esc(r.unit || '') + '</span>' : '') + '</span>' +
           '<span class="bp-w">' + fmtWeight(r.weight) + '</span>' +
           (others.length ? '<select class="bp-move" data-bp-move="' + r.kind + ':' + esc(r.id) + '" aria-label="移到別的行李"><option value="">移到…</option>' +
@@ -895,12 +896,18 @@
     }
     if ((el = e.target.closest('[data-bp-check]'))) {
       var r = splitRef(el.getAttribute('data-bp-check'));
+      var rowName = (el.closest('.bp-row') && el.closest('.bp-row').querySelector('.bp-name') || {}).textContent;
       if (r.kind === 'entry') { window.Packing.checkEntry(r.id); toast('收好了'); }
       else if (!window.Packing.uncheckItem(r.id)) {
         var it0 = state.items.find(function (x) { return x.id === r.id; });
         if (it0 && confirm('這個行李不在這趟的打包清單上。要把「' + it0.name + '」從行李拿出來嗎？')) window.Packing.takeOutItem(r.id);
       }
       renderHome();
+      // 剛打勾的那一格輕輕跳一下
+      if (r.kind === 'entry' && window.UI) {
+        var row = [].slice.call(document.querySelectorAll('#bag-list .bp-row.done')).find(function (x) { return (x.querySelector('.bp-name') || {}).textContent === rowName; });
+        if (row) window.UI.pop(row.querySelector('.bp-check'));
+      }
       return;
     }
     if ((el = e.target.closest('[data-bp-out]'))) {

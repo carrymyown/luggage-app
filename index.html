@@ -9,14 +9,14 @@
   <meta name="apple-mobile-web-app-title" content="Carry My Own">
   <title>Carry My Own</title>
   <!-- 圖示：瀏覽器分頁（網址前面）、iPad 主畫面、安裝成 app 時用 -->
-  <link rel="icon" type="image/svg+xml" href="icons/favicon.svg?v=20261117h">
-  <link rel="icon" href="icons/favicon-32.png?v=20261117h" sizes="32x32" type="image/png">
-  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png?v=20261117h">
+  <link rel="icon" type="image/svg+xml" href="icons/favicon.svg?v=20261117i">
+  <link rel="icon" href="icons/favicon-32.png?v=20261117i" sizes="32x32" type="image/png">
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png?v=20261117i">
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&family=Noto+Serif+TC:wght@300;400;600&display=swap">
-  <link rel="stylesheet" href="style.css?v=20261117h">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:opsz,wght@6..96,400;6..96,500&family=Noto+Sans+TC:wght@400;500;700&family=Noto+Serif+TC:wght@300;400;600&display=swap">
+  <link rel="stylesheet" href="style.css?v=20261117i">
 </head>
 <body>
   <main>
@@ -35,7 +35,8 @@
       <div id="trip-cards" class="trip-cards" aria-label="接下來的旅程"></div>
       <div id="trip-dots" class="trip-dots" hidden></div>
       <div id="trip-none" class="trip-none" hidden>
-        <a class="btn primary first-trip-btn" href="#trips/new">＋ 先新增一趟旅程</a>
+        <p class="empty-line">還沒有旅程</p>
+        <a class="btn primary first-trip-btn" href="#trips/new">先新增一趟旅程</a>
       </div>
 
 
@@ -161,7 +162,7 @@
 
         <div id="trip-view-list">
           <div id="trip-list"></div>
-          <p id="trip-empty" class="empty-big" hidden>還沒有旅程・<a href="#trips/new" class="link">＋新增第一趟</a></p>
+          <div id="trip-empty" class="empty-state" hidden><p class="empty-line">還沒有旅程</p><a href="#trips/new" class="btn primary">新增第一趟</a></div>
         </div>
 
         <div id="trip-view-month" hidden>
@@ -229,7 +230,7 @@
     <!-- 打包清單 -->
     <section id="view-pack" class="view" hidden>
       <div class="page-head"><h1 data-en="PACKING">打包清單</h1></div>
-      <p id="pack-empty" class="empty-big" hidden>還沒有旅程・<a href="#trips/new" class="link">＋新增第一趟</a></p>
+      <div id="pack-empty" class="empty-state" hidden><p class="empty-line">還沒有旅程</p><a href="#trips/new" class="btn primary">新增第一趟</a></div>
 
       <div id="pack-main" hidden>
         <label class="pk-trip" id="pack-trip-wrap">這趟旅程
@@ -306,7 +307,7 @@
     <section id="view-shop" class="view" hidden>
       <div class="home-switch"><button type="button" data-shop-tab="buy" class="on">購物</button><button type="button" data-shop-tab="gift">送禮</button></div>
       <div class="page-head"><h1 id="shop-h1" data-en="SHOPPING">回程購物</h1></div>
-      <p id="shop-empty" class="empty-big" hidden>還沒有旅程。<br>先到「行程」新增一趟旅程，就能記錄購物和禮物。<br><a href="#trips/new" class="link">＋ 新增旅程</a></p>
+      <div id="shop-empty" class="empty-state" hidden><p class="empty-line">先新增一趟旅程，就能記錄購物和禮物</p><a href="#trips/new" class="btn primary">新增旅程</a></div>
       <div id="shop-main" hidden>
         <label class="pk-trip">這趟旅程
           <select id="shop-trip"></select>
@@ -361,7 +362,7 @@
           <div class="filter-row"><span class="filter-label">風格</span><div id="closet-f-style" class="chips filter"></div></div>
         </div>
         <div id="closet-grid" class="closet-grid"></div>
-        <p id="closet-empty" class="empty-big" hidden>還沒有衣服・<a href="#closet/new" class="link">＋新增第一件</a></p>
+        <div id="closet-empty" class="empty-state" hidden><p class="empty-line">還沒有衣服</p><a href="#closet/new" class="btn primary">新增第一件</a></div>
         <p id="closet-storage" class="muted small center"></p>
       </div>
 
@@ -835,22 +836,23 @@
     </div>
   </div>
 
-  <script src="weights.js?v=20261117h"></script>
-  <script src="photos.js?v=20261117h"></script>
-  <script src="clothing.js?v=20261117h"></script>
-  <script src="app.js?v=20261117h"></script>
-  <script src="closet.js?v=20261117h"></script>
-  <script src="trips.js?v=20261117h"></script>
-  <script src="organize.js?v=20261117h"></script>
-  <script src="packing.js?v=20261117h"></script>
-  <script src="drawer.js?v=20261117h"></script>
-  <script src="bags.js?v=20261117h"></script>
-  <script src="shop.js?v=20261117h"></script>
-  <script src="sample-data.js?v=20261117h"></script>
-  <script src="onboard.js?v=20261117h"></script>
-  <script src="nav.js?v=20261117h"></script>
-  <script src="backup.js?v=20261117h"></script>
+  <script src="weights.js?v=20261117i"></script>
+  <script src="photos.js?v=20261117i"></script>
+  <script src="clothing.js?v=20261117i"></script>
+  <script src="ui.js?v=20261117i"></script>
+  <script src="app.js?v=20261117i"></script>
+  <script src="closet.js?v=20261117i"></script>
+  <script src="trips.js?v=20261117i"></script>
+  <script src="organize.js?v=20261117i"></script>
+  <script src="packing.js?v=20261117i"></script>
+  <script src="drawer.js?v=20261117i"></script>
+  <script src="bags.js?v=20261117i"></script>
+  <script src="shop.js?v=20261117i"></script>
+  <script src="sample-data.js?v=20261117i"></script>
+  <script src="onboard.js?v=20261117i"></script>
+  <script src="nav.js?v=20261117i"></script>
+  <script src="backup.js?v=20261117i"></script>
   <script src="vendor/supabase.js"></script>
-  <script src="cloud.js?v=20261117h"></script>
+  <script src="cloud.js?v=20261117i"></script>
 </body>
 </html>

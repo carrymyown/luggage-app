@@ -532,6 +532,7 @@
     var lv = r.remain == null ? 'none' : level(r.remain, r.limit);
     el.className = 'pk-remain ' + lv;
     $('#pack-remain-num').textContent = r.remain == null ? '—' : fmt(r.remain);
+    if (window.UI) window.UI.roll($('#pack-remain-num'), 'pack:' + curTrip.id);   // 打勾後數字平滑滾動
     el.title = r.remain == null ? '這趟還沒設定額度' : '';
   }
 
@@ -548,6 +549,7 @@
       var e = entryById(el.getAttribute('data-check'));
       setChecked(curList, e, !e.checked);
       commit();
+      if (e.checked && window.UI) window.UI.pop(document.querySelector('#view-pack [data-check="' + e.id + '"]'));   // 打勾的小動畫
       return;
     }
     if ((el = t.closest('[data-row]'))) { openMove(entryById(el.getAttribute('data-row'))); return; }
