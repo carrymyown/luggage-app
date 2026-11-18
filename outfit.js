@@ -435,7 +435,7 @@
       if (t && !tid) { location.replace('#outfit/' + encodeURIComponent(t.id)); return; }
     }
     if (!t) {
-      view().innerHTML = '<div class="page-head"><h1 data-en="OUTFITS">每日穿搭</h1></div><div class="empty-state"><p class="empty-line">還沒有旅程</p><a href="#trips/new" class="btn primary">新增第一趟</a></div>';
+      view().innerHTML = '<div class="page-head"><h1 data-en="OUTFITS">穿搭</h1></div><div class="empty-state"><p class="empty-line">還沒有旅程</p><a href="#trips/new" class="btn primary">新增第一趟</a></div>';
       return;
     }
     curTrip = t; curDate = date || '';
@@ -446,7 +446,7 @@
   function renderList() {
     var t = curTrip, planned = planTrip(t), sm = summary(t, planned);
     var r = App.tripRemain(t);
-    var html = '<div class="page-head"><h1 data-en="OUTFITS">' + esc(t.name || '每日穿搭') + '</h1>' +
+    var html = '<div class="page-head"><h1 data-en="OUTFITS">' + esc(t.name || '穿搭') + '</h1>' +
       '<a class="btn ghost small-btn" href="#trips/' + encodeURIComponent(t.id) + '">編輯旅程</a></div>';
     if (!planned.length) {
       view().innerHTML = html + '<div class="empty-state"><p class="empty-line">先填上航班日期，就能看每一天的穿搭</p><a class="btn primary" href="#trips/' + encodeURIComponent(t.id) + '">填寫航班</a></div>';
@@ -503,7 +503,7 @@
     }
     if (inList(p.acts, '正式場合')) reasons.push('正式場合，選正式風格');
     if (inList(p.acts, '長途飛行')) reasons.push('長途飛行，選舒適的');
-    var html = '<div class="page-head of-day-head"><div><a class="link small" href="#outfit/' + encodeURIComponent(t.id) + '">‹ 每日穿搭</a>' +
+    var html = '<div class="page-head of-day-head"><div><a class="link small" href="#outfit/' + encodeURIComponent(t.id) + '">‹ 穿搭</a>' +
       '<h1 data-en="DAY ' + (planned.indexOf(p) + 1) + '">' + esc(md(d.date)) + ' ' + esc(d.flight || d.city) + '</h1></div></div>' +
       '<div class="of-weather">' + weatherText(p.ctx.w) + (homeAt(d.city) && homeAt(d.city) !== homeAt(curTrip.origin) ? '<span class="muted small">' + esc(App.homeCity(homeAt(d.city))) + '有家：那裡的衣服也能穿、不用帶</span>' : '') + '</div>' +
       '<div class="field-title">當天活動</div><div class="chips of-acts">' + acts.map(function (a) {

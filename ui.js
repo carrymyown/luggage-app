@@ -5,7 +5,9 @@
  *    文字和資料本身不變，只是顯示時換成 SVG；確認視窗、提示訊息這類純文字的地方照舊。
  * 2. 數字平滑滾動：剩餘公斤數改變時，從舊數字滾到新數字（約 0.2 秒）
  * 3. 打勾的小動畫：剛打勾的那一格輕輕跳一下
- * iPad 開啟「減少動態效果」時，2、3 都不做。
+ * 4. 行李進度條：已放（近黑）＋還能放（霧感天空藍；剩不到 15% 芥末黃；超重整條酒紅），右邊「7 / 23 kg」＋「快滿」「超重」小字
+ *    打包頁每個行李、打包頁最上方整趟、首頁行李區塊三個地方共用；寬度變化約 0.2 秒
+ * iPad 開啟「減少動態效果」時，2、3、4 的動畫都不做。
  */
 (function () {
   'use strict';
@@ -116,5 +118,40 @@
     setTimeout(function () { el.classList.remove('just-checked'); }, 400);
   }
 
-  window.UI = { roll: roll, rollAll: rollAll, pop: pop, icon: svg };
+  // ---------- 4. 行李進度條 ----------
+  function kg(v) { var r = Math.round((Number(v) || 0) * 10) / 10; return String(Object.is(r, -0) ? 0 : r); }
+  var WARN = 0.15;   // 剩不到 15% 算「快滿」
+  // load：已放的重量；limit：額度（null＝還沒設定）；key：同一條進度條的識別（寬度和數字從上次的值平滑變過去）
+  function barLevel(load, limit) {
+    if (limit == null || !(limit > 0)) return 'none';
+    if (load > limit + 1e-9) return 'over';
+    return (limit - load) / limit < WARN ? 'warn' : 'ok';
+  }
+  function bar(load, limit, key, extra) {
+    var lv = barLevel(load, limit);
+    var pct = lv === 'none' ? 0 : Math.max(0, Math.min(100, load / limit * 100));
+    var flag = lv === 'over' ? '超重' : lv === 'warn' ? '快滿' : lv === 'none' ? '尚未設定額度' : '';
+    return '<span class="wbar ' + lv + '">' +
+      '<span class="wbar-track" role="img" aria-label="' + kg(load) + (lv === 'none' ? ' 公斤' : ' / ' + kg(limit) + ' 公斤') + (flag ? '，' + flag : '') + '">' +
+        '<i class="wbar-fill" data-bar="' + key + '" style="width:' + pct.toFixed(2) + '%"></i></span>' +
+      '<span class="wbar-num"><span data-roll="bar:' + key + '">' + kg(load) + '</span><small>' + (lv === 'none' ? ' kg' : ' / ' + kg(limit) + ' kg') + '</small>' +
+        (flag ? '<em class="wbar-flag">' + flag + '</em>' : '') + (extra || '') + '</span></span>';
+  }
+  var lastW = {};
+  // 畫好之後呼叫：每條從上次的寬度滑到新的寬度（減少動態效果時直接跳到新的）
+  function animateBars(root) {
+    (root || document).querySelectorAll('[data-bar]').forEach(function (el) {
+      var key = el.getAttribute('data-bar'), to = el.style.width, from = lastW[key];
+      lastW[key] = to;
+      if (from == null || from === to || calm()) return;
+      el.style.transition = 'none';
+      el.style.width = from;
+      void el.offsetWidth;
+      el.style.transition = '';
+      el.style.width = to;
+    });
+    rollAll(root);
+  }
+
+  window.UI = { roll: roll, rollAll: rollAll, pop: pop, icon: svg, bar: bar, barLevel: barLevel, animateBars: animateBars, kg: kg };
 })();

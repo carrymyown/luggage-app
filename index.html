@@ -8,17 +8,17 @@
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-title" content="Carry My Own">
   <!-- 目前的版本（發布時更新；和 version.json 比對，有新版就提示更新） -->
-  <meta name="app-version" content="20261118i">
+  <meta name="app-version" content="20261118j">
   <title>Carry My Own</title>
   <!-- 圖示：瀏覽器分頁（網址前面）、iPad 主畫面、安裝成 app 時用 -->
-  <link rel="icon" type="image/svg+xml" href="icons/favicon.svg?v=20261118i">
-  <link rel="icon" href="icons/favicon-32.png?v=20261118i" sizes="32x32" type="image/png">
-  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png?v=20261118i">
+  <link rel="icon" type="image/svg+xml" href="icons/favicon.svg?v=20261118j">
+  <link rel="icon" href="icons/favicon-32.png?v=20261118j" sizes="32x32" type="image/png">
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png?v=20261118j">
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800;900&family=Noto+Sans+TC:wght@400;500;700;900&display=swap">
-  <link rel="stylesheet" href="style.css?v=20261118i">
+  <link rel="stylesheet" href="style.css?v=20261118j">
 </head>
 <body>
   <main>
@@ -47,7 +47,7 @@
       <div id="gift-banner" class="card arrival-banner gift-banner" hidden></div>
 
       <section id="bags-block" class="home-sec">
-        <div class="sec-head"><span class="eyebrow">LUGGAGE</span><span class="sec-right"><span class="sec-title">我的行李</span><a id="bags-limit-link" class="link small" href="#trips">修改額度</a></span></div>
+        <div class="sec-head"><span class="eyebrow">BAGS</span><span class="sec-right"><span class="sec-title">行李</span><a id="bags-limit-link" class="link small" href="#trips">修改額度</a></span></div>
         <div id="bag-list"></div>
       </section>
 
@@ -143,11 +143,11 @@
         <button type="submit" class="btn primary">加入行李</button>
       </form>
     </section>
-    <!-- 行程設定 -->
+    <!-- 行程 -->
     <section id="view-trips" class="view" hidden>
       <div id="trip-list-view">
         <div class="page-head">
-          <h1 data-en="TRIP">行程設定</h1>
+          <h1 data-en="TRIPS">行程</h1>
           <a href="#trips/new" class="btn primary small-btn">＋ 新增旅程</a>
         </div>
         <p id="trip-here" class="trip-here" hidden></p>
@@ -191,7 +191,7 @@
       <form id="trip-form" class="form" autocomplete="off" hidden>
         <div class="page-head">
           <a href="#trips" class="link back">‹ 行程</a>
-          <h1 id="tf-title" data-en="TRIP">新增旅程</h1>
+          <h1 id="tf-title" data-en="TRIPS">新增旅程</h1>
           <span class="back"></span>
         </div>
         <div class="card">
@@ -229,9 +229,9 @@
       </form>
     </section>
 
-    <!-- 打包清單 -->
+    <!-- 打包：清單 LIST／行李 BAGS 兩個分頁 -->
     <section id="view-pack" class="view" hidden>
-      <div class="page-head"><h1 data-en="PACKING">打包清單</h1></div>
+      <div class="page-head"><h1 data-en="PACKING">打包</h1></div>
       <div id="pack-empty" class="empty-state" hidden><p class="empty-line">還沒有旅程</p><a href="#trips/new" class="btn primary">新增第一趟</a></div>
 
       <div id="pack-main" hidden>
@@ -239,17 +239,21 @@
           <select id="pack-trip"></select>
         </label>
 
-        <!-- 只留一行：還能放幾公斤（和首頁的剩餘公斤數同一個數字；打勾就扣、取消就加回來） -->
-        <div id="pack-remain" class="pk-remain"><span class="pk-remain-label">還能放</span><b id="pack-remain-num">—</b><span class="pk-remain-unit">kg</span></div>
+        <!-- 整趟的剩餘公斤數：進度條（已放 / 額度，和首頁、每個行李同一個樣式；打勾就即時變動） -->
+        <div id="pack-remain" class="pk-remain"></div>
 
-        <!-- 兩個分頁：要帶什麼（還沒放進去的）／行李箱（已經放進每個箱子的） -->
+        <!-- 兩個平行的分頁：清單（要帶什麼、還沒放進去的）／行李（每個行李箱裡放了什麼） -->
         <div id="pack-tabs" class="home-switch pk-tabs" role="tablist">
-          <button type="button" data-pack-tab="todo" role="tab">要帶什麼 <small id="pk-todo-n"></small></button>
-          <button type="button" data-pack-tab="bags" role="tab">行李箱 <small id="pk-bags-n"></small></button>
+          <button type="button" data-pack-tab="todo" role="tab">清單<span class="tab-en">LIST</span><small id="pk-todo-n"></small></button>
+          <button type="button" data-pack-tab="bags" role="tab">行李<span class="tab-en">BAGS</span><small id="pk-bags-n"></small></button>
         </div>
 
         <div id="pack-tab-todo">
-          <button type="button" id="pack-add" class="btn ghost pk-add-btn">＋ 新增</button>
+          <!-- 清單右上角：編輯（一次刪很多項、拖曳調整順序；按「完成」結束） -->
+          <div class="pk-list-tools">
+            <button type="button" id="pack-add" class="btn ghost pk-add-btn">＋ 新增</button>
+            <button type="button" id="pack-edit" class="link small pk-edit-btn">編輯</button>
+          </div>
           <div id="pack-todo"></div>
           <div id="pack-done-note" class="pk-done-note"></div>
         </div>
@@ -272,10 +276,10 @@
     <!-- 每日穿搭：旅程的每一天（天氣、活動、穿搭）和整趟的總結 -->
     <section id="view-outfit" class="view" hidden></section>
 
-    <!-- 我的抽屜 -->
+    <!-- 家 → 抽屜 -->
     <section id="view-drawer" class="view" hidden>
-      <div class="home-switch"><a href="#closet">我的衣櫃</a><a href="#drawer" class="on">我的抽屜</a><a href="#bags">我的行李箱</a></div>
-      <div class="page-head"><h1 data-en="DRAWER">我的抽屜</h1></div>
+      <div class="home-switch"><a href="#closet">衣櫃<span class="tab-en">WARDROBE</span></a><a href="#drawer" class="on">抽屜<span class="tab-en">DRAWER</span></a><a href="#bags">行李箱<span class="tab-en">LUGGAGE</span></a></div>
+      <div class="page-head"><h1 data-en="HOMES">家</h1></div>
       <div id="dr-tabs" class="tabs"></div>
 
       <form id="dr-add" class="card form dr-add" autocomplete="off">
@@ -312,10 +316,10 @@
       <div id="dr-list"></div>
     </section>
 
-    <!-- 我的行李箱 -->
+    <!-- 家 → 行李箱 -->
     <section id="view-bags" class="view" hidden>
-      <div class="home-switch"><a href="#closet">我的衣櫃</a><a href="#drawer">我的抽屜</a><a href="#bags" class="on">我的行李箱</a></div>
-      <div class="page-head"><h1 data-en="SUITCASES">我的行李箱</h1></div>
+      <div class="home-switch"><a href="#closet">衣櫃<span class="tab-en">WARDROBE</span></a><a href="#drawer">抽屜<span class="tab-en">DRAWER</span></a><a href="#bags" class="on">行李箱<span class="tab-en">LUGGAGE</span></a></div>
+      <div class="page-head"><h1 data-en="HOMES">家</h1></div>
       <p class="muted small">每個家放了哪些行李箱。打包時從這裡選這趟要用哪一個。</p>
       <div id="bg-list"></div>
     </section>
@@ -323,7 +327,7 @@
     <!-- 回程購物・送禮 -->
     <section id="view-shop" class="view" hidden>
       <div class="home-switch"><button type="button" data-shop-tab="buy" class="on">購物</button><button type="button" data-shop-tab="gift">送禮</button></div>
-      <div class="page-head"><h1 id="shop-h1" data-en="SHOPPING">回程購物</h1></div>
+      <div class="page-head"><h1 id="shop-h1" data-en="SHOPPING">購物</h1></div>
       <div id="shop-empty" class="empty-state" hidden><p class="empty-line">先新增一趟旅程，就能記錄購物和禮物</p><a href="#trips/new" class="btn primary">新增旅程</a></div>
       <div id="shop-main" hidden>
         <label class="pk-trip">這趟旅程
@@ -334,7 +338,7 @@
         <div id="shop-buy">
           <div class="card shop-card">
             <div class="eyebrow">REMAINING</div>
-            <div class="muted small">還可以買</div>
+            <div class="muted small">剩餘公斤數</div>
             <div class="shop-remain"><span id="shop-remain">—</span><small> kg</small></div>
             <p id="shop-remain-note" class="muted small"></p>
           </div>
@@ -364,12 +368,12 @@
       </div>
     </section>
 
-    <!-- 我的衣櫃 -->
+    <!-- 家 → 衣櫃 -->
     <section id="view-closet" class="view" hidden>
       <div id="closet-list">
-        <div class="home-switch"><a href="#closet" class="on">我的衣櫃</a><a href="#drawer">我的抽屜</a><a href="#bags">我的行李箱</a></div>
+        <div class="home-switch"><a href="#closet" class="on">衣櫃<span class="tab-en">WARDROBE</span></a><a href="#drawer">抽屜<span class="tab-en">DRAWER</span></a><a href="#bags">行李箱<span class="tab-en">LUGGAGE</span></a></div>
         <div class="page-head">
-          <h1 data-en="WARDROBE">我的衣櫃</h1>
+          <h1 data-en="HOMES">家</h1>
           <a href="#closet/new" class="btn primary small-btn">＋ 新增衣服</a>
         </div>
         <div id="closet-tabs" class="tabs"></div>
@@ -481,7 +485,7 @@
       <svg class="ico" viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="7" width="14" height="13.5" rx="1"/><path d="M9 7V4.5h6V7"/><path d="M9 11.5h6"/><path d="M8.5 20.5v1"/><path d="M15.5 20.5v1"/></svg><span>打包</span>
     </a>
     <a href="#closet" data-views="closet drawer bags">
-      <svg class="ico" viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4.5" y="3.5" width="15" height="17" rx="1"/><path d="M12 3.5v17"/><path d="M10 11v2"/><path d="M14 11v2"/></svg><span>我的家</span>
+      <svg class="ico" viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4.5" y="3.5" width="15" height="17" rx="1"/><path d="M12 3.5v17"/><path d="M10 11v2"/><path d="M14 11v2"/></svg><span>家</span>
     </a>
   </nav>
 
@@ -533,6 +537,25 @@
     </div>
   </div>
 
+  <!-- 打包清單：修改一項（名稱、重量、數量、放哪個行李） -->
+  <div id="pk-edit-sheet" class="sheet ask-sheet" hidden>
+    <form id="pk-edit-form" class="sheet-panel ask-panel form" autocomplete="off">
+      <div class="sheet-title">修改</div>
+      <label>名稱<input id="pk-edit-name" maxlength="40"></label>
+      <div class="pk-add-row">
+        <label>重量（g）<input id="pk-edit-weight" type="number" inputmode="decimal" min="0" step="any"></label>
+        <label>數量<input id="pk-edit-qty" type="number" inputmode="numeric" min="1" step="1"></label>
+      </div>
+      <label>放在哪個行李<select id="pk-edit-zone"></select></label>
+      <p id="pk-edit-note" class="muted small" hidden></p>
+      <div class="cloud-btns">
+        <button type="button" id="pk-edit-cancel" class="btn ghost">取消</button>
+        <button type="submit" class="btn primary">儲存</button>
+      </div>
+      <button type="button" id="pk-edit-delete" class="btn danger">這趟不帶（從清單刪除）</button>
+    </form>
+  </div>
+
   <!-- 打包清單：手動新增 -->
   <div id="pk-add-sheet" class="sheet ask-sheet" hidden>
     <form id="pk-add-form" class="sheet-panel ask-panel form" autocomplete="off">
@@ -558,11 +581,11 @@
     </form>
   </div>
 
-  <!-- 必帶清單：每次產生新的打包清單時自動加進「要帶什麼」 -->
+  <!-- 必帶清單：每次產生新的打包清單時自動加進「清單」 -->
   <div id="must-sheet" class="sheet" hidden>
     <div class="sheet-panel org-panel form" role="dialog" aria-modal="true" aria-labelledby="must-title">
       <div id="must-title" class="sheet-title">必帶清單</div>
-      <p class="muted small">每次產生新的打包清單時，這些東西會自動加進「要帶什麼」，放在預設的行李；出發前檢查也會特別提醒。</p>
+      <p class="muted small">每次產生新的打包清單時，這些東西會自動加進「清單」，放在預設的行李；出發前檢查也會特別提醒。</p>
       <div id="must-list"></div>
       <form id="must-add" class="must-add" autocomplete="off">
         <input id="must-name" maxlength="30" placeholder="新增必帶的東西">
@@ -750,7 +773,7 @@
         <div id="gift-drawer" class="chips"></div>
       </div>
       <label>禮物名稱<input id="gift-name" maxlength="40" placeholder="例如：鳳梨酥、茶葉"></label>
-      <p id="gift-drawer-note" class="muted small" hidden>名稱和重量跟抽屜那件一樣，要改請到「我的抽屜」。</p>
+      <p id="gift-drawer-note" class="muted small" hidden>名稱和重量跟抽屜那件一樣，要改請到「家 → 抽屜」。</p>
       <div class="dr-add-grid">
         <label>重量（每份）<span class="input-unit"><input id="gift-weight" type="number" inputmode="decimal" min="0" step="any" placeholder="0.3"><span class="unit-text">kg</span></span></label>
         <label>數量<input id="gift-qty" type="number" inputmode="numeric" min="1" step="1" value="1"></label>
@@ -780,7 +803,7 @@
       <div id="account-title" class="sheet-title">帳號</div>
       <div id="cloud-box"></div>
       <div class="account-homes">
-        <div class="field-title">我的家</div>
+        <div class="field-title">家</div>
         <div id="account-home-list"></div>
         <form id="account-home-add" class="home-add-form" autocomplete="off">
           <input id="account-home-city" maxlength="30" placeholder="所在城市">
@@ -846,7 +869,7 @@
         <div class="ob-dots"></div>
         <div class="eyebrow">STEP 3</div>
         <h2 class="ob-title">常用的行李箱</h2>
-        <p class="muted small">選填。點一下選擇，會放在你的第一個家；之後在「我的家 → 我的行李箱」可以補上尺寸、空箱重量。</p>
+        <p class="muted small">選填。點一下選擇，會放在你的第一個家；之後在「家 → 行李箱」可以補上尺寸、空箱重量。</p>
         <div id="ob-bags" class="chips"></div>
       </div>
 
@@ -898,25 +921,25 @@
     </div>
   </div>
 
-  <script src="weights.js?v=20261118i"></script>
-  <script src="photos.js?v=20261118i"></script>
-  <script src="clothing.js?v=20261118i"></script>
-  <script src="ui.js?v=20261118i"></script>
-  <script src="app.js?v=20261118i"></script>
-  <script src="closet.js?v=20261118i"></script>
-  <script src="trips.js?v=20261118i"></script>
-  <script src="organize.js?v=20261118i"></script>
-  <script src="packing.js?v=20261118i"></script>
-  <script src="drawer.js?v=20261118i"></script>
-  <script src="bags.js?v=20261118i"></script>
-  <script src="shop.js?v=20261118i"></script>
-  <script src="outfit.js?v=20261118i"></script>
-  <script src="sample-data.js?v=20261118i"></script>
-  <script src="onboard.js?v=20261118i"></script>
-  <script src="intro.js?v=20261118i"></script>
-  <script src="nav.js?v=20261118i"></script>
-  <script src="backup.js?v=20261118i"></script>
+  <script src="weights.js?v=20261118j"></script>
+  <script src="photos.js?v=20261118j"></script>
+  <script src="clothing.js?v=20261118j"></script>
+  <script src="ui.js?v=20261118j"></script>
+  <script src="app.js?v=20261118j"></script>
+  <script src="closet.js?v=20261118j"></script>
+  <script src="trips.js?v=20261118j"></script>
+  <script src="organize.js?v=20261118j"></script>
+  <script src="packing.js?v=20261118j"></script>
+  <script src="drawer.js?v=20261118j"></script>
+  <script src="bags.js?v=20261118j"></script>
+  <script src="shop.js?v=20261118j"></script>
+  <script src="outfit.js?v=20261118j"></script>
+  <script src="sample-data.js?v=20261118j"></script>
+  <script src="onboard.js?v=20261118j"></script>
+  <script src="intro.js?v=20261118j"></script>
+  <script src="nav.js?v=20261118j"></script>
+  <script src="backup.js?v=20261118j"></script>
   <script src="vendor/supabase.js"></script>
-  <script src="cloud.js?v=20261118i"></script>
+  <script src="cloud.js?v=20261118j"></script>
 </body>
 </html>

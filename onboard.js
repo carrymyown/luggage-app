@@ -201,13 +201,13 @@
   // 只在範例模式出現；看到第幾個記在 cmo-coach（帳號選單「再看一次範例」會從第 1 個重新開始）
   var COACH = [
     { page: 'home', target: '#view-home .trip-card .tc-value', away: '.tabbar a[href="#home"]',
-      title: '這趟還能放多少', body: '打包、購物、禮物都會自動算進來，快超重會變色提醒。' },
+      title: '這趟還能放多少', body: '打包、購物、禮物都會自動算進來，快滿、超重會標示提醒。' },
     { page: 'closet', target: '.home-switch', away: '.tabbar a[href="#closet"]',
       title: '每個家有什麼', body: '衣服放衣櫃、其他東西放抽屜；家裡已經有的，出門就不用再帶。' },
     { page: '', target: '#plus-btn',
       title: '隨時新增', body: '新增衣服、抽屜物品、記一筆購物或禮物，都從這裡開始。' },
     { page: 'pack', target: '#pack-tabs', away: '.tabbar a[href="#pack"]',
-      title: '先列清單，再打勾', body: '打勾就是放進行李，每個行李箱還能放多少會即時更新。' },
+      title: '先列清單，再打勾', body: '打勾就是放進行李，行李的進度條會即時更新；往左滑或按「編輯」可以刪除。' },
     { page: 'trips', target: '#view-trips .trip-card .trip-route, #view-trips .trip-card, #view-trips .page-head', away: '.tabbar a[href="#trips"]',
       title: '每一段航班的額度', body: '填好航班和行李額度，到了有家的城市會提醒你整理行李。點每天旁邊的小方格，看當天穿搭。' }
   ];

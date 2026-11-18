@@ -91,7 +91,7 @@
   function defaultState() {
     return {
       schemaVersion: SCHEMA_VERSION,
-      bags: [],   // 行李箱由你自己在「我的行李箱」新增；還沒選時顯示「尚未選擇行李箱」
+      bags: [],   // 行李箱由你自己在「家 → 行李箱」新增；還沒選時顯示「尚未選擇行李箱」
       items: [],
       memory: [],
       outfits: [],
@@ -706,13 +706,14 @@
 
   function tripCard(t) {
     var r = tripRemain(t);
-    var lv = level(r.remain, r.limit);
+    // 快滿（剩不到 15%）、超重：數字旁邊小字標出來（黑白，不靠顏色）
+    var blv = r.remain == null ? 'none' : UI.barLevel(r.limit - r.remain, r.limit);
     return '<div class="trip-card" role="link" tabindex="0" data-trip-card="' + esc(t.id) + '">' +
       '<div class="tc-date">' + esc(tripDates(t)) + '<span class="tc-name">' + esc(t.name || '') + '</span></div>' +
       '<div class="tc-route">' + tripRoute(t) + '</div>' +
-      '<div class="tc-label">剩餘公斤數</div>' +
+      '<div class="tc-label">剩餘公斤數<span class="lbl-en">REMAINING</span></div>' +
       '<div class="tc-value' + (r.remain == null ? ' none' : '') + '"><span data-roll="tc:' + esc(t.id) + '">' + (r.remain == null ? '—' : fmt(r.remain)) + '</span><small> kg' +
-      '<i class="tc-dot ' + lv + '" title="' + (lv === 'bad' ? '超重' : lv === 'warn' ? '快滿了' : lv === 'ok' ? '充裕' : '尚未設定額度') + '"></i></small></div>' +
+      (blv === 'over' ? '<em class="tc-flag">超重</em>' : blv === 'warn' ? '<em class="tc-flag">快滿</em>' : '') + '</small></div>' +
       (r.remain == null ? '<div class="tc-note">尚未設定額度</div>' :
         r.tight && r.leg ? '<div class="tc-note">最緊：' + esc(r.leg.from || '?') + ' → ' + esc(r.leg.to || '?') + '</div>' : '') +
       reserveLine(t) + outfitLine(t) +
@@ -820,6 +821,7 @@
     if (r.live) html += r.bags.filter(function (b) { return shown.indexOf(b.id) < 0; }).map(function (b) { return bagRow(b, null, r, shown); }).join('');
     $('#bag-list').innerHTML = html;
     Photos.fillThumbs($('#bag-list'));
+    UI.animateBars($('#bag-list'));
   }
 
   function bagRow(b, zoneKind, r, shown) {
@@ -831,21 +833,19 @@
     function order(x) { return BAG_KINDS.findIndex(function (k) { return k[0] === x.kind; }); }
     var lastOfGroup = !gr || gr.bags.every(function (x) { return x.id === b.id || order(x) < order(b) || (order(x) === order(b) && gr.bags.indexOf(x) < gr.bags.indexOf(b)); });
     var shared = gr && gr.bags.length > 1;
-    var blv = level(allow == null ? 0 : allow - (gr ? gr.load : w), allow);
     var items = r.live ? state.items.filter(function (it) { return it.bagId === b.id; }) : [];
     var pending = r.live && window.Packing ? window.Packing.bagPending(b.id) : [];
     var open = r.live && openBag === b.id;
-    var right;
-    if (!gkey) right = fmt(w) + ' kg<span class="muted small">・不計算</span>';
-    else if (allow == null) right = fmt(w) + ' kg<span class="muted small">・尚未設定額度</span>';
-    else if (shared && !lastOfGroup) right = fmt(w) + ' kg<span class="muted small">・算在' + kindName(gkey) + '額度</span>';
-    else if (shared) right = '<span class="muted small">合計</span> ' + fmt(gr.load) + '<span class="muted"> / ' + fmt(allow) + '</span> kg';
-    else right = fmt(w) + '<span class="muted"> / ' + fmt(allow) + '</span> kg';
+    // 名稱下方一條進度條（和打包頁同一個樣式）：已放 / 額度；同一項額度的好幾個行李只在最後一行顯示合計
+    var meter;
+    if (!gkey) meter = '<span class="bag-note muted small">' + UI.kg(w) + ' kg・不計算</span>';
+    else if (shared && !lastOfGroup) meter = '<span class="bag-note muted small">' + UI.kg(w) + ' kg・算在' + kindName(gkey) + '額度</span>';
+    else if (allow == null) meter = UI.bar(w, null, 'home:' + b.id);
+    else meter = UI.bar(shared ? gr.load : w, allow, 'home:' + (r.trip ? r.trip.id : '') + ':' + gkey, shared ? '<span class="wbar-share">合計</span>' : '');
     var kind = zoneKind || b.kind;
     return '<div class="bag-block' + (open ? ' open' : '') + '">' +
       '<button type="button" class="bag-row" data-bag-open="' + esc(b.id) + '" aria-expanded="' + open + '"' + (r.live ? '' : ' disabled') + '>' +
-      '<span class="bag-row-name"><b>' + kindName(kind) + '</b><span class="small">' + (b.auto ? '<span class="bag-warn">尚未選擇行李箱</span>' : '<span class="muted">' + esc(b.name) + '</span>') + '</span></span>' +
-      '<span class="bag-row-w"><i class="dot ' + (allow == null || (shared && !lastOfGroup) ? 'none' : blv) + '"></i>' + right + '</span>' +
+      '<span class="bag-row-name"><b>' + kindName(kind) + '</b><span class="small">' + (b.auto ? '<span class="bag-warn">尚未選擇行李箱</span>' : '<span class="muted">' + esc(b.name) + '</span>') + '</span>' + meter + '</span>' +
       (r.live ? '<span class="bag-chev" aria-hidden="true">' + (open ? '−' : '+') + '</span>' : '') + '</button>' +
       (zoneKind ? '<div class="bag-tools"><button type="button" class="link small" data-pick-kind="' + zoneKind + '">選擇行李箱</button>' +
         (b.auto ? '<span class="muted small">選了行李箱，空箱重量就會自動算進去</span>' : '') + '</div>' : '') +
@@ -868,8 +868,8 @@
     $('#kind-sheet-list').innerHTML = (bags.length ? bags.map(function (b) {
       return '<button type="button" class="btn ghost sheet-bag' + (cur && cur.id === b.id ? ' cur' : '') + '" data-kind-bag="' + esc(b.id) + '">' +
         esc(b.name) + '<span class="muted small">' + [b.home ? (b.home === origin ? b.home + '・出發地' : '在' + b.home) : '', b.size, '空箱 ' + fmt(Number(b.tare) || 0) + ' kg'].filter(Boolean).join('・') + '</span></button>';
-    }).join('') : '<p class="muted small">「我的行李箱」裡還沒有' + kindName(kind) + '。</p>') +
-      '<a class="link small" href="#bags" data-kind-manage="1">到「我的家 → 我的行李箱」新增或修改 ›</a>' +
+    }).join('') : '<p class="muted small">「家 → 行李箱」裡還沒有' + kindName(kind) + '。</p>') +
+      '<a class="link small" href="#bags" data-kind-manage="1">到「家 → 行李箱」新增或修改 ›</a>' +
       '<button type="button" class="btn ghost sheet-bag' + (zone && !zone.on ? ' cur' : '') + '" data-kind-bag="off">這趟不帶' + kindName(kind) + '</button>';
     $('#kind-sheet').hidden = false;
   }

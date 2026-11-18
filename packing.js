@@ -512,24 +512,34 @@
       var g = App.groupOf(z, curTrip);
       if (!g) { out[z] = { none: true, label: '不計算重量' }; return; }
       var x = gr[g] || { allow: null, load: 0, remain: null };
-      out[z] = { group: g, allow: x.allow, remain: x.remain, shared: g !== z || (z === 'personal' && activeZones(curList).indexOf('pouch') >= 0 && App.groupOf('pouch', curTrip) === 'personal') };
+      out[z] = { group: g, allow: x.allow, remain: x.remain, load: x.load, shared: g !== z || (z === 'personal' && activeZones(curList).indexOf('pouch') >= 0 && App.groupOf('pouch', curTrip) === 'personal') };
     });
     return out;
   }
+  // 選單裡的短字：「2.7 / 7 kg」，快滿、超重另外標出來（不只靠顏色）
   function boxText(b) {
     if (b.none) return '不計算重量';
     if (b.allow == null) return '尚未設定額度';
-    return b.remain < 0 ? '超重 ' + fmt(-b.remain) + ' kg' : '還能放 ' + fmt(b.remain) + ' kg';
+    var lv = UI.barLevel(b.load, b.allow);
+    return UI.kg(b.load) + ' / ' + UI.kg(b.allow) + ' kg' + (lv === 'over' ? '・超重' : lv === 'warn' ? '・快滿' : '');
   }
   function boxLevel(b) { return b.none || b.allow == null ? 'none' : level(b.remain, b.allow); }
 
   // 分頁一「要帶什麼」：打勾框、品名、重量，下面一行選放哪個行李（顯示那個行李還能放多少）
+  // 每一項外面包一層：往左滑露出「刪除」；編輯模式時前面是刪除鈕、後面是拖曳把手
+  var DEL_SVG = '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.4" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M8 12h8"/></svg>';
+  var SORT_SVG = '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" aria-hidden="true"><path d="M5 8h14M5 12h14M5 16h14"/></svg>';
+  function swipeWrap(e, inner) {
+    return '<div class="pk-swipe' + (editMode ? ' editing' : '') + '" data-swipe="' + esc(e.id) + '">' +
+      (editMode ? '' : '<button type="button" class="pk-swipe-del" data-del="' + esc(e.id) + '" tabindex="-1">刪除</button>') + inner + '</div>';
+  }
   function todoRowHTML(e, boxes, act) {
     var b = boxes[e.zone] || {};
     var w = e.weight * e.qty;
     var over = !b.none && b.allow != null && b.remain - w < 0;
-    return '<div class="pk-row pk-todo" data-e="' + esc(e.id) + '">' +
-      '<button type="button" class="pk-check" data-check="' + esc(e.id) + '" aria-label="放進去了"></button>' +
+    return swipeWrap(e, '<div class="pk-row pk-todo" data-e="' + esc(e.id) + '">' +
+      (editMode ? '<button type="button" class="pk-minus" data-del="' + esc(e.id) + '" aria-label="刪除：' + esc(e.name) + '">' + DEL_SVG + '</button>' :
+        '<button type="button" class="pk-check" data-check="' + esc(e.id) + '" aria-label="放進去了"></button>') +
       '<div class="pk-todo-main">' +
         '<button type="button" class="pk-name" data-row="' + esc(e.id) + '">' + esc(e.name) + (e.qty > 1 ? ' × ' + e.qty : '') +
           (isMust(e) ? '<span class="pk-must">必帶</span>' : '') + '</button>' +
@@ -537,19 +547,19 @@
           '<select class="pk-zone-pick" data-zone-pick="' + esc(e.id) + '" aria-label="放哪個行李">' + act.map(function (z) {
             return '<option value="' + z + '"' + (z === e.zone ? ' selected' : '') + '>' + zoneName(z) + '・' + boxText(boxes[z]) + '</option>';
           }).join('') + '</select>' +
-          (over ? '<span class="pk-over">放進去會超重 ' + fmt(w - b.remain) + ' kg</span>' : '') +
+          (over ? '<span class="pk-over">會超重 ' + fmt(w - b.remain) + ' kg</span>' : '') +
         '</div>' +
-      '</div></div>';
+      '</div>' + (editMode ? '<span class="pk-sort" data-sort="' + esc(e.id) + '" aria-label="拖曳調整順序">' + SORT_SVG + '</span>' : '') + '</div>');
   }
 
   // 分頁二「行李箱」：每個箱子裡已經放進去的東西；可以拖到別的箱子，或取消打勾移回分頁一
   function boxRowHTML(e) {
-    return '<div class="pk-row pk-in" data-e="' + esc(e.id) + '">' +
+    return swipeWrap(e, '<div class="pk-row pk-in" data-e="' + esc(e.id) + '">' +
       '<span class="pk-handle" data-handle="' + esc(e.id) + '" aria-label="拖到別的行李"><svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor" aria-hidden="true">' +
         '<circle cx="9" cy="6" r="1.2"/><circle cx="15" cy="6" r="1.2"/><circle cx="9" cy="12" r="1.2"/><circle cx="15" cy="12" r="1.2"/><circle cx="9" cy="18" r="1.2"/><circle cx="15" cy="18" r="1.2"/></svg></span>' +
       '<button type="button" class="pk-name" data-row="' + esc(e.id) + '">' + esc(e.name) + (e.qty > 1 ? ' × ' + e.qty : '') + '</button>' +
       '<span class="pk-w-item">' + esc(App.fmtWeight(e.weight * e.qty)) + '</span>' +
-      '<button type="button" class="link small pk-uncheck" data-uncheck="' + esc(e.id) + '">取消</button></div>';
+      '<button type="button" class="link small pk-uncheck" data-uncheck="' + esc(e.id) + '">取消</button></div>');
   }
 
   var packTab = 'todo';
@@ -575,9 +585,17 @@
     // 分頁一：要帶但還沒放進去的；必帶的排前面，再依預設行李
     var order = { pouch: 0, personal: 1, carry: 2, checked: 3 };
     todo.sort(function (a, b) { return (isMust(b) ? 1 : 0) - (isMust(a) ? 1 : 0) || order[a.zone] - order[b.zone]; });
+    // 自己拖曳排過的順序（e.sort）優先；之後新增、還沒排過的放在後面
+    var pos = {};
+    todo.forEach(function (e, i) { pos[e.id] = e.sort != null ? e.sort : 100000 + i; });
+    todo.sort(function (a, b) { return pos[a.id] - pos[b.id]; });
+    $('#pack-edit').textContent = editMode ? '完成' : '編輯';
+    $('#pack-edit').hidden = !todo.length && !editMode;
+    $('#pack-add').hidden = editMode;
+    $('#view-pack').classList.toggle('pk-editing', editMode);
     $('#pack-todo').innerHTML = todo.length ? todo.map(function (e) { return todoRowHTML(e, boxes, act); }).join('') :
       (done.length ? '<p class="pk-all-done">全部都放進去了</p>' : '<p class="muted small">清單是空的。點「＋ 新增」從衣櫃、抽屜挑，或直接輸入。</p>');
-    $('#pack-done-note').innerHTML = done.length ? '<button type="button" class="link small" data-pack-tab="bags">已經放進行李 ' + done.length + ' 項・看行李箱 ›</button>' : '';
+    $('#pack-done-note').innerHTML = done.length ? '<button type="button" class="link small" data-pack-tab="bags">已經放進行李 ' + done.length + ' 項・看「行李」 ›</button>' : '';
 
     // 分頁二：依隨身小包、背包、手提、托運分組
     $('#pack-zones').innerHTML = act.map(function (z) {
@@ -587,13 +605,15 @@
       return '<div class="pk-zone" data-zone="' + z + '">' +
         '<div class="pk-zone-head"><b>' + zoneName(z) + '</b>' +
           '<span class="pk-bag-name muted small">' + esc(bag && !bag.auto ? bag.name : '尚未選擇行李箱') + '</span>' +
-          '<span class="pk-box-remain ' + boxLevel(b) + '">' + (b.shared && !b.none ? '和' + (z === 'pouch' ? '背包' : '隨身小包') + '共用・' : '') +
-            (b.none || b.allow == null ? boxText(b) : b.remain < 0 ? '這個箱子超重 <b>' + fmt(-b.remain) + '</b> kg' : '這個箱子還能放 <b>' + fmt(b.remain) + '</b> kg') + '</span></div>' +
+          // 名稱下方一條進度條：已放／額度（隨身小包算在背包額度時，兩個一起算）
+          (b.none ? '<span class="pk-box-note muted small">不計算重量</span>' :
+            UI.bar(b.load || 0, b.allow, 'pk:' + curTrip.id + ':' + b.group, b.shared ? '<span class="wbar-share">和' + (z === 'pouch' ? '背包' : '隨身小包') + '共用</span>' : '')) + '</div>' +
         (rows.length ? rows.map(boxRowHTML).join('') : '<p class="pk-box-empty muted small">還沒有放東西</p>') + '</div>';
     }).join('');
 
     var home = list.entries.filter(function (e) { return e.status === 'home'; });
     $('#pack-home-wrap').hidden = !home.length || packTab !== 'todo';
+    UI.animateBars($('#view-pack'));
     $('#pack-home').innerHTML = home.map(function (e) {
       return '<button type="button" class="pk-row pk-simple gray" data-take="' + esc(e.id) + '" aria-label="改成要帶：' + esc(e.name) + '">' +
         '<span class="pk-name">' + esc(e.name) + '</span><span class="pk-w-item">' + esc(App.fmtWeight(e.weight * e.qty)) + '</span></button>';
@@ -609,18 +629,16 @@
   }
 
   // 最上方一行：還能放幾公斤（和首頁旅程卡的剩餘公斤數同一個計算；打勾就扣、取消打勾就加回來）
+  // 進度條和首頁行李區塊同一個樣式：已放 / 額度（最緊的那一段航班）
   function renderRemain() {
     var r = App.tripRemain(curTrip);
-    var el = $('#pack-remain');
-    var lv = r.remain == null ? 'none' : level(r.remain, r.limit);
-    el.className = 'pk-remain ' + lv;
-    $('#pack-remain-num').textContent = r.remain == null ? '—' : fmt(r.remain);
-    if (window.UI) window.UI.roll($('#pack-remain-num'), 'pack:' + curTrip.id);   // 打勾後數字平滑滾動
-    el.title = r.remain == null ? '這趟還沒設定額度' : '';
+    var load = r.limit == null ? r.total : r.limit - r.remain;
+    $('#pack-remain').innerHTML = '<span class="pk-remain-label">剩餘公斤數<span class="lbl-en">REMAINING</span></span>' +
+      UI.bar(load, r.limit, 'pack:' + curTrip.id);
   }
 
   function entryById(id) { return curList.entries.find(function (e) { return e.id === id; }); }
-  function commit() { App.save(); render(); }
+  function commit() { clearUndo(); App.save(); render(); }
 
   // ---------- 操作 ----------
   $('#pack-trip').addEventListener('change', function () { var t = tripById(this.value); if (t) open(t); });
@@ -664,10 +682,14 @@
       var eu = entryById(el.getAttribute('data-uncheck'));
       setChecked(curList, eu, false);
       commit();
-      App.toast('已移回「要帶什麼」：' + eu.name);
+      App.toast('已移回「清單」：' + eu.name);
       return;
     }
-    if ((el = t.closest('[data-row]'))) { openMove(entryById(el.getAttribute('data-row'))); return; }
+    if ((el = t.closest('[data-del]'))) { var ed = entryById(el.getAttribute('data-del')); if (ed) deleteEntries([ed]); return; }
+    if (t.id === 'pack-edit') { editMode = !editMode; closeSwipe(); render(); return; }
+    if ((el = t.closest('[data-row]'))) { if (!editMode) openEdit(entryById(el.getAttribute('data-row'))); return; }
+    // 點一項的空白處也打開修改（打勾框、選行李、取消、把手除外）
+    if (!editMode && (el = t.closest('.pk-row[data-e]')) && !t.closest('[data-check], select, [data-handle], [data-uncheck], [data-sort]')) { openEdit(entryById(el.getAttribute('data-e'))); return; }
     if ((el = t.closest('[data-remove]'))) {
       var e2 = entryById(el.getAttribute('data-remove'));
       if (e2.checked && !confirm('「' + e2.name + '」已經收好了，要從清單刪除並從行李拿出來嗎？')) return;
@@ -746,7 +768,7 @@
     if (cancel) return;
     var e = entryById(d.id);
     if (!e) return;
-    if (!d.moved) { openMove(e); return; }
+    if (!d.moved) { openEdit(e); return; }
     var over = zoneAt(ev.clientX, ev.clientY);
     if (over) tryMove(e, over.getAttribute('data-zone'));
   }
@@ -762,29 +784,234 @@
     commit();
   }
 
-  var moveTarget = null;
-  function openMove(e) {
-    moveTarget = e;
+  // ---------- 刪除（只代表「這趟不帶」）：衣櫃、抽屜的東西和必帶清單都不會變；幾秒內可以復原 ----------
+  var editMode = false;
+  var undo = null;
+  function snapshot(es) {
+    var mem = {};
+    es.forEach(function (e) {
+      var m = e.catalogId && App.entryById(e.catalogId);
+      if (m) mem[m.id] = { location: JSON.stringify(m.location || null), uses: m.uses };
+    });
+    return { listId: curList.id, entries: JSON.stringify(curList.entries), items: JSON.stringify(st().items), mem: mem };
+  }
+  function restore(sn) {
+    var list = lists().find(function (x) { return x.id === sn.listId; });
+    if (!list) return;
+    list.entries = JSON.parse(sn.entries);
+    st().items = JSON.parse(sn.items);
+    Object.keys(sn.mem).forEach(function (id) {
+      var m = App.entryById(id); if (!m) return;
+      var loc = JSON.parse(sn.mem[id].location);
+      if (loc) m.location = loc; else delete m.location;
+      m.uses = sn.mem[id].uses;
+    });
+    touch(list);
+  }
+  function deleteEntries(es) {
+    es = es.filter(Boolean);
+    if (!es.length) return;
+    var sn = snapshot(es);
+    es.forEach(function (e) { removeEntry(curList, e); });
+    closeSwipe();
+    App.save(); render();
+    showUndo(sn, es);
+  }
+  function undoBar() {
+    var el = $('#pk-undo');
+    if (!el) {
+      el = document.createElement('div');
+      el.id = 'pk-undo'; el.className = 'pk-undo'; el.setAttribute('role', 'status');
+      document.body.appendChild(el);
+      el.addEventListener('click', function (ev) {
+        if (!ev.target.closest('[data-undo]') || !undo) return;
+        var sn = undo.sn; clearUndo();
+        restore(sn); App.save();
+        if (curList) render();
+        App.toast('已復原');
+      });
+    }
+    return el;
+  }
+  function showUndo(sn, es) {
+    clearUndo();
+    var el = undoBar();
+    el.innerHTML = '<span>已移除' + (es.length > 1 ? ' ' + es.length + ' 項' : '「' + esc(es[0].name) + '」') + '</span><button type="button" class="pk-undo-btn" data-undo="1">復原</button>';
+    el.classList.add('show');
+    undo = { sn: sn, timer: setTimeout(clearUndo, 5000) };
+  }
+  function clearUndo() {
+    if (undo) clearTimeout(undo.timer);
+    undo = null;
+    var el = $('#pk-undo'); if (el) el.classList.remove('show');
+  }
+  window.addEventListener('hashchange', function () { clearUndo(); if (editMode && location.hash.indexOf('#pack') !== 0) editMode = false; });
+
+  // ---------- 修改一項：名稱、重量、數量、放哪個行李 ----------
+  var editTarget = null;
+  function openEdit(e) {
+    if (!e) return;
+    editTarget = e;
+    closeSwipe();
+    var bx = boxRemains();
+    $('#pk-edit-name').value = e.name;
+    $('#pk-edit-weight').value = Math.round((Number(e.weight) || 0) * 1000 * 10) / 10;
+    $('#pk-edit-qty').value = e.qty || 1;
+    $('#pk-edit-zone').innerHTML = activeZones(curList).map(function (z) {
+      return '<option value="' + z + '"' + (z === e.zone ? ' selected' : '') + '>' + zoneName(z) + '・' + boxText(bx[z]) + '</option>';
+    }).join('');
+    var m = e.catalogId && App.entryById(e.catalogId);
+    var note = m ? '這件在' + (App.isCloth(m) ? '衣櫃' : '抽屜') + '裡：名稱和重量會一起更新；數量和放哪個行李只改這趟。' :
+      isMust(e) ? '必帶清單的設定不會變，只改這趟。' : '';
+    $('#pk-edit-note').textContent = note;
+    $('#pk-edit-note').hidden = !note;
+    $('#pk-edit-sheet').hidden = false;
+  }
+  function saveEdit() {
+    var e = editTarget; if (!e) return;
+    var name = $('#pk-edit-name').value.trim();
+    if (!name) { App.toast('請輸入名稱'); return; }
+    var g = parseFloat($('#pk-edit-weight').value);
+    var w = isFinite(g) && g >= 0 ? g / 1000 : e.weight;
+    var q = Math.max(1, parseInt($('#pk-edit-qty').value, 10) || 1);
+    var z = $('#pk-edit-zone').value;
+    var s0 = st();
+    // 衣櫃、抽屜裡的東西：同一樣東西只有一個名稱和重量（行李、禮物跟著更新）
+    var m = e.catalogId && App.entryById(e.catalogId);
+    if (m && (m.name !== name || Math.round((m.weight || 0) * 1000) !== Math.round(w * 1000))) {
+      m.name = name; if (Math.round((m.weight || 0) * 1000) !== Math.round(w * 1000)) { m.weight = w; m.estimated = false; }
+      m.updatedAt = Date.now();
+      s0.items.forEach(function (it) { if (it.catalogId === m.id) { it.name = m.name; it.weight = m.weight; } });
+      (s0.gifts || []).forEach(function (gf) { if (gf.drawerId === m.id) { gf.name = m.name; gf.weight = m.weight; gf.updatedAt = Date.now(); } });
+    }
+    e.name = name; e.weight = w; e.qty = q;
+    // 禮物、購物帶進來的：那一筆也跟著改
+    var gf2 = e.giftId && (s0.gifts || []).find(function (x) { return x.id === e.giftId; });
+    if (gf2) { gf2.name = name; gf2.weight = w; gf2.qty = q; gf2.updatedAt = Date.now(); }
+    var pu = e.purchaseId && ((s0.shopping || {}).purchases || []).find(function (x) { return x.id === e.purchaseId; });
+    if (pu) { pu.name = name; pu.weight = w; pu.qty = q; pu.updatedAt = Date.now(); }
+    var it = e.checked && s0.items.find(function (x) { return x.id === e.itemId; });
+    if (it) { it.name = name; it.weight = w; it.qty = q; }
+    touch(curList);
+    $('#pk-edit-sheet').hidden = true;
+    editTarget = null;
+    if (z !== e.zone) { App.save(); tryMove(e, z); return; }
+    App.toast('已儲存');
+    commit();
+  }
+  $('#pk-edit-form').addEventListener('submit', function (ev) { ev.preventDefault(); saveEdit(); });
+  $('#pk-edit-sheet').addEventListener('click', function (ev) {
+    if (ev.target.id === 'pk-edit-delete' && editTarget) { var e = editTarget; $('#pk-edit-sheet').hidden = true; editTarget = null; deleteEntries([e]); return; }
+    if (ev.target.id === 'pk-edit-sheet' || ev.target.id === 'pk-edit-cancel') { $('#pk-edit-sheet').hidden = true; editTarget = null; }
+  });
+
+  // ---------- 長按一項：選單「修改」「刪除」 ----------
+  var menuTarget = null;
+  function openMenu(e) {
+    menuTarget = e;
+    closeSwipe();
     $('#pk-move-title').textContent = '「' + e.name + '」';
-    $('#pk-move-list').innerHTML = activeZones(curList).map(function (z) {
-      return '<button type="button" class="btn ghost sheet-bag' + (z === e.zone ? ' cur' : '') + '" data-move-zone="' + z + '">' +
-        (z === e.zone ? '放在' + zoneName(z) + '（目前）' : '移到' + zoneName(z)) +
-        '<span class="muted small">' + boxText(boxRemains()[z]) + '</span></button>';
-    }).join('') + '<button type="button" class="btn danger" data-move-remove="1">從清單刪除</button>';
+    $('#pk-move-list').innerHTML = '<button type="button" class="btn ghost sheet-bag" data-menu="edit">修改</button>' +
+      '<button type="button" class="btn danger" data-menu="del">刪除（這趟不帶）</button>';
     $('#pk-move-sheet').hidden = false;
   }
   $('#pk-move-sheet').addEventListener('click', function (ev) {
-    if (ev.target.closest('[data-move-remove]') && moveTarget) {
-      var er = moveTarget;
-      $('#pk-move-sheet').hidden = true; moveTarget = null;
-      if (er.checked && !confirm('「' + er.name + '」已經收好了，要從清單刪除並從行李拿出來嗎？')) return;
-      removeEntry(curList, er); commit();
+    var b = ev.target.closest('[data-menu]');
+    if (b && menuTarget) {
+      var e = menuTarget; $('#pk-move-sheet').hidden = true; menuTarget = null;
+      if (b.getAttribute('data-menu') === 'edit') openEdit(e); else deleteEntries([e]);
       return;
     }
-    var b = ev.target.closest('[data-move-zone]');
-    if (b && moveTarget) { var e = moveTarget; $('#pk-move-sheet').hidden = true; moveTarget = null; tryMove(e, b.getAttribute('data-move-zone')); return; }
-    if (ev.target.id === 'pk-move-sheet' || ev.target.id === 'pk-move-cancel') { $('#pk-move-sheet').hidden = true; moveTarget = null; }
+    if (ev.target.id === 'pk-move-sheet' || ev.target.id === 'pk-move-cancel') { $('#pk-move-sheet').hidden = true; menuTarget = null; }
   });
+
+  // ---------- 往左滑露出「刪除」、長按跳出選單 ----------
+  var SWIPE = 88, sw = null, swOpen = null, suppressUntil = 0;
+  function closeSwipe() {
+    if (swOpen) { swOpen.style.transform = ''; swOpen.parentNode && swOpen.parentNode.classList.remove('open'); }
+    swOpen = null;
+  }
+  $('#view-pack').addEventListener('pointerdown', function (ev) {
+    if (!curList || editMode) return;
+    var row = ev.target.closest('.pk-swipe > .pk-row');
+    if (!row || ev.target.closest('[data-handle], select')) { if (!ev.target.closest('.pk-swipe-del')) closeSwipe(); return; }
+    if (ev.pointerType === 'mouse' && ev.button !== 0) return;
+    if (swOpen && swOpen !== row) closeSwipe();
+    var id = row.getAttribute('data-e');
+    sw = { row: row, id: id, x: ev.clientX, y: ev.clientY, base: swOpen === row ? -SWIPE : 0, cur: 0, mode: null, pid: ev.pointerId,
+      timer: setTimeout(function () {
+        if (!sw || sw.mode) return;
+        sw.mode = 'long';
+        suppressUntil = performance.now() + 700;
+        var e = entryById(id); sw = null;
+        if (e) openMenu(e);
+      }, 550) };
+  });
+  document.addEventListener('pointermove', function (ev) {
+    if (!sw || ev.pointerId !== sw.pid) return;
+    var dx = ev.clientX - sw.x, dy = ev.clientY - sw.y;
+    if (!sw.mode) {
+      if (Math.abs(dx) > 8 && Math.abs(dx) > Math.abs(dy)) { sw.mode = 'h'; clearTimeout(sw.timer); sw.row.classList.add('swiping'); sw.row.parentNode.classList.add('swiping'); }
+      else if (Math.abs(dy) > 8) { clearTimeout(sw.timer); sw = null; return; }
+      else return;
+    }
+    if (sw.mode !== 'h') return;
+    sw.cur = Math.max(-SWIPE * 1.4, Math.min(0, sw.base + dx));
+    sw.row.style.transform = 'translateX(' + sw.cur + 'px)';
+  });
+  function endSwipe(ev, cancel) {
+    if (!sw || (ev && ev.pointerId !== sw.pid)) return;
+    clearTimeout(sw.timer);
+    var d = sw; sw = null;
+    if (d.mode !== 'h') return;
+    d.row.classList.remove('swiping'); d.row.parentNode.classList.remove('swiping');
+    suppressUntil = performance.now() + 400;
+    var open = !cancel && d.cur < -SWIPE / 2;
+    d.row.style.transform = open ? 'translateX(-' + SWIPE + 'px)' : '';
+    d.row.parentNode.classList.toggle('open', open);
+    swOpen = open ? d.row : null;
+  }
+  document.addEventListener('pointerup', function (ev) { endSwipe(ev, false); });
+  document.addEventListener('pointercancel', function (ev) { endSwipe(ev, true); });
+  // 滑動或長按之後的那一下點擊不算（不會打勾、也不會打開修改）
+  $('#view-pack').addEventListener('click', function (ev) {
+    if (performance.now() < suppressUntil && !ev.target.closest('.pk-swipe-del')) { ev.stopPropagation(); ev.preventDefault(); }
+  }, true);
+  $('#view-pack').addEventListener('contextmenu', function (ev) { if (ev.target.closest('.pk-swipe')) ev.preventDefault(); });
+
+  // ---------- 編輯模式：按住右邊的把手上下拖曳，調整順序 ----------
+  var sd = null;
+  $('#view-pack').addEventListener('pointerdown', function (ev) {
+    var h = ev.target.closest('[data-sort]');
+    if (!h || !editMode) return;
+    ev.preventDefault();
+    var wrap = h.closest('.pk-swipe');
+    sd = { wrap: wrap, pid: ev.pointerId };
+    wrap.classList.add('sorting');
+    try { h.setPointerCapture(ev.pointerId); } catch (e) { /* 不支援就算了 */ }
+  });
+  document.addEventListener('pointermove', function (ev) {
+    if (!sd || ev.pointerId !== sd.pid) return;
+    ev.preventDefault();
+    var box = $('#pack-todo');
+    var rows = Array.prototype.filter.call(box.children, function (x) { return x.classList.contains('pk-swipe') && x !== sd.wrap; });
+    var before = rows.find(function (r) { var b = r.getBoundingClientRect(); return ev.clientY < b.top + b.height / 2; });
+    if (before) { if (sd.wrap.nextSibling !== before) box.insertBefore(sd.wrap, before); }
+    else if (box.lastElementChild !== sd.wrap) box.appendChild(sd.wrap);
+    if (ev.clientY < 90) window.scrollBy(0, -12); else if (ev.clientY > window.innerHeight - 150) window.scrollBy(0, 12);
+  });
+  function endSort(ev) {
+    if (!sd || (ev && ev.pointerId !== sd.pid)) return;
+    sd.wrap.classList.remove('sorting');
+    sd = null;
+    Array.prototype.forEach.call($('#pack-todo').querySelectorAll('.pk-swipe'), function (w, i) {
+      var e = entryById(w.getAttribute('data-swipe')); if (e) e.sort = i;
+    });
+    touch(curList);
+    commit();
+  }
+  document.addEventListener('pointerup', endSort);
+  document.addEventListener('pointercancel', endSort);
 
   // ---------- 手動新增 ----------
   function openAdd() {

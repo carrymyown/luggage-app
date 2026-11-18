@@ -91,8 +91,8 @@
 
   // 這趟用哪幾個行李箱（對應上面 BAGS 的 key）
   var PACK_ZONES = { pouch: 'pouch', personal: 'personal', carry: 'carry', checked: 'checked' };
-  // 打包清單：會依照衣櫃、季節和必帶清單自動列出（分頁一「要帶什麼」）；另外用「＋ 加入」加進這幾樣抽屜裡的東西
-  // 打勾的會移到分頁二「行李箱」，每個箱子標題旁顯示還能放多少
+  // 打包（清單 LIST）：會依照衣櫃、季節和必帶清單自動列出；另外用「＋ 加入」加進這幾樣抽屜裡的東西
+  // 打勾的會移到「行李 BAGS」分頁，每個行李名稱下方一條進度條（已放 / 額度）
   var ADD_TO_LIST = ['面膜', '維他命', '卡其短褲'];
   // 每日穿搭：每天的活動（第幾天），沒寫的那天用預設（搭機那天＝長途飛行）
   //   第 0 天台北飛東京、第 2 天在東京有正式晚餐（東京的家有黑色洋裝和樂福鞋，不用帶）
@@ -150,7 +150,7 @@
         material: b.material || '', home: b.home, extra: { sample: true } }).id;
     });
 
-    // 必帶清單（產生打包清單前先加好，才會自動放進「要帶什麼」）
+    // 必帶清單（產生打包清單前先加好，才會自動放進「清單」）
     MUST_EXTRA.forEach(function (m) { App.addMust(m.name, m.zone, m.weight); });
 
     var trip = window.Trips.create({

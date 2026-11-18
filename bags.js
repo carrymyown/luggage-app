@@ -1,5 +1,5 @@
 /*
- * 我的行李箱（在「打包」裡）
+ * 家 → 行李箱
  * 每個行李箱：{ id, name, kind(pouch 隨身小包／personal 背包／carry 手提／checked 托運), size, style, material, tare(空箱 kg),
  *              limit(沒填航班額度時的上限), home(放在哪個家), photoId, photoPath }
  * 位置：箱子裡有東西＝跟著旅程出門；空的＝在它的家（見 app.js bagLocOf）
@@ -49,7 +49,7 @@
       }).join('') +
         (h ? '<button type="button" class="link small bg-add-home" data-bg-add-home="' + esc(h) + '">＋ 在' + esc(h) + '新增行李箱</button>' : '') + '</div>';
     }).join('');
-    $('#bg-list').innerHTML = html || '<p class="empty-big">還沒有家。到「我的衣櫃」新增衣服時可以新增家。</p>';
+    $('#bg-list').innerHTML = html || '<p class="empty-big">還沒有家。到「家 → 衣櫃」新增衣服時可以新增家。</p>';
     Photos.fillThumbs($('#bg-list'));
   }
 

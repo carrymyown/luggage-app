@@ -2278,3 +2278,72 @@ svg * { vector-effect: non-scaling-stroke; }
 /* 預留空間：首頁旅程卡一行、購物頁旅程下面一行（和卡片裡其他小字一樣） */
 .tc-reserve { color: var(--muted); text-transform: none !important; }
 .shop-reserve { display: block; margin: -4px 0 16px; padding: 4px 0; color: var(--muted); text-align: left; text-transform: none !important; }
+
+/* =====================================================================
+   名稱與英文小標、中間的＋改成黑白、行李進度條（2026-11）
+   ===================================================================== */
+/* 分頁和小標：中文後面接一個小小的英文（全大寫、加寬字距） */
+.tab-en, .lbl-en { display: inline-block; margin-left: 6px; font-family: var(--display); font-size: 10px !important; font-weight: 400 !important; letter-spacing: 0.2em; text-transform: uppercase; color: var(--c-meta); vertical-align: 1px; }
+.home-switch a.on .tab-en, .pk-tabs button.on .tab-en { color: inherit; }
+.pk-tabs small { margin-left: 8px; }
+
+/* 中間的＋：跟其他導覽圖示一樣的近黑色，黑底白色＋號（稍大一點、方角） */
+:root { --gold: #111111; --navy: #111111; }   /* 香檳金、深海軍藍都改成近黑色：除了行李進度條，全 app 只用黑、白、灰 */
+.plus-btn { background: #111111 !important; color: #FFFFFF; width: 46px; height: 46px; border-radius: 0 !important; }
+.plus-btn svg { stroke: #FFFFFF; }
+
+/* 行李進度條：高 6px、方角；已放近黑，還能放霧感天空藍，快滿芥末黃，超重整條酒紅 */
+:root { --bar-load: #111111; --bar-room: #8FC1E3; --bar-warn: #C9A13B; --bar-over: #8C2F39; }
+.wbar { display: flex; align-items: center; gap: 12px; width: 100%; margin-top: 8px; }
+.wbar-track { position: relative; flex: 1; min-width: 60px; height: 6px; background: var(--bar-room); overflow: hidden; border-radius: 0; transition: background-color .2s ease; }
+.wbar.warn .wbar-track { background: var(--bar-warn); }
+.wbar.over .wbar-track, .wbar.over .wbar-fill { background: var(--bar-over); }
+.wbar.none .wbar-track { background: #E5E5E5; }
+.wbar-fill { position: absolute; left: 0; top: 0; bottom: 0; background: var(--bar-load); transition: width .2s ease; }
+.wbar-num { flex: none; font-size: 12px !important; font-weight: 400 !important; letter-spacing: 0.02em; color: var(--text); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.wbar-num small { font-size: 11px !important; color: var(--c-meta); }
+.wbar-flag, .tc-flag { font-style: normal; margin-left: 6px; font-size: 11px !important; font-weight: 500 !important; letter-spacing: 0.08em; color: var(--text); }
+.wbar-share { margin-left: 6px; font-size: 11px !important; color: var(--c-meta); }
+@media (prefers-reduced-motion: reduce) { .wbar-fill, .wbar-track { transition: none !important; } }
+
+/* 打包頁最上方：整趟的剩餘公斤數 */
+.pk-remain { display: block !important; padding-bottom: 14px; }
+.pk-remain .pk-remain-label { font-size: 11px !important; letter-spacing: 0.16em; color: var(--c-meta); }
+/* 每個行李：名稱、行李箱，下面一整行進度條 */
+#pack-zones .pk-zone-head .wbar, #pack-zones .pk-zone-head .pk-box-note { flex-basis: 100%; }
+/* 首頁行李區塊：名稱下方進度條 */
+.bag-row-name .wbar { margin-top: 10px; }
+.bag-row-name .bag-note { margin-top: 6px; }
+.tc-label .lbl-en { color: inherit; }
+
+/* =====================================================================
+   打包清單：往左滑刪除、長按選單、編輯模式（刪除鈕、拖曳排序）、已移除・復原
+   ===================================================================== */
+.pk-list-tools { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.pk-list-tools .pk-add-btn { width: auto; flex: 1; }
+.pk-edit-btn { flex: none; min-height: 44px; padding: 0 4px; }
+.pk-swipe { position: relative; overflow: hidden; }
+.pk-swipe > .pk-row { position: relative; z-index: 1; background: #FFFFFF; transition: transform .2s ease; touch-action: pan-y;
+  -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
+.pk-swipe > .pk-row.swiping { transition: none; }
+.pk-swipe-del { position: absolute; right: 0; top: 0; bottom: 0; z-index: 0; width: 88px; border: 0; border-radius: 0; background: #111111; color: #FFFFFF;
+  font: inherit; font-size: 12px !important; font-weight: 500 !important; letter-spacing: 0.14em; cursor: pointer; }
+.pk-swipe:not(.open) .pk-swipe-del { visibility: hidden; }
+.pk-swipe.open .pk-swipe-del, .pk-swipe.swiping .pk-swipe-del { visibility: visible; }
+.pk-swipe .pk-row.swiping, .pk-swipe.open .pk-row { box-shadow: none; }
+/* 編輯模式：每項前面一個刪除鈕、後面一個拖曳把手 */
+.pk-minus { flex: none; width: 44px; height: 44px; margin: -10px 0 -10px -10px; display: flex; align-items: center; justify-content: center; border: 0; background: none; color: #111111; cursor: pointer; }
+.pk-sort { flex: none; width: 44px; height: 44px; margin: -10px -10px -10px 0; display: flex; align-items: center; justify-content: center; color: var(--c-meta); touch-action: none; cursor: grab; }
+.pk-editing .pk-zone-pick { display: none; }
+.pk-swipe.sorting > .pk-row { background: #F4F4F4; }
+/* 刪除後畫面下方：已移除・復原（幾秒後自動消失） */
+.pk-undo {
+  position: fixed; left: 50%; bottom: calc(var(--tab-h, 64px) + 20px + env(safe-area-inset-bottom)); z-index: 130;
+  display: flex; align-items: center; gap: 18px; width: max-content; max-width: calc(100vw - 32px); padding: 10px 12px 10px 16px;
+  background: #111111; color: #FFFFFF; font-size: 13px; letter-spacing: 0.04em;
+  opacity: 0; transform: translate(-50%, 12px); pointer-events: none; transition: opacity .2s ease, transform .2s ease;
+}
+.pk-undo span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pk-undo.show { opacity: 1; transform: translate(-50%, 0); pointer-events: auto; }
+.pk-undo-btn { flex: none; min-height: 36px; padding: 0 12px; border: 1px solid #FFFFFF; background: transparent; color: #FFFFFF; font: inherit; font-size: 12px; font-weight: 500 !important; letter-spacing: 0.14em; cursor: pointer; border-radius: 0; }
+@media (prefers-reduced-motion: reduce) { .pk-swipe > .pk-row, .pk-undo { transition: none !important; } }

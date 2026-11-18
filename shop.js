@@ -178,7 +178,7 @@
     Array.prototype.forEach.call(document.querySelectorAll('[data-shop-tab]'), function (b) {
       b.classList.toggle('on', b.getAttribute('data-shop-tab') === tab);
     });
-    $('#shop-h1').textContent = tab === 'gift' ? '送禮與伴手禮' : '回程購物';
+    $('#shop-h1').textContent = tab === 'gift' ? '送禮' : '購物';
     $('#shop-h1').setAttribute('data-en', tab === 'gift' ? 'GIFTS' : 'SHOPPING');
     if (!trips.length) return;
     $('#shop-trip').innerHTML = trips.map(function (x) {
@@ -360,7 +360,7 @@
     // 已經放到家裡（進了抽屜）的購物：只留作紀錄，東西本身到抽屜改，才不會有兩份不一樣的資料
     buy.locked = !buy.isNew && !!(p && p.placedHome) && !itemOfPurchase(p);
     $('#buy-note').hidden = !buy.locked;
-    $('#buy-note').textContent = buy.locked ? '這筆已經放到' + p.placedHome + '的家，現在在「我的抽屜」裡。這裡只留作購物紀錄；要改名稱或重量請到抽屜。' : '';
+    $('#buy-note').textContent = buy.locked ? '這筆已經放到' + p.placedHome + '的家，現在在「家 → 抽屜」裡。這裡只留作購物紀錄；要改名稱或重量請到抽屜。' : '';
     ['#buy-name', '#buy-weight', '#buy-qty', '#buy-price', '#buy-cat'].forEach(function (s) { $(s).disabled = buy.locked; });
     $('#buy-save').hidden = buy.locked;
     $('#buy-sheet').classList.toggle('locked', buy.locked);
