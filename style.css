@@ -2215,14 +2215,14 @@ svg * { vector-effect: non-scaling-stroke; }
 .ow-temp { font-variant-numeric: tabular-nums; }
 .ow-rain { font-size: 12px; letter-spacing: 0.04em; border-bottom: 1px solid currentColor; }
 .ow-avg { font-size: 11px !important; letter-spacing: 0.08em; }
-/* 每一天右邊的穿搭小方格（約 56×56）＋「穿搭 ›」；點擊範圍至少 44×44 */
+/* 每一天右邊的穿搭小方格（44×44、方角）＋「穿搭 ›」；整行都可以點 */
 .od-look { display: flex; flex-direction: column; align-items: center; gap: 6px; min-width: 56px; min-height: 44px; }
-.od-sq { position: relative; width: 56px; height: 56px; display: block; background: #FFFFFF; border: 1px solid var(--line); overflow: hidden; }
+.od-sq { position: relative; width: 44px; height: 44px; display: block; background: #FFFFFF; border: 1px solid var(--line); overflow: hidden; border-radius: 0; }
 .od-sq.empty { border: 1px dashed #111111; display: flex; align-items: center; justify-content: center; }
-.od-pc { position: absolute; width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; }
-.od-pc0 { left: 3px; top: 2px; }
-.od-pc1 { right: 3px; bottom: 2px; }
-.od-sq.one .od-pc0 { left: 4px; top: 4px; width: 46px; height: 46px; }
+.od-pc { position: absolute; width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; }
+.od-pc0 { left: 2px; top: 1px; }
+.od-pc1 { right: 2px; bottom: 1px; }
+.od-sq.one .od-pc0 { left: 4px; top: 4px; width: 34px; height: 34px; }
 .od-pc img { width: 100%; height: 100%; object-fit: contain; }
 .od-pc svg { width: 100%; height: 100%; }
 .od-go { font-size: 11px !important; font-weight: 400 !important; letter-spacing: 0.16em; color: var(--c-meta); white-space: nowrap; }
@@ -2347,3 +2347,6 @@ svg * { vector-effect: non-scaling-stroke; }
 .pk-undo.show { opacity: 1; transform: translate(-50%, 0); pointer-events: auto; }
 .pk-undo-btn { flex: none; min-height: 36px; padding: 0 12px; border: 1px solid #FFFFFF; background: transparent; color: #FFFFFF; font: inherit; font-size: 12px; font-weight: 500 !important; letter-spacing: 0.14em; cursor: pointer; border-radius: 0; }
 @media (prefers-reduced-motion: reduce) { .pk-swipe > .pk-row, .pk-undo { transition: none !important; } }
+/* 中間「＋」選單：標題「新增到」，四個選項 */
+.plus-title { text-align: center; margin: 2px 0 12px; }
+.tf-outfit { display: inline-block; margin: 0 0 16px; min-height: 44px; line-height: 44px; }

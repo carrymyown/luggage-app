@@ -8,17 +8,17 @@
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-title" content="Carry My Own">
   <!-- 目前的版本（發布時更新；和 version.json 比對，有新版就提示更新） -->
-  <meta name="app-version" content="20261118j">
+  <meta name="app-version" content="20261118k">
   <title>Carry My Own</title>
   <!-- 圖示：瀏覽器分頁（網址前面）、iPad 主畫面、安裝成 app 時用 -->
-  <link rel="icon" type="image/svg+xml" href="icons/favicon.svg?v=20261118j">
-  <link rel="icon" href="icons/favicon-32.png?v=20261118j" sizes="32x32" type="image/png">
-  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png?v=20261118j">
+  <link rel="icon" type="image/svg+xml" href="icons/favicon.svg?v=20261118k">
+  <link rel="icon" href="icons/favicon-32.png?v=20261118k" sizes="32x32" type="image/png">
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png?v=20261118k">
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800;900&family=Noto+Sans+TC:wght@400;500;700;900&display=swap">
-  <link rel="stylesheet" href="style.css?v=20261118j">
+  <link rel="stylesheet" href="style.css?v=20261118k">
 </head>
 <body>
   <main>
@@ -194,6 +194,8 @@
           <h1 id="tf-title" data-en="TRIPS">新增旅程</h1>
           <span class="back"></span>
         </div>
+        <!-- 打開一趟旅程：最上方一行小字，點了一次看完每一天的穿搭 -->
+        <a id="tf-outfit" class="link small tf-outfit" hidden>這趟的穿搭 ›</a>
         <div class="card">
           <label>旅程名稱
             <input id="tf-name" maxlength="40" placeholder="例如：2027 春節回台灣">
@@ -491,12 +493,13 @@
 
   <!-- 「＋」選單 -->
   <div id="plus-sheet" class="sheet plus-sheet" hidden>
-    <div class="sheet-panel plus-panel" role="dialog" aria-modal="true" aria-label="新增">
+    <div class="sheet-panel plus-panel" role="dialog" aria-modal="true" aria-labelledby="plus-title">
       <div class="eyebrow center">ADD</div>
-      <a class="plus-item" href="#closet/new"><span>新增衣服</span><span class="muted small">拍照、選類別，放進衣櫃</span></a>
-      <a class="plus-item" href="#drawer" data-focus="dr-name"><span>新增抽屜物品</span><span class="muted small">衣服以外的東西</span></a>
-      <a class="plus-item" href="#shop" data-plus-buy="1"><span>記一筆購物</span><span class="muted small">旅途中買的東西、重量、放進哪個行李</span></a>
-      <a class="plus-item" href="#shop/gift" data-plus-gift="1"><span>新增禮物</span><span class="muted small">送給誰、在哪個城市送</span></a>
+      <div id="plus-title" class="sheet-title plus-title">新增到</div>
+      <a class="plus-item" href="#closet/new"><span>衣櫃</span><span class="muted small">衣服、鞋子、帽子和配件</span></a>
+      <a class="plus-item" href="#drawer" data-focus="dr-name"><span>抽屜</span><span class="muted small">保養品、電線這些出門會帶的東西</span></a>
+      <a class="plus-item" href="#shop" data-plus-buy="1"><span>購物</span><span class="muted small">旅途中買給自己的</span></a>
+      <a class="plus-item" href="#shop/gift" data-plus-gift="1"><span>禮物</span><span class="muted small">要帶去送人的</span></a>
       <button type="button" id="plus-close" class="btn ghost">取消</button>
     </div>
   </div>
@@ -921,25 +924,25 @@
     </div>
   </div>
 
-  <script src="weights.js?v=20261118j"></script>
-  <script src="photos.js?v=20261118j"></script>
-  <script src="clothing.js?v=20261118j"></script>
-  <script src="ui.js?v=20261118j"></script>
-  <script src="app.js?v=20261118j"></script>
-  <script src="closet.js?v=20261118j"></script>
-  <script src="trips.js?v=20261118j"></script>
-  <script src="organize.js?v=20261118j"></script>
-  <script src="packing.js?v=20261118j"></script>
-  <script src="drawer.js?v=20261118j"></script>
-  <script src="bags.js?v=20261118j"></script>
-  <script src="shop.js?v=20261118j"></script>
-  <script src="outfit.js?v=20261118j"></script>
-  <script src="sample-data.js?v=20261118j"></script>
-  <script src="onboard.js?v=20261118j"></script>
-  <script src="intro.js?v=20261118j"></script>
-  <script src="nav.js?v=20261118j"></script>
-  <script src="backup.js?v=20261118j"></script>
+  <script src="weights.js?v=20261118k"></script>
+  <script src="photos.js?v=20261118k"></script>
+  <script src="clothing.js?v=20261118k"></script>
+  <script src="ui.js?v=20261118k"></script>
+  <script src="app.js?v=20261118k"></script>
+  <script src="closet.js?v=20261118k"></script>
+  <script src="trips.js?v=20261118k"></script>
+  <script src="organize.js?v=20261118k"></script>
+  <script src="packing.js?v=20261118k"></script>
+  <script src="drawer.js?v=20261118k"></script>
+  <script src="bags.js?v=20261118k"></script>
+  <script src="shop.js?v=20261118k"></script>
+  <script src="outfit.js?v=20261118k"></script>
+  <script src="sample-data.js?v=20261118k"></script>
+  <script src="onboard.js?v=20261118k"></script>
+  <script src="intro.js?v=20261118k"></script>
+  <script src="nav.js?v=20261118k"></script>
+  <script src="backup.js?v=20261118k"></script>
   <script src="vendor/supabase.js"></script>
-  <script src="cloud.js?v=20261118j"></script>
+  <script src="cloud.js?v=20261118k"></script>
 </body>
 </html>

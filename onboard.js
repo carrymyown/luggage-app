@@ -209,9 +209,11 @@
     { page: 'pack', target: '#pack-tabs', away: '.tabbar a[href="#pack"]',
       title: '先列清單，再打勾', body: '打勾就是放進行李，行李的進度條會即時更新；往左滑或按「編輯」可以刪除。' },
     { page: 'trips', target: '#view-trips .trip-card .trip-route, #view-trips .trip-card, #view-trips .page-head', away: '.tabbar a[href="#trips"]',
-      title: '每一段航班的額度', body: '填好航班和行李額度，到了有家的城市會提醒你整理行李。點每天旁邊的小方格，看當天穿搭。' }
+      title: '每一段航班的額度', body: '填好航班和行李額度，到了有家的城市會提醒你整理行李。點一趟旅程，看每一天的穿搭。' },
+    { page: 'outfit', target: '#view-outfit .od-sq.empty, #view-outfit .od-look', away: '#view-trips .trip-card, .tabbar a[href="#trips"]',
+      title: '每天穿什麼', body: '點這裡用衣櫃的衣服搭配，搭好的會自動加進打包清單。' }
   ];
-  var PAGE_OF = { home: 'home', closet: 'closet', drawer: 'closet', bags: 'closet', pack: 'pack', trips: 'trips' };
+  var PAGE_OF = { home: 'home', closet: 'closet', drawer: 'closet', bags: 'closet', pack: 'pack', trips: 'trips', outfit: 'outfit' };
   var COACH_KEY = 'cmo-coach';
   function coachState() { try { return JSON.parse(localStorage.getItem(COACH_KEY)) || { step: 0, done: false }; } catch (e) { return { step: 0, done: false }; } }
   function saveCoach(o) { try { localStorage.setItem(COACH_KEY, JSON.stringify(o)); } catch (e) { /* 不影響 */ } }
@@ -249,8 +251,13 @@
         for (var k = 0; k < list.length; k++) if (visible(list[k])) return list[k];
       }
     }
-    var away = c.away && document.querySelector(c.away);
-    return visible(away) ? away : null;
+    // 不在那一頁：依序找第一個看得見的（例如先指旅程卡片，沒有才指底部的「行程」）
+    var aw = c.away ? c.away.split(',') : [];
+    for (var a = 0; a < aw.length; a++) {
+      var el = document.querySelector(aw[a]);
+      if (visible(el)) return el;
+    }
+    return null;
   }
   // 不出現：正式使用（非範例）、已經按過知道了、第一次使用設定或介紹畫面開著
   function blocked() {

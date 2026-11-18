@@ -195,6 +195,10 @@
     $('#tf-origin-hint').textContent = hint;
     $('#tf-origin-hint').hidden = !hint;
     $('#tf-title').textContent = t ? '編輯旅程' : '新增旅程';
+    // 已經存好、有日期的旅程：最上方「這趟的穿搭 ›」
+    var hasDays = !!(t && window.Outfit && window.Outfit.tripDays(t).length);
+    $('#tf-outfit').hidden = !hasDays;
+    if (hasDays) $('#tf-outfit').href = '#outfit/' + encodeURIComponent(t.id);
     $('#tf-name').value = draft.name;
     $('#tf-origin').value = draft.origin;
     $('#tf-delete').hidden = !t;
