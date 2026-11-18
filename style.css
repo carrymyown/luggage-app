@@ -2275,3 +2275,6 @@ svg * { vector-effect: non-scaling-stroke; }
 .of-note { margin-top: 10px; }
 /* 首頁旅程卡：今天的穿搭（和「購物・禮物」同樣的小字，另起一行） */
 .tc-outfit { display: table; margin: 6px auto 0; }
+/* 預留空間：首頁旅程卡一行、購物頁旅程下面一行（和卡片裡其他小字一樣） */
+.tc-reserve { color: var(--muted); text-transform: none !important; }
+.shop-reserve { display: block; margin: -4px 0 16px; padding: 4px 0; color: var(--muted); text-align: left; text-transform: none !important; }

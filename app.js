@@ -352,7 +352,7 @@
     catch (e) { toast('無法儲存（瀏覽器可能在私密模式）'); }
     // 有登入雲端的話，稍後自動同步（範例模式不同步）
     if (window.Cloud && !sampleMode()) window.Cloud.schedule();
-    // 有設購物目標：打包快吃到預留空間就提醒
+    // 有設預留空間：打包快吃到預留空間就提醒
     clearTimeout(goalTimer);
     goalTimer = setTimeout(function () { checkGoals(false); }, 50);
   }
@@ -618,20 +618,27 @@
     return c.map(function (x) { return '<span class="nw">' + esc(x) + '</span>'; }).join(' → ') || '路線未定';
   }
 
-  // ---------- 購物目標（可選）：想留給購物的公斤數；打包吃到這個空間時提醒 ----------
-  var GOAL_NEAR = 1;   // 離購物預留只剩 1 公斤以內就算「快吃到」
+  // ---------- 預留空間（可選）：這趟想留給購物和送禮的公斤數（資料欄位沿用 shopGoal）；打包吃到這個空間時提醒 ----------
+  var GOAL_NEAR = 1;   // 離預留空間只剩 1 公斤以內就算「快吃到」
   function goalOf(t) { var g = t && t.shopGoal; return g === '' || g == null || !isFinite(Number(g)) ? null : Number(g); }
-  // 這趟行李裡「旅途中買的」重量（購物、旅途中買的禮物）：它們本來就該用購物空間，不算打包吃掉的
+  // 預留空間「已用」：這趟在行李裡的購物和禮物重量（它們本來就該用預留空間，不算打包吃掉的）
   function shoppingWeight(trip) {
     var sh = state.shopping || { purchases: [] };
     return state.items.reduce(function (sum, it) {
       var p = it.purchaseId && sh.purchases.find(function (x) { return x.id === it.purchaseId; });
       var g = it.giftId && (state.gifts || []).find(function (x) { return x.id === it.giftId; });
-      if ((p && p.tripId === trip.id) || (g && g.tripId === trip.id && g.source === 'trip')) return sum + it.weight * it.qty;
+      if ((p && p.tripId === trip.id) || (g && g.tripId === trip.id)) return sum + (Number(it.weight) || 0) * (Number(it.qty) || 1);
       return sum;
     }, 0);
   }
-  // 打包後留給購物的空間，和購物目標比：ok／near 快吃到／over 已經吃到
+  function reserveOf(trip) { return { goal: goalOf(trip), used: shoppingWeight(trip) }; }
+  function kgShort(v) { var r = Math.round((Number(v) || 0) * 10) / 10; return String(Object.is(r, -0) ? 0 : r); }
+  // 預留空間那一行的文字：「預留空間 已用 2 / 5 kg」，沒設定：「設定預留空間」
+  function reserveText(trip) {
+    var rv = reserveOf(trip);
+    return rv.goal == null ? '設定預留空間' : '預留空間 已用 ' + kgShort(rv.used) + ' / ' + kgShort(rv.goal) + ' kg';
+  }
+  // 打包後留給購物和送禮的空間，和預留空間比：ok／near 快吃到／over 已經吃到
   function goalStatus(trip, r) {
     var goal = goalOf(trip);
     r = r || tripRemain(trip);
@@ -655,8 +662,8 @@
       if (rank[now] <= rank[before]) return;
       var name = t.name ? '「' + t.name + '」' : '這趟';
       msg = now === 'over'
-        ? name + '打包的重量已經用到留給購物的空間了。\n購物目標 ' + fmt(g.goal) + ' kg，現在打包後只剩 ' + fmt(Math.max(0, g.free)) + ' kg 可以買。'
-        : name + '打包的重量快用到留給購物的空間了。\n再放 ' + fmt(g.free - g.goal) + ' kg 就會開始佔用購物目標的 ' + fmt(g.goal) + ' kg。';
+        ? name + '打包的重量已經用到預留空間了。\n預留空間 ' + fmt(g.goal) + ' kg，現在打包後只剩 ' + fmt(Math.max(0, g.free)) + ' kg 可以放購物和禮物。'
+        : name + '打包的重量快用到預留空間了。\n再放 ' + fmt(g.free - g.goal) + ' kg 就會開始佔用預留空間的 ' + fmt(g.goal) + ' kg。';
     });
     if (msg) {
       $('#goal-alert-text').textContent = msg;
@@ -669,7 +676,7 @@
     var t = state.trips.find(function (x) { return x.id === id; });
     if (!t) return;
     goalTripId = id;
-    $('#goal-title').textContent = (t.name ? '「' + t.name + '」' : '這趟') + '的購物目標';
+    $('#goal-title').textContent = (t.name ? '「' + t.name + '」' : '這趟') + '的預留空間';
     $('#goal-input').value = goalOf(t) == null ? '' : goalOf(t);
     $('#goal-sheet').hidden = false;
     setTimeout(function () { $('#goal-input').focus(); }, 50);
@@ -683,8 +690,9 @@
     var g = goalStatus(t);
     goalSeen[t.id] = g ? g.level : 'none';   // 剛設定時不跳提醒，直接在卡片上顯示
     save();
-    toast(v === '' ? '已取消購物目標' : '購物目標：' + fmt(v) + ' kg');
+    toast(v === '' ? '已取消預留空間' : '預留空間：' + fmt(v) + ' kg');
     renderHome();
+    if (window.Shop && /^#shop/.test(location.hash)) window.Shop.refresh();
   }
   $('#goal-form').addEventListener('submit', function (e) {
     e.preventDefault();
@@ -699,10 +707,6 @@
   function tripCard(t) {
     var r = tripRemain(t);
     var lv = level(r.remain, r.limit);
-    var g = goalStatus(t, r);
-    var goalHtml = goalOf(t) == null ? '<button type="button" class="link small tc-goal" data-goal="' + esc(t.id) + '">＋ 設定購物目標</button>' :
-      '<button type="button" class="link small tc-goal" data-goal="' + esc(t.id) + '">購物目標 ' + fmt(goalOf(t)) + ' kg</button>' +
-      (g && g.level === 'over' ? '<span class="tc-goal-warn">打包已用到購物空間</span>' : g && g.level === 'near' ? '<span class="tc-goal-warn near">打包快用到購物空間</span>' : '');
     return '<div class="trip-card" role="link" tabindex="0" data-trip-card="' + esc(t.id) + '">' +
       '<div class="tc-date">' + esc(tripDates(t)) + '<span class="tc-name">' + esc(t.name || '') + '</span></div>' +
       '<div class="tc-route">' + tripRoute(t) + '</div>' +
@@ -711,8 +715,7 @@
       '<i class="tc-dot ' + lv + '" title="' + (lv === 'bad' ? '超重' : lv === 'warn' ? '快滿了' : lv === 'ok' ? '充裕' : '尚未設定額度') + '"></i></small></div>' +
       (r.remain == null ? '<div class="tc-note">尚未設定額度</div>' :
         r.tight && r.leg ? '<div class="tc-note">最緊：' + esc(r.leg.from || '?') + ' → ' + esc(r.leg.to || '?') + '</div>' : '') +
-      '<div class="tc-goal-row">' + goalHtml + '</div>' +
-      shopLine(t) + outfitLine(t) +
+      reserveLine(t) + outfitLine(t) +
       '</div>';
   }
   // 今天（或明天）在這趟旅程裡：多一行「今天的穿搭 ›」，點了直接進那天的穿搭頁
@@ -725,15 +728,14 @@
     if (!d) return '';
     return '<button type="button" class="link small tc-shop tc-outfit" data-outfit-day="' + esc(t.id) + '/' + d + '">' + (d === today ? '今天' : '明天') + '的穿搭 ›</button>';
   }
-  // 旅程卡底下一行小字：這趟的購物和禮物，點了進這趟的購物／送禮頁
-  function shopLine(t) {
-    var sh = state.shopping || { purchases: [] };
-    var nb = sh.purchases.filter(function (p) { return p.tripId === t.id; }).length;
-    var ng = (state.gifts || []).filter(function (g) { return g.tripId === t.id; }).length;
-    return '<button type="button" class="link small tc-shop" data-shop-trip="' + esc(t.id) + '">' +
-      (nb || ng ? '購物 ' + nb + ' 件・禮物 ' + ng + ' 份' : '購物・禮物') + ' ›</button>';
+  // 旅程卡裡的預留空間（購物和送禮共用）：「預留空間 已用 2 / 5 kg ›」點了進這趟的購物和送禮頁；
+  // 沒設定時「設定預留空間 ›」點了可以設定（也可以不設）
+  function reserveLine(t) {
+    var set = goalOf(t) != null;
+    return '<div class="tc-goal-row"><button type="button" class="link small tc-goal tc-reserve" ' + (set ? 'data-shop-trip' : 'data-goal') + '="' + esc(t.id) + '">' +
+      esc(reserveText(t)) + ' ›</button></div>';
   }
-  // 點旅程卡進行程設定；點「購物目標」開設定
+  // 點旅程卡進行程設定；點「設定預留空間」開設定、點「預留空間 已用…」進這趟的購物和送禮
   $('#trip-cards').addEventListener('click', function (e) {
     var g = e.target.closest('[data-goal]');
     if (g) { openGoal(g.getAttribute('data-goal')); return; }
@@ -1857,6 +1859,7 @@
 
   // 給衣櫃（closet.js）使用的共用功能
   window.App = {
+    reserveText: reserveText, openGoal: openGoal,
     saveQuiet: saveQuiet,
     replaceState: replaceState,
     refreshView: refreshView,

@@ -855,7 +855,7 @@
   }
 
   // ---------- 新增一趟旅程（範例資料用；跟表單一樣從 normalizeTrip／newLeg 開始，格式才會一樣） ----------
-  // o：{ id?, name, origin, endHome?, pouchMode?, seasons?, activities?, shopGoal?（購物目標 kg）,
+  // o：{ id?, name, origin, endHome?, pouchMode?, seasons?, activities?, shopGoal?（預留空間 kg：留給購物和送禮）,
   //      legs: [{ id?, from?, to, date, depTime, arrTime, flightNo, airline, allowance?, connection? }] }
   function create(o) {
     var t = App.normalizeTrip({ id: o.id, name: o.name || '', origin: o.origin || '', legs: [] });

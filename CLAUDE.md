@@ -9,11 +9,11 @@
   - 行李箱 `Bags.create`
   - 旅程 `Trips.create`
   - 打包清單 `Packing.prepareTrip`（裡面走「＋ 加入」的 `addToList`）
-  - 購物 `Shop.writePurchase`（`purpose`：own 自己會帶出門／souvenir 紀念品；「送人」用 `Shop.writeGift`，source 'trip'）
+  - 購物（自己買、自己留的）`Shop.writePurchase`；要送人的一律是禮物 `Shop.writeGift`（旅途中買的 source 'trip'）
   - 禮物 `Shop.writeGift`
   - 常搭航空公司與額度 `Onboard.setDefaults`
   - 必帶清單 `App.addMust(名字, 預設行李, 重量)`（預設內容在 app.js 的 `DEFAULT_MUST`）
-  - 購物目標：`Trips.create` 的 `shopGoal`
+  - 預留空間（這趟想留給購物和送禮的重量，以前叫購物目標）：`Trips.create` 的 `shopGoal`
   - 每日穿搭：當天活動 `Outfit.setActs(旅程 id, 日期, 活動[])`、確定這套 `Outfit.confirm(旅程 id, 日期)`（自動搭配靠衣服的 pattern／seasons／styles／uses 標籤，範例衣服要填）
   - 範例內容改了，把 `sample-data.js` 的 `VERSION` 加 1，打開過舊範例的裝置會自動換成新的
   - 表單存檔時也呼叫同一個函式，所以兩邊不會分岔。新增功能時，請照這個做法，把「新增一筆」寫成函式，表單和範例共用。

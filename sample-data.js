@@ -74,7 +74,7 @@
   var ALLOW = { checked: 23, carry: 7, personal: 5 };
   var TRIP = {
     name: '台北・東京・首爾', origin: '台北', endHome: '台北', pouchMode: 'personal', seasons: ['冬'], activities: [],
-    shopGoal: 5,   // 首頁的購物目標：留 5 公斤給回程購物
+    shopGoal: 5,   // 首頁旅程卡的預留空間：留 5 公斤給購物和送禮（顯示「預留空間 已用 0.6 / 5 kg」）
     legs: [
       { day: 0, from: '台北', to: '東京', depTime: '08:50', arrTime: '13:05', flightNo: 'BR198', airline: '長榮航空', allowance: ALLOW,
         connection: { baggage: 'recheck', mode: 'enter', stayDays: 4, note: '在東京的家停留，可以換行李箱' } },
@@ -103,29 +103,17 @@
   // 已經打勾（放進行李）的東西，其他的還沒打勾
   var PACKED = ['護照', '錢包', '白色 T 恤', '牛仔褲', '充電線', '白色運動鞋'];
 
-  // 在東京買一件衣服（第 2 天）
-  // 購物：記一筆購物時先選「這是什麼」，三種各示範一筆
-  //   own 自己會帶出門（之後放到哪個家）／souvenir 紀念品、放家裡就好（到家自動拿出行李）
+  // 購物（自己買、自己留的）：在東京買一條圍巾，放進托運箱，之後放到台北的家（抵達台北時出現在整理行李畫面）
   var PURCHASES = [
-    { day: 2, purpose: 'own', name: '羊毛圍巾', weight: 0.2, qty: 1, price: '¥3,990', category: '必備品', city: '東京', homeDest: '台北', bag: 'checked' },
-    { day: 3, purpose: 'souvenir', name: '招財貓擺飾', weight: 0.35, qty: 1, price: '¥1,500', city: '東京', bag: 'checked' }
+    { day: 2, name: '羊毛圍巾', weight: 0.2, qty: 1, price: '¥3,990', category: '必備品', city: '東京', homeDest: '台北', bag: 'checked' }
   ];
-  // 送人：存成一份禮物（旅途中買的，會列在購物紀錄的「送人」）
+  // 送禮：在首爾買的人蔘茶要送媽媽，已經放進行李（送出後從行李拿掉、重量加回來）
   var GIFT_BUYS = [
     { name: '首爾的人蔘茶', weight: 0.4, qty: 1, to: '媽媽', city: '台北', status: 'packed', bag: 'checked' }
   ];
-  // 已經送出的禮物：從行李拿掉、重量加回來，只在送禮紀錄留一行
-  var GIFTS_GIVEN = [
-    { name: '抹茶點心禮盒', weight: 0.3, qty: 1, to: '東京的朋友 小林', city: '東京', bag: 'checked' }
-  ];
-
-  // 帶一盒鳳梨酥（抽屜裡的那盒）送首爾的朋友，已經放進行李
-  var GIFTS = [
-    { drawer: 'cake', qty: 1, to: '首爾的朋友 敏智', city: '首爾', status: 'packed', bag: 'checked' }
-  ];
 
   // 範例內容的版本：改了範例內容就加 1，已經打開過舊範例的裝置會自動換成新的
-  var VERSION = 3;
+  var VERSION = 4;
 
   // ================= 產生範例（用各功能自己的新增函式） =================
 
@@ -185,7 +173,7 @@
     CONFIRM.forEach(function (n) { window.Outfit.confirm(trip.id, day(n)); });
 
     PURCHASES.forEach(function (p) {
-      window.Shop.writePurchase(null, { tripId: trip.id, date: day(p.day), purpose: p.purpose, name: p.name, weight: p.weight, qty: p.qty, price: p.price,
+      window.Shop.writePurchase(null, { tripId: trip.id, date: day(p.day), name: p.name, weight: p.weight, qty: p.qty, price: p.price,
         category: p.category || '必備品', city: p.city, homeDest: p.homeDest || '', bagId: bagIds[p.bag] });
     });
 
@@ -193,20 +181,6 @@
       window.Shop.writeGift(null, { tripId: trip.id, name: g.name, weight: g.weight, qty: g.qty, to: g.to, city: g.city,
         source: 'trip', status: g.status, bagId: bagIds[g.bag] });
     });
-    // 已送出：先放進行李，再按「已送出」（和真的操作一樣）
-    GIFTS_GIVEN.forEach(function (g) {
-      var gg = window.Shop.writeGift(null, { tripId: trip.id, name: g.name, weight: g.weight, qty: g.qty, to: g.to, city: g.city,
-        source: 'trip', status: 'packed', bagId: bagIds[g.bag] });
-      window.Shop.writeGift(gg, { tripId: trip.id, name: g.name, weight: g.weight, qty: g.qty, to: g.to, city: g.city,
-        source: 'trip', status: 'given', bagId: bagIds[g.bag] });
-    });
-
-    GIFTS.forEach(function (g) {
-      var m = App.entryById(drawerIds[g.drawer]);
-      window.Shop.writeGift(null, { tripId: trip.id, name: m.name, weight: m.weight, qty: g.qty, to: g.to, city: g.city,
-        source: 'drawer', drawerId: m.id, status: g.status, bagId: bagIds[g.bag] });
-    });
-
     s.onboarded = true;
     s.sampleBuilt = VERSION;
     App.save();

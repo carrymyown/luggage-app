@@ -8,17 +8,17 @@
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-title" content="Carry My Own">
   <!-- 目前的版本（發布時更新；和 version.json 比對，有新版就提示更新） -->
-  <meta name="app-version" content="20261118h">
+  <meta name="app-version" content="20261118i">
   <title>Carry My Own</title>
   <!-- 圖示：瀏覽器分頁（網址前面）、iPad 主畫面、安裝成 app 時用 -->
-  <link rel="icon" type="image/svg+xml" href="icons/favicon.svg?v=20261118h">
-  <link rel="icon" href="icons/favicon-32.png?v=20261118h" sizes="32x32" type="image/png">
-  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png?v=20261118h">
+  <link rel="icon" type="image/svg+xml" href="icons/favicon.svg?v=20261118i">
+  <link rel="icon" href="icons/favicon-32.png?v=20261118i" sizes="32x32" type="image/png">
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png?v=20261118i">
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800;900&family=Noto+Sans+TC:wght@400;500;700;900&display=swap">
-  <link rel="stylesheet" href="style.css?v=20261118h">
+  <link rel="stylesheet" href="style.css?v=20261118i">
 </head>
 <body>
   <main>
@@ -329,6 +329,7 @@
         <label class="pk-trip">這趟旅程
           <select id="shop-trip"></select>
         </label>
+        <button type="button" id="shop-reserve" class="link small shop-reserve"></button>
 
         <div id="shop-buy">
           <div class="card shop-card">
@@ -491,7 +492,7 @@
       <a class="plus-item" href="#closet/new"><span>新增衣服</span><span class="muted small">拍照、選類別，放進衣櫃</span></a>
       <a class="plus-item" href="#drawer" data-focus="dr-name"><span>新增抽屜物品</span><span class="muted small">衣服以外的東西</span></a>
       <a class="plus-item" href="#shop" data-plus-buy="1"><span>記一筆購物</span><span class="muted small">旅途中買的東西、重量、放進哪個行李</span></a>
-      <a class="plus-item" href="#shop/gift"><span>新增禮物</span><span class="muted small">送給誰、在哪個城市送</span></a>
+      <a class="plus-item" href="#shop/gift" data-plus-gift="1"><span>新增禮物</span><span class="muted small">送給誰、在哪個城市送</span></a>
       <button type="button" id="plus-close" class="btn ghost">取消</button>
     </div>
   </div>
@@ -708,33 +709,27 @@
   <div id="buy-sheet" class="sheet" hidden>
     <div class="sheet-panel org-panel form" role="dialog" aria-modal="true" aria-labelledby="buy-title">
       <div id="buy-title" class="sheet-title">記一筆購物</div>
-      <div class="field-title">這是什麼</div>
-      <div id="buy-purpose" class="seg buy-purpose"></div>
-      <!-- 選好「這是什麼」才出現的欄位 -->
       <div id="buy-fields">
       <label>名稱<input id="buy-name" maxlength="40" placeholder="買了什麼"></label>
       <div class="dr-add-grid">
         <label>重量（每個）<span class="input-unit"><input id="buy-weight" type="number" inputmode="decimal" min="0" step="any" placeholder="0.5"><span class="unit-text">kg</span></span></label>
         <label>數量<input id="buy-qty" type="number" inputmode="numeric" min="1" step="1" value="1"></label>
-        <label data-for="own souvenir">價格 <span class="muted">（選填）</span><input id="buy-price" maxlength="20" placeholder="例如 ฿350"></label>
-        <label data-for="own">品類<select id="buy-cat"></select></label>
+        <label>價格 <span class="muted">（選填）</span><input id="buy-price" maxlength="20" placeholder="例如 ฿350"></label>
+        <select id="buy-cat" hidden aria-hidden="true"></select>
       </div>
-      <label data-for="gift">送給誰<input id="buy-to" maxlength="20" placeholder="例如：媽媽、王經理"></label>
       <p id="buy-note" class="muted small" hidden></p>
       <p id="buy-try" class="shop-try-out"></p>
       <div class="field-title">放進哪個行李</div>
       <div id="buy-bag" class="chips"></div>
       <div id="buy-city-title" class="field-title">在哪個城市買</div>
       <div id="buy-city" class="chips"></div>
-      <div data-for="own">
+      <div>
         <div class="field-title">之後放到哪個家 <span class="muted small">抵達那個家整理行李時會提醒</span></div>
         <div id="buy-home" class="chips"></div>
         <div class="field-title">照片 <span class="muted small">（選填）</span></div>
         <label class="buy-photo"><input id="buy-photo" type="file" accept="image/*"><img id="buy-photo-img" alt="" hidden><span id="buy-photo-hint">＋ 加照片</span></label>
         <button type="button" id="buy-photo-remove" class="link small" hidden>移除照片</button>
       </div>
-      <p data-for="souvenir" class="muted small">紀念品只算回程重量；抵達任何一個家時會自動從行李拿出來，不放進衣櫃或抽屜。</p>
-      <p data-for="gift" class="muted small">存好後會變成「送禮」裡的一份禮物；送出後就從行李拿掉，重量加回來。</p>
       </div>
       <div class="cloud-btns dr-foot">
         <button type="button" id="buy-cancel" class="btn ghost">取消</button>
@@ -862,11 +857,11 @@
     </div>
   </div>
 
-  <!-- 首頁：購物目標（可選） -->
+  <!-- 首頁：預留空間（可選）：這趟想留給購物和送禮的重量 -->
   <div id="goal-sheet" class="sheet ask-sheet" hidden>
     <form id="goal-form" class="sheet-panel ask-panel form" autocomplete="off">
-      <div id="goal-title" class="sheet-title">購物目標</div>
-      <p class="muted small">想留多少公斤給購物？打包快用到這個空間時會提醒你。可以不設定。</p>
+      <div id="goal-title" class="sheet-title">預留空間</div>
+      <p class="muted small">這趟想留多少公斤給購物和送禮？打包快用到這個空間時會提醒你。可以不設定。</p>
       <span class="input-unit"><input id="goal-input" type="number" inputmode="decimal" min="0" step="any" enterkeyhint="done" placeholder="例如 5"><span class="unit-text">kg</span></span>
       <div class="cloud-btns">
         <button type="button" id="goal-clear" class="btn ghost">不設定</button>
@@ -876,10 +871,10 @@
     </form>
   </div>
 
-  <!-- 購物空間提醒 -->
+  <!-- 預留空間提醒 -->
   <div id="goal-alert" class="sheet" hidden>
     <div class="sheet-panel" role="alertdialog" aria-modal="true" aria-labelledby="goal-alert-title">
-      <div id="goal-alert-title" class="sheet-title">購物空間提醒</div>
+      <div id="goal-alert-title" class="sheet-title">預留空間提醒</div>
       <p id="goal-alert-text" class="goal-alert-text"></p>
       <button type="button" id="goal-alert-ok" class="btn primary">知道了</button>
     </div>
@@ -903,25 +898,25 @@
     </div>
   </div>
 
-  <script src="weights.js?v=20261118h"></script>
-  <script src="photos.js?v=20261118h"></script>
-  <script src="clothing.js?v=20261118h"></script>
-  <script src="ui.js?v=20261118h"></script>
-  <script src="app.js?v=20261118h"></script>
-  <script src="closet.js?v=20261118h"></script>
-  <script src="trips.js?v=20261118h"></script>
-  <script src="organize.js?v=20261118h"></script>
-  <script src="packing.js?v=20261118h"></script>
-  <script src="drawer.js?v=20261118h"></script>
-  <script src="bags.js?v=20261118h"></script>
-  <script src="shop.js?v=20261118h"></script>
-  <script src="outfit.js?v=20261118h"></script>
-  <script src="sample-data.js?v=20261118h"></script>
-  <script src="onboard.js?v=20261118h"></script>
-  <script src="intro.js?v=20261118h"></script>
-  <script src="nav.js?v=20261118h"></script>
-  <script src="backup.js?v=20261118h"></script>
+  <script src="weights.js?v=20261118i"></script>
+  <script src="photos.js?v=20261118i"></script>
+  <script src="clothing.js?v=20261118i"></script>
+  <script src="ui.js?v=20261118i"></script>
+  <script src="app.js?v=20261118i"></script>
+  <script src="closet.js?v=20261118i"></script>
+  <script src="trips.js?v=20261118i"></script>
+  <script src="organize.js?v=20261118i"></script>
+  <script src="packing.js?v=20261118i"></script>
+  <script src="drawer.js?v=20261118i"></script>
+  <script src="bags.js?v=20261118i"></script>
+  <script src="shop.js?v=20261118i"></script>
+  <script src="outfit.js?v=20261118i"></script>
+  <script src="sample-data.js?v=20261118i"></script>
+  <script src="onboard.js?v=20261118i"></script>
+  <script src="intro.js?v=20261118i"></script>
+  <script src="nav.js?v=20261118i"></script>
+  <script src="backup.js?v=20261118i"></script>
   <script src="vendor/supabase.js"></script>
-  <script src="cloud.js?v=20261118h"></script>
+  <script src="cloud.js?v=20261118i"></script>
 </body>
 </html>
