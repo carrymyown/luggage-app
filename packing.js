@@ -845,6 +845,16 @@
     return addToList(list, m);
   }
 
+  // 每日穿搭用：這趟的打包清單；把衣服從清單拿掉（已經放進行李的也一起拿出來）
+  function listOf(t) { return (t && listFor(t.id)) || { entries: [] }; }   // 只讀：還沒有清單就當作空的，不自動建立
+  function removeFromTrip(t, catalogIds) {
+    var list = ensureList(t), n = 0;
+    list.entries.slice().forEach(function (e) {
+      if (e.status === 'take' && e.catalogId && catalogIds.indexOf(e.catalogId) >= 0) { removeEntry(list, e); n++; }
+    });
+    return n;
+  }
+
   function pickToList(id) {
     var m = App.entryById(id);
     if (!m) return;
@@ -1197,7 +1207,7 @@
   });
 
   window.Packing = {
-    prepareTrip: prepareTrip, addToTrip: addToTrip,
+    prepareTrip: prepareTrip, addToTrip: addToTrip, listOf: listOf, removeFromTrip: removeFromTrip,
     show: show, tripBagIds: tripBagIds, openAdd: openAdd, tripZones: tripZones, setTripZone: setTripZone, zoneWeights: zoneWeights,
     seasonOptions: function () { return SEASONS; }, actOptions: function () { return ACTS.map(function (a) { return a.name; }); },
     guessSeasons: tripSeasons, guessActs: guessActs, zones: function () { return ZONES; }, pendingByBag: pendingByBag, bagPending: bagPending, checkEntry: checkEntry, uncheckItem: uncheckItem,

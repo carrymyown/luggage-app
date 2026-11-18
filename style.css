@@ -2191,3 +2191,79 @@ svg * { vector-effect: non-scaling-stroke; }
 /* 匯入備份：看不見的選檔案欄位只蓋在文字上，不會擋到旁邊的按鈕 */
 .file-link { overflow: hidden; }
 .file-link input { height: 100% !important; min-height: 0 !important; padding: 0 !important; margin: 0 !important; border: 0 !important; }
+
+/* =====================================================================
+   每日穿搭：整趟總結、每一天的列表、平拍穿搭（衣服照片當主角）
+   ===================================================================== */
+.of-summary { border-bottom: 1px solid var(--line); padding: 4px 0 16px; margin-bottom: 24px; }
+.of-big { font-size: 20px; line-height: 1.5; margin: 8px 0 4px; letter-spacing: 0.02em; }
+.of-big b { font-family: var(--num); font-size: 48px; font-weight: 500 !important; line-height: 1; margin: 0 4px; font-variant-numeric: tabular-nums; }
+.of-tip { border-top: 1px solid var(--line); margin-top: 16px; padding-top: 14px; }
+.of-tip-title { font-size: 15px; font-weight: 500 !important; margin-bottom: 8px; }
+.of-tip .btn { margin-top: 10px; }
+.of-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.of-chip { font-size: 13px; border: 1px solid var(--line); padding: 4px 10px; }
+.of-days .sec-head { margin-bottom: 0; }
+.od-row {
+  display: grid; grid-template-columns: 76px 1fr auto; gap: 12px; align-items: center; position: relative;
+  padding: 14px 0; border-bottom: 1px solid var(--line); color: inherit; text-decoration: none;
+}
+.od-date { font-size: 13px; font-variant-numeric: tabular-nums; }
+.od-main { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+.od-city { font-size: 15px; font-weight: 500 !important; }
+.od-weather { display: flex; flex-wrap: wrap; gap: 8px; align-items: baseline; font-size: 13px; }
+.ow-temp { font-variant-numeric: tabular-nums; }
+.ow-rain { font-size: 12px; letter-spacing: 0.04em; border-bottom: 1px solid currentColor; }
+.ow-avg { font-size: 11px !important; letter-spacing: 0.08em; }
+.od-thumbs { display: flex; gap: 4px; }
+.od-thumb { width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; background: #FFFFFF; border: 1px solid var(--line); overflow: hidden; }
+.od-thumb img { width: 100%; height: 100%; object-fit: contain; }
+.od-thumb svg { width: 28px; height: 28px; }
+.od-ok { position: absolute; right: 0; top: 6px; font-size: 11px; }
+@media (max-width: 420px) { .od-row { grid-template-columns: 60px 1fr; } .od-thumbs { grid-column: 2; } }
+
+.of-day-head h1 { margin-top: 6px; }
+.of-weather { display: flex; flex-wrap: wrap; gap: 12px; align-items: baseline; font-size: 15px; padding: 4px 0 16px; border-bottom: 1px solid var(--line); margin-bottom: 16px; }
+.of-acts { margin-bottom: 8px; }
+.of-why { margin: 4px 0 16px; }
+.of-board {
+  display: grid; gap: 12px; margin: 16px 0 20px;
+  grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
+  grid-template-areas: "top outer" "bottom acc1" "shoes acc2";
+}
+.of-board.dress { grid-template-areas: "dress outer" "dress acc1" "shoes acc2"; }
+.of-slot { min-width: 0; border-top: 1px solid var(--rule); padding-top: 6px; }
+.of-top { grid-area: top; } .of-bottom { grid-area: bottom; } .of-dress { grid-area: dress; }
+.of-outer { grid-area: outer; } .of-shoes { grid-area: shoes; } .of-acc1 { grid-area: acc1; } .of-acc2 { grid-area: acc2; }
+.of-slot-head { display: flex; justify-content: space-between; align-items: center; min-height: 28px; }
+.of-lock { border: 0; background: none; padding: 6px; margin: -6px -6px -6px 0; color: #BDBDBD; cursor: pointer; line-height: 0; }
+.of-lock.on { color: #111111; }
+.of-stage { position: relative; }
+.of-track {
+  display: flex; overflow-x: auto; scroll-snap-type: x mandatory; -webkit-overflow-scrolling: touch;
+  scrollbar-width: none; background: #FFFFFF;
+}
+.of-track::-webkit-scrollbar { display: none; }
+.of-board { --of-h: clamp(120px, 21vh, 230px); }
+.of-item { flex: 0 0 100%; scroll-snap-align: center; height: var(--of-h); display: flex; align-items: center; justify-content: center; background: #FFFFFF; }
+.of-dress, .of-dress .of-stage { display: flex; flex-direction: column; }
+.of-dress .of-stage { flex: 1; }
+.of-dress .of-track { flex: 1; }
+.of-dress .of-item { height: auto; min-height: calc(var(--of-h) * 2); }
+.of-acc1 .of-art, .of-acc2 .of-art { width: 46%; height: 46%; }
+.of-item img { width: 100%; height: 100%; object-fit: contain; }
+.of-art { width: 70%; height: 70%; display: flex; align-items: center; justify-content: center; }
+.of-art svg { width: 100%; height: 100%; }
+.of-none span { font-size: 12px; color: var(--c-meta); letter-spacing: 0.08em; border: 1px dashed var(--line); padding: 10px 14px; }
+.of-arrow {
+  position: absolute; top: 50%; transform: translateY(-50%); z-index: 1; width: 32px; height: 44px;
+  border: 0; background: rgba(255, 255, 255, .85); color: #111111; font-size: 20px; line-height: 1; cursor: pointer; padding: 0;
+}
+.of-arrow.prev { left: 0; } .of-arrow.next { right: 0; }
+.of-cap { display: flex; flex-direction: column; gap: 2px; padding-top: 6px; }
+.of-name { font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.of-src { font-size: 11px !important; letter-spacing: 0.04em; }
+.of-form { margin: -8px 0 16px; text-align: right; }
+.of-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.of-actions .btn { width: 100%; }
+.of-note { margin-top: 10px; }

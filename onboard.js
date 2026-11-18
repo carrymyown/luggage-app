@@ -153,6 +153,7 @@
     s.items = s.items.filter(function (it) { return !(isSample(it) || inA(mem, it.catalogId) || inA(bags, it.bagId) || inA(gifts, it.giftId) || inA(buys, it.purchaseId)); });
     s.trips = s.trips.filter(function (t) { return !inA(trips, t.id); });
     s.packLists = (s.packLists || []).filter(function (l) { return !inA(trips, l.id); });
+    if (s.dayPlans) trips.forEach(function (id) { delete s.dayPlans[id]; });
     s.memory = s.memory.filter(function (m) { return !inA(mem, m.id); });
     s.bags = s.bags.filter(function (b) { return !inA(bags, b.id); });
     s.gifts = (s.gifts || []).filter(function (g) { return !inA(gifts, g.id); });
@@ -376,6 +377,10 @@
       first = false;
       if (App.sampleMode()) {
         if (!st().sampleBuilt) { buildSample(); App.refreshView(); return; }
+        // 範例內容更新過（例如新增每日穿搭）：這台裝置上的舊範例換成新的（只動範例，不碰自己的資料）
+        if (st().sampleBuilt !== window.SampleData.VERSION) {
+          try { localStorage.removeItem('cmo-sample-state'); location.reload(); return; } catch (e) { /* 不影響，繼續用舊範例 */ }
+        }
       } else {
         stripOldSample();
         var after = false;

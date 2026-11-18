@@ -14,6 +14,8 @@
   - 常搭航空公司與額度 `Onboard.setDefaults`
   - 必帶清單 `App.addMust(名字, 預設行李, 重量)`（預設內容在 app.js 的 `DEFAULT_MUST`）
   - 購物目標：`Trips.create` 的 `shopGoal`
+  - 每日穿搭：當天活動 `Outfit.setActs(旅程 id, 日期, 活動[])`、確定這套 `Outfit.confirm(旅程 id, 日期)`（自動搭配靠衣服的 pattern／seasons／styles／uses 標籤，範例衣服要填）
+  - 範例內容改了，把 `sample-data.js` 的 `VERSION` 加 1，打開過舊範例的裝置會自動換成新的
   - 表單存檔時也呼叫同一個函式，所以兩邊不會分岔。新增功能時，請照這個做法，把「新增一筆」寫成函式，表單和範例共用。
 - **每次新增或修改功能、欄位、選項時**，都要一起檢查並更新 `sample-data.js`，讓範例能示範到最新的功能。在回報裡寫明「範例改了什麼」；沒改也要說明為什麼不需要改。
 - 範例只用虛構內容和台灣用語，不出現中國大陸的城市名稱或用語。

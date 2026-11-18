@@ -124,7 +124,8 @@
     var dates = t.legs.map(function (l) { return l.date; }).filter(Boolean).sort();
     var cities = [t.origin].concat(t.legs.map(function (l) { return l.to; })).filter(Boolean);
     var isNext = next && next.trip.id === t.id;
-    return '<a class="card trip-card" href="#trips/' + encodeURIComponent(t.id) + '">' +
+    // 點一趟旅程：看每一天的列表和穿搭（每日列表上方有「編輯旅程」）
+    return '<a class="card trip-card" href="#outfit/' + encodeURIComponent(t.id) + '">' +
       '<div class="trip-head"><span class="trip-name">' + esc(t.name) + (t.sample ? '<span class="sample-tag">範例</span>' : '') + '</span>' +
       (isNext ? '<span class="next-badge">下一趟</span>' : '') + '</div>' +
       '<div class="muted small">' + (dates.length ? fmtDate(dates[0]) + (dates.length > 1 ? ' ～ ' + fmtDate(dates[dates.length - 1]) : '') : '日期未定') +

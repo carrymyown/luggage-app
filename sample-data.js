@@ -4,7 +4,7 @@
  * ⚠ 維護規則：每次新增或修改功能、欄位、選項，都要回來檢查這個檔案，
  *   讓範例能示範到最新的功能。範例一律透過各功能「自己的新增函式」產生
  *   （Closet.create、Drawer.create、Bags.create、Trips.create、Packing.prepareTrip、
- *   Shop.writePurchase、Shop.writeGift、Onboard.setDefaults、App.addHome、App.addMust），跟使用者在畫面上新增的資料格式完全一樣，
+ *   Shop.writePurchase、Shop.writeGift、Onboard.setDefaults、App.addHome、App.addMust、Outfit.setActs、Outfit.confirm），跟使用者在畫面上新增的資料格式完全一樣，
  *   不要在這裡另外手寫資料結構。
  *
  * 內容都是虛構的；使用台灣用語，不出現中國大陸的城市名稱。
@@ -23,19 +23,27 @@
   // 第一次使用設定裡的「常搭的航空公司和行李額度」：新增旅程時第一段會自動帶入
   var DEFAULTS = { airline: '長榮航空', checked: 23, carry: 7, personal: '' };
 
-  // 衣櫃：沒有照片，畫面會用第一個顏色畫成色塊；不放品牌
-  // group／type／subtype 要用 clothing.js 裡的選項
+  // 衣櫃：沒有照片，畫面會用第一個顏色畫成色塊（每日穿搭畫成線條示意圖）；不放品牌
+  // group／type／subtype／pattern／seasons／styles／uses 要用 clothing.js 裡的選項（每日穿搭靠這些標籤自動搭配）
+  // 灰色帽T 放在台北、沒放進清單：每日穿搭的總結會建議「多帶這件，可以多 Z 套」
+  // 卡其短褲「以防萬一」放進了清單，但 12 月用不到：總結會列在「這幾件可以不帶」
   var CLOSET = [
-    { name: '白色 T 恤', group: '上衣', type: 'T 恤', colors: ['白'], home: '台北', weight: 0.2 },
-    { name: '牛仔褲', group: '下身', type: '牛仔褲', colors: ['藍'], home: '台北', weight: 0.6 },
-    { name: '米色針織衫', group: '上衣', type: '針織衫', colors: ['米'], home: '台北', weight: 0.35 },
-    { name: '風衣', group: '外套', type: '外套', colors: ['咖啡'], home: '台北', weight: 0.8 },
-    { name: '白色運動鞋', group: '鞋子', type: '運動鞋', subtype: '休閒運動鞋', colors: ['白'], home: '台北', weight: 0.7 },
-    { name: '黑色樂福鞋', group: '鞋子', type: '平底鞋', subtype: '樂福鞋', colors: ['黑'], home: TOKYO, weight: 0.6 },
+    { name: '白色 T 恤', group: '上衣', type: 'T 恤', colors: ['白'], pattern: '素色', seasons: ['春', '夏', '秋'], styles: ['休閒'], home: '台北', weight: 0.2 },
+    { name: '條紋上衣', group: '上衣', type: 'T 恤', colors: ['海軍藍', '白'], pattern: '條紋', seasons: ['春', '秋'], styles: ['休閒'], home: '台北', weight: 0.25 },
+    { name: '米色針織衫', group: '上衣', type: '針織衫', colors: ['米'], pattern: '素色', seasons: ['秋', '冬'], styles: ['休閒', '正式'], home: '台北', weight: 0.35 },
+    { name: '牛仔褲', group: '下身', type: '牛仔褲', colors: ['藍'], pattern: '素色', seasons: ['春', '秋', '冬'], styles: ['休閒'], home: '台北', weight: 0.6 },
+    { name: '黑色長褲', group: '下身', type: '長褲', colors: ['黑'], pattern: '素色', seasons: ['春', '秋', '冬'], styles: ['正式', '休閒'], home: '台北', weight: 0.45 },
+    { name: '風衣', group: '外套', type: '外套', colors: ['咖啡'], pattern: '素色', seasons: ['春', '秋'], styles: ['休閒', '正式'], home: '台北', weight: 0.8 },
+    { name: '羊毛大衣', group: '外套', type: '大衣', colors: ['灰'], pattern: '素色', seasons: ['冬'], styles: ['正式', '休閒'], home: '台北', weight: 1.2 },
+    { name: '白色運動鞋', group: '鞋子', type: '運動鞋', subtype: '休閒運動鞋', uses: ['日常', '走路'], colors: ['白'], home: '台北', weight: 0.7 },
+    { name: '黑色樂福鞋', group: '鞋子', type: '平底鞋', subtype: '樂福鞋', uses: ['正式'], colors: ['黑'], home: TOKYO, weight: 0.6 },
     { name: '棒球帽', group: '帽子', type: '棒球帽', colors: ['海軍藍'], home: TOKYO, weight: 0.1 },
     { name: '金色耳環', group: '配件', type: '耳環', colors: ['金色'], home: '台北', weight: 0.02 },
-    { name: '黑色洋裝', group: '洋裝／連身', type: '', colors: ['黑'], home: TOKYO, weight: 0.35 },
-    { name: '藍色襯衫', group: '上衣', type: '襯衫', colors: ['藍'], home: TOKYO, weight: 0.25 }
+    { name: '金色手錶', group: '配件', type: '手錶', colors: ['金色'], home: '台北', weight: 0.12 },
+    { name: '黑色洋裝', group: '洋裝／連身', type: '', colors: ['黑'], pattern: '素色', seasons: ['秋', '冬'], styles: ['正式'], home: TOKYO, weight: 0.35 },
+    { name: '藍色襯衫', group: '上衣', type: '襯衫', colors: ['藍'], pattern: '素色', seasons: ['春', '秋', '冬'], styles: ['正式', '休閒'], home: TOKYO, weight: 0.25 },
+    { name: '卡其短褲', group: '下身', type: '短褲', colors: ['咖啡'], pattern: '素色', seasons: ['夏'], styles: ['休閒', '度假'], home: '台北', weight: 0.3 },
+    { name: '灰色帽T', group: '上衣', type: '帽T', colors: ['灰'], pattern: '素色', seasons: ['秋', '冬'], styles: ['休閒', '運動'], home: '台北', weight: 0.5 }
   ];
 
   // 抽屜：分別放在台北和東京的公寓；count 空白代表「有，不記數量」
@@ -85,7 +93,12 @@
   var PACK_ZONES = { pouch: 'pouch', personal: 'personal', carry: 'carry', checked: 'checked' };
   // 打包清單：會依照衣櫃、季節和必帶清單自動列出（分頁一「要帶什麼」）；另外用「＋ 加入」加進這幾樣抽屜裡的東西
   // 打勾的會移到分頁二「行李箱」，每個箱子標題旁顯示還能放多少
-  var ADD_TO_LIST = ['面膜', '維他命'];
+  var ADD_TO_LIST = ['面膜', '維他命', '卡其短褲'];
+  // 每日穿搭：每天的活動（第幾天），沒寫的那天用預設（搭機那天＝長途飛行）
+  //   第 0 天台北飛東京、第 2 天在東京有正式晚餐（東京的家有黑色洋裝和樂福鞋，不用帶）
+  //   CONFIRM：按過「確定這套」的那天（這套的衣服會加進打包清單，不重複）
+  var DAY_ACTS = [{ day: 0, acts: ['長途飛行'] }, { day: 1, acts: ['日常逛街'] }, { day: 2, acts: ['正式場合'] }, { day: 5, acts: ['日常逛街'] }];
+  var CONFIRM = [2];
   // 已經打勾（放進行李）的東西，其他的還沒打勾
   var PACKED = ['護照', '錢包', '白色 T 恤', '牛仔褲', '充電線', '白色運動鞋'];
 
@@ -110,6 +123,9 @@
     { drawer: 'cake', qty: 1, to: '首爾的朋友 敏智', city: '首爾', status: 'packed', bag: 'checked' }
   ];
 
+  // 範例內容的版本：改了範例內容就加 1，已經打開過舊範例的裝置會自動換成新的
+  var VERSION = 2;
+
   // ================= 產生範例（用各功能自己的新增函式） =================
 
   function ymd(d) { return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); }
@@ -127,6 +143,7 @@
     CLOSET.forEach(function (c) {
       var tags = window.Clothing.empty();
       tags.group = c.group; tags.type = c.type || ''; tags.subtype = c.subtype || ''; tags.colors = c.colors.slice();
+      tags.pattern = c.pattern || ''; tags.seasons = (c.seasons || []).slice(); tags.styles = (c.styles || []).slice(); tags.uses = (c.uses || []).slice();
       tags.home = c.home; tags.part = PART[c.group] || '';
       window.Closet.create({ name: c.name, weight: c.weight, estimated: true, tags: tags, extra: { sample: true } });
     });
@@ -162,6 +179,10 @@
     Object.keys(PACK_ZONES).forEach(function (k) { zones[k] = bagIds[PACK_ZONES[k]]; });
     window.Packing.prepareTrip(trip, zones, PACKED, ADD_TO_LIST);
 
+    // 每日穿搭（行程 → 點旅程）：每天的活動、按「確定這套」（跟畫面上的操作一樣）
+    DAY_ACTS.forEach(function (d) { window.Outfit.setActs(trip.id, day(d.day), d.acts); });
+    CONFIRM.forEach(function (n) { window.Outfit.confirm(trip.id, day(n)); });
+
     PURCHASES.forEach(function (p) {
       window.Shop.writePurchase(null, { tripId: trip.id, date: day(p.day), purpose: p.purpose, name: p.name, weight: p.weight, qty: p.qty, price: p.price,
         category: p.category || '必備品', city: p.city, homeDest: p.homeDest || '', bagId: bagIds[p.bag] });
@@ -186,9 +207,9 @@
     });
 
     s.onboarded = true;
-    s.sampleBuilt = true;
+    s.sampleBuilt = VERSION;
     App.save();
   }
 
-  window.SampleData = { build: build, homes: HOMES.map(function (h) { return h.name; }) };
+  window.SampleData = { VERSION: VERSION, build: build, homes: HOMES.map(function (h) { return h.name; }) };
 })();

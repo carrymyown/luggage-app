@@ -45,7 +45,8 @@
    *            home,               抽屜物品放在哪個家（衣物記在 clothing.home）
    *            count, countUnit,   抽屜物品的數量（例如 5、'片'）；用「有／快用完／沒了」時 count 是 null
    *            stock }             'have' 有、'low' 快用完、'out' 沒了
-   * outfits 預留：模擬穿搭 { id, date, place, weather, parts: { top, bottom, full, outer, shoes, accessory[] } }
+   * outfits 預留（舊欄位，沒有使用）
+   * dayPlans 每日穿搭：{ 旅程 id: { 日期: { acts[]（null＝預設）, picks{部位: 衣物 id}, chosen{部位: true 自己滑過}, locks{部位: true}, form（dress／sep）, seed, confirmed } } }
    * sync    預留：雲端帳號 { userId, lastSyncedAt }
    * homes   「家」的清單，衣服標籤的 clothing.home 會是其中之一
    * customOptions  在「其他」自己輸入過的選項：{ 'colors@配件/皮帶': ['酒紅'], … }
@@ -284,6 +285,7 @@
     if (!Array.isArray(s.homes)) s.homes = DEFAULT_HOMES.slice();
     if (!s.customOptions || typeof s.customOptions !== 'object') s.customOptions = {};
     if (!Array.isArray(s.packLists)) s.packLists = [];
+    if (!s.dayPlans || typeof s.dayPlans !== 'object' || Array.isArray(s.dayPlans)) s.dayPlans = {};
     s.bags.forEach(normalizeBag);
     // 以前 app 自己建立的預設行李（托運行李 4 kg、登機箱 2.5 kg、打包清單自動建立的 0 kg）不是你選的行李箱：
     // 改成「尚未選擇行李箱」（資料保留，空箱不算，等你選真正用的行李箱）
@@ -316,6 +318,7 @@
     s.gifts.forEach(function (x) { lost(x.tripId); });
     s.packLists.forEach(function (x) { lost(x.id); });
     Object.keys(s.shopping.ratio).forEach(lost);
+    Object.keys(s.dayPlans).forEach(lost);
     Object.keys(orphan).forEach(function (id) { purgeTripData(s, id); });
     s.bags.forEach(function (b) { if (!b.kind) b.kind = guessBagKind(b.name); });
     // 首頁原本填的額度：搬到行程裡還沒填的航班段（只做一次；填過或填 0 的不動）
@@ -371,7 +374,8 @@
 
   // 重畫目前的畫面；正在填表單（編輯衣服、旅程）時先不重畫，避免打斷
   function refreshView() {
-    if (/\//.test(location.hash)) return;
+    // 表單頁（網址有 /）不重畫，免得打到一半的內容不見；每日穿搭只是顯示，資料回來就重畫
+    if (/\//.test(location.hash)) { if (window.Outfit && location.hash.indexOf('#outfit/') === 0) window.Outfit.refresh(); return; }
     route();
   }
 
@@ -1180,6 +1184,7 @@
     if (sh.ratio) delete sh.ratio[id];
     s.gifts = (s.gifts || []).filter(function (g) { return g.tripId !== id; });
     s.packLists = (s.packLists || []).filter(function (l) { return l.id !== id; });
+    if (s.dayPlans) delete s.dayPlans[id];
   }
   function deleteTrip(t) {
     purgeTripData(state, t.id);
@@ -1819,7 +1824,7 @@
     var parts = location.hash.replace(/^#/, '').split('/');
     // 「放進行李」頁已經整併到打包清單（手動新增）和首頁「我的行李」
     if (parts[0] === 'add') { location.replace('#pack'); return; }
-    var VIEWS = ['home', 'add', 'closet', 'trips', 'pack', 'drawer', 'shop', 'bags'];
+    var VIEWS = ['home', 'add', 'closet', 'trips', 'pack', 'drawer', 'shop', 'bags', 'outfit'];
     var view = VIEWS.indexOf(parts[0]) >= 0 ? parts[0] : 'home';
     VIEWS.forEach(function (v) { $('#view-' + v).hidden = v !== view; });
     document.querySelectorAll('.tabbar a').forEach(function (a) {
@@ -1832,6 +1837,7 @@
     else if (view === 'shop') { if (window.Shop) window.Shop.show(parts[1]); }
     else if (view === 'bags') { if (window.Bags) window.Bags.show(); }
     else if (view === 'trips') { if (window.Trips) window.Trips.show(decodeURIComponent(parts.slice(1).join('/'))); }
+    else if (view === 'outfit') { if (window.Outfit) window.Outfit.show(decodeURIComponent(parts[1] || ''), decodeURIComponent(parts[2] || '')); }
     else if (window.Closet) window.Closet.show(decodeURIComponent(parts.slice(1).join('/')));
     window.scrollTo(0, 0);
     if (window.Onboard) window.Onboard.afterRoute(view);   // 第一次使用設定、範例提示列、使用提示
