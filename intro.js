@@ -160,10 +160,19 @@
   $('#intro-again').addEventListener('click', function () { $('#account-sheet').hidden = true; open(); });
   window.addEventListener('resize', function () { if (isOpen() && cur >= 0) track.scrollLeft = cur * track.clientWidth; });
 
+  // 網址最後加 #intro：不管有沒有登入，直接打開介紹（例如 …/luggage-app/#intro）
+  function fromLink() {
+    if (location.hash !== '#intro') return false;
+    history.replaceState(null, '', location.pathname + location.search + '#home');
+    open();
+    return true;
+  }
+  window.addEventListener('hashchange', fromLink);
+
   // 第一次打開、還沒登入：自動出現
   var seen = false;
   try { seen = localStorage.getItem(SEEN_KEY) === '1'; } catch (e) { seen = true; }
-  if (!seen && !App.signedIn()) open();
+  if (!fromLink() && !seen && !App.signedIn()) open();
 
   window.Intro = { open: open, close: close, isOpen: isOpen };
 })();
