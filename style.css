@@ -2350,3 +2350,37 @@ svg * { vector-effect: non-scaling-stroke; }
 /* 中間「＋」選單：標題「新增到」，四個選項 */
 .plus-title { text-align: center; margin: 2px 0 12px; }
 .tf-outfit { display: inline-block; margin: 0 0 16px; min-height: 44px; line-height: 44px; }
+
+/* =====================================================================
+   拿掉多餘的大標題：最上方直接是分頁或內容；打包清單依品項分組
+   ===================================================================== */
+.page-top { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin: 0 0 16px; }
+.page-top .mode-seg { margin: 0; flex: 0 1 auto; min-width: 0; }
+.page-top-end { justify-content: flex-end; margin: 12px 0 4px; }
+.page-top .small-btn { flex: none; }
+#view-pack .pk-tabs { margin-top: 0; }
+#pack-main > .pk-tabs + .pk-trip { margin-top: 12px; }
+#view-pack .pk-remain { margin-top: 16px; }
+
+/* 每一組：標題「上衣 2 / 4」，整組打勾完成出現小勾、可以收合 */
+.pk-group { margin-top: 18px; }
+.pk-group-head { display: flex; align-items: center; gap: 10px; width: 100%; min-height: 44px; padding: 0; border: 0; border-bottom: 1px solid var(--rule); background: none; color: var(--text); font: inherit; text-align: left; cursor: pointer; }
+.pk-group-head b { font-size: 15px; font-weight: 500 !important; letter-spacing: 0.06em; }
+.pk-group-n { font-size: 12px; color: var(--c-meta); font-variant-numeric: tabular-nums; letter-spacing: 0.04em; }
+.pk-group-ok { display: inline-flex; align-items: center; justify-content: center; width: 16px; height: 16px; border: 1px solid #111111; color: #111111; }
+.pk-group-chev { margin-left: auto; width: 24px; text-align: center; color: var(--c-meta); font-size: 16px; }
+.pk-group.complete .pk-group-head b { color: var(--c-meta); }
+/* 打勾的項目留在原組：方框填滿、名稱變灰 */
+.pk-todo.done .pk-name { color: var(--c-meta); text-decoration: line-through; text-decoration-thickness: 1px; text-decoration-color: var(--line); }
+.pk-todo.done .pk-check { background: #111111; border-color: #111111; }
+.pk-todo.done .pk-check::after { content: ''; display: block; width: 9px; height: 5px; margin: 0 auto; border-left: 1.5px solid #FFFFFF; border-bottom: 1.5px solid #FFFFFF; transform: translateY(-1px) rotate(-45deg); }
+/* 右邊很小的灰色標籤：放進哪個行李（底下是透明的選單，點了可以改） */
+.pk-todo { align-items: center; }
+.pk-zone-tag { position: relative; flex: none; display: inline-flex; align-items: center; min-height: 32px; padding: 0 8px; border: 1px solid var(--line); color: var(--c-meta); font-size: 11px !important; letter-spacing: 0.08em; cursor: pointer; }
+.pk-zone-tag select { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; font-size: 16px; border: 0; }
+.pk-editing .pk-zone-tag { display: none; }
+.page-top { flex-wrap: wrap; }
+.page-top .mode-seg button { white-space: nowrap; }
+.page-top:not(.page-top-end) .small-btn { margin-left: auto; }
+.page-top .mode-seg { display: inline-flex; width: auto; }
+.page-top .mode-seg button { flex: 0 0 auto; padding: 0 14px; overflow: visible; }

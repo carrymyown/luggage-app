@@ -208,7 +208,7 @@
       title: '隨時新增', body: '新增衣服、抽屜物品、記一筆購物或禮物，都從這裡開始。' },
     { page: 'pack', target: '#pack-tabs', away: '.tabbar a[href="#pack"]',
       title: '先列清單，再打勾', body: '打勾就是放進行李，行李的進度條會即時更新；往左滑或按「編輯」可以刪除。' },
-    { page: 'trips', target: '#view-trips .trip-card .trip-route, #view-trips .trip-card, #view-trips .page-head', away: '.tabbar a[href="#trips"]',
+    { page: 'trips', target: '#view-trips .trip-card .trip-route, #view-trips .trip-card, #trip-mode', away: '.tabbar a[href="#trips"]',
       title: '每一段航班的額度', body: '填好航班和行李額度，到了有家的城市會提醒你整理行李。點一趟旅程，看每一天的穿搭。' },
     { page: 'outfit', target: '#view-outfit .od-sq.empty, #view-outfit .od-look', away: '#view-trips .trip-card, .tabbar a[href="#trips"]',
       title: '每天穿什麼', body: '點這裡用衣櫃的衣服搭配，搭好的會自動加進打包清單。' }

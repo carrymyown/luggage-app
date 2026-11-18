@@ -537,19 +537,22 @@
     var b = boxes[e.zone] || {};
     var w = e.weight * e.qty;
     var over = !b.none && b.allow != null && b.remain - w < 0;
-    return swipeWrap(e, '<div class="pk-row pk-todo" data-e="' + esc(e.id) + '">' +
+    if (e.checked) over = false;
+    // 右邊一個很小的灰色標籤：要放進哪個行李（點了跳出選單可以改）
+    return swipeWrap(e, '<div class="pk-row pk-todo' + (e.checked ? ' done' : '') + '" data-e="' + esc(e.id) + '">' +
       (editMode ? '<button type="button" class="pk-minus" data-del="' + esc(e.id) + '" aria-label="刪除：' + esc(e.name) + '">' + DEL_SVG + '</button>' :
-        '<button type="button" class="pk-check" data-check="' + esc(e.id) + '" aria-label="放進去了"></button>') +
+        '<button type="button" class="pk-check" data-check="' + esc(e.id) + '" aria-label="' + (e.checked ? '已放進去，點一下取消' : '放進去了') + '" aria-pressed="' + !!e.checked + '"></button>') +
       '<div class="pk-todo-main">' +
-        '<button type="button" class="pk-name" data-row="' + esc(e.id) + '">' + esc(e.name) + (e.qty > 1 ? ' × ' + e.qty : '') +
-          (isMust(e) ? '<span class="pk-must">必帶</span>' : '') + '</button>' +
+        '<button type="button" class="pk-name" data-row="' + esc(e.id) + '">' + esc(e.name) + (e.qty > 1 ? ' × ' + e.qty : '') + '</button>' +
         '<div class="pk-todo-sub"><span class="pk-w-item">' + esc(App.fmtWeight(w)) + '</span>' +
-          '<select class="pk-zone-pick" data-zone-pick="' + esc(e.id) + '" aria-label="放哪個行李">' + act.map(function (z) {
-            return '<option value="' + z + '"' + (z === e.zone ? ' selected' : '') + '>' + zoneName(z) + '・' + boxText(boxes[z]) + '</option>';
-          }).join('') + '</select>' +
           (over ? '<span class="pk-over">會超重 ' + fmt(w - b.remain) + ' kg</span>' : '') +
         '</div>' +
-      '</div>' + (editMode ? '<span class="pk-sort" data-sort="' + esc(e.id) + '" aria-label="拖曳調整順序">' + SORT_SVG + '</span>' : '') + '</div>');
+      '</div>' +
+      '<label class="pk-zone-tag"><span>' + zoneName(e.zone) + '</span>' +
+        '<select class="pk-zone-pick" data-zone-pick="' + esc(e.id) + '" aria-label="放哪個行李（現在：' + zoneName(e.zone) + '）">' + act.map(function (z) {
+          return '<option value="' + z + '"' + (z === e.zone ? ' selected' : '') + '>' + zoneName(z) + '・' + boxText(boxes[z]) + '</option>';
+        }).join('') + '</select></label>' +
+      (editMode ? '<span class="pk-sort" data-sort="' + esc(e.id) + '" aria-label="拖曳調整順序">' + SORT_SVG + '</span>' : '') + '</div>');
   }
 
   // 分頁二「行李箱」：每個箱子裡已經放進去的東西；可以拖到別的箱子，或取消打勾移回分頁一
@@ -560,6 +563,37 @@
       '<button type="button" class="pk-name" data-row="' + esc(e.id) + '">' + esc(e.name) + (e.qty > 1 ? ' × ' + e.qty : '') + '</button>' +
       '<span class="pk-w-item">' + esc(App.fmtWeight(e.weight * e.qty)) + '</span>' +
       '<button type="button" class="link small pk-uncheck" data-uncheck="' + esc(e.id) + '">取消</button></div>');
+  }
+
+  // ---------- 清單依品項分組：打包時一類一類去拿 ----------
+  var PK_GROUPS = ['必帶', '上衣', '下身', '洋裝／連身', '外套', '睡衣', '鞋子', '帽子／圍巾', '首飾配件', '保養品', '保健品', '電線電器', '特殊類', '食品', '禮物', '其他'];
+  var DRAWER_GROUPS = ['保養品', '保健品', '電線電器', '特殊類', '食品', '禮物'];
+  // 必帶清單裡的東西只在「必帶」；衣服用衣櫃的大類；其他用抽屜的品類；都不是就放「其他」
+  function groupOfEntry(e) {
+    if (isMust(e)) return '必帶';
+    var m = e.catalogId && App.entryById(e.catalogId);
+    var cg = m && m.clothing && m.clothing.group;
+    if (cg) return cg === '帽子' || cg === '圍巾' ? '帽子／圍巾' : cg === '配件' ? '首飾配件' : PK_GROUPS.indexOf(cg) >= 0 ? cg : '其他';
+    if (e.giftId) return '禮物';
+    var c = e.category || (m && m.category) || '';
+    return DRAWER_GROUPS.indexOf(c) >= 0 ? c : '其他';
+  }
+  var collapsed = {};   // 收合：{ 旅程 id|組別: true/false }，沒按過的話，整組打勾完成就收起來
+  var CHECK_SVG = '<svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>';
+  function groupsHTML(take, boxes, act) {
+    var by = {};
+    take.forEach(function (e) { var g = groupOfEntry(e); (by[g] = by[g] || []).push(e); });
+    return PK_GROUPS.filter(function (g) { return by[g]; }).map(function (g) {
+      var rows = by[g], n = rows.filter(function (e) { return e.checked; }).length, done = n === rows.length;
+      var key = curTrip.id + '|' + g;
+      var shut = !editMode && (collapsed[key] != null ? collapsed[key] : done);
+      return '<section class="pk-group' + (done ? ' complete' : '') + (shut ? ' shut' : '') + '" data-group="' + esc(g) + '">' +
+        '<button type="button" class="pk-group-head" data-group-toggle="' + esc(g) + '" aria-expanded="' + !shut + '">' +
+          '<b>' + esc(g) + '</b><span class="pk-group-n">' + n + ' / ' + rows.length + '</span>' +
+          (done ? '<span class="pk-group-ok" aria-label="這組都放好了">' + CHECK_SVG + '</span>' : '') +
+          '<span class="pk-group-chev" aria-hidden="true">' + (shut ? '+' : '−') + '</span></button>' +
+        '<div class="pk-group-body"' + (shut ? ' hidden' : '') + '>' + rows.map(function (e) { return todoRowHTML(e, boxes, act); }).join('') + '</div></section>';
+    }).join('');
   }
 
   var packTab = 'todo';
@@ -582,20 +616,20 @@
     $('#pack-tab-todo').hidden = packTab !== 'todo';
     $('#pack-tab-bags').hidden = packTab !== 'bags';
 
-    // 分頁一：要帶但還沒放進去的；必帶的排前面，再依預設行李
+    // 分頁一「清單」：依品項分組（必帶、上衣、下身…），每組裡依預設行李；打勾的留在原組（標題顯示 2 / 4）
     var order = { pouch: 0, personal: 1, carry: 2, checked: 3 };
-    todo.sort(function (a, b) { return (isMust(b) ? 1 : 0) - (isMust(a) ? 1 : 0) || order[a.zone] - order[b.zone]; });
+    var all = take.slice().sort(function (a, b) { return order[a.zone] - order[b.zone]; });
     // 自己拖曳排過的順序（e.sort）優先；之後新增、還沒排過的放在後面
     var pos = {};
-    todo.forEach(function (e, i) { pos[e.id] = e.sort != null ? e.sort : 100000 + i; });
-    todo.sort(function (a, b) { return pos[a.id] - pos[b.id]; });
+    all.forEach(function (e, i) { pos[e.id] = e.sort != null ? e.sort : 100000 + i; });
+    all.sort(function (a, b) { return pos[a.id] - pos[b.id]; });
     $('#pack-edit').textContent = editMode ? '完成' : '編輯';
-    $('#pack-edit').hidden = !todo.length && !editMode;
+    $('#pack-edit').hidden = !take.length && !editMode;
     $('#pack-add').hidden = editMode;
     $('#view-pack').classList.toggle('pk-editing', editMode);
-    $('#pack-todo').innerHTML = todo.length ? todo.map(function (e) { return todoRowHTML(e, boxes, act); }).join('') :
-      (done.length ? '<p class="pk-all-done">全部都放進去了</p>' : '<p class="muted small">清單是空的。點「＋ 新增」從衣櫃、抽屜挑，或直接輸入。</p>');
-    $('#pack-done-note').innerHTML = done.length ? '<button type="button" class="link small" data-pack-tab="bags">已經放進行李 ' + done.length + ' 項・看「行李」 ›</button>' : '';
+    $('#pack-todo').innerHTML = take.length ? (!todo.length ? '<p class="pk-all-done">全部都放進去了</p>' : '') + groupsHTML(all, boxes, act) :
+      '<p class="muted small">清單是空的。點「＋ 新增」從衣櫃、抽屜挑，或直接輸入。</p>';
+    $('#pack-done-note').innerHTML = '';
 
     // 分頁二：依隨身小包、背包、手提、托運分組
     $('#pack-zones').innerHTML = act.map(function (z) {
@@ -665,17 +699,23 @@
       window.scrollTo(0, 0);
       return;
     }
+    if ((el = t.closest('[data-group-toggle]'))) {
+      var gk = curTrip.id + '|' + el.getAttribute('data-group-toggle');
+      var sec = el.closest('.pk-group');
+      collapsed[gk] = !sec.classList.contains('shut');
+      render();
+      return;
+    }
     if ((el = t.closest('[data-check]'))) {
       var e = entryById(el.getAttribute('data-check'));
       if (!e.checked && !okToPut(e, e.zone)) return;
-      // 打勾的小動畫，接著這項從「要帶什麼」劃掉、移到「行李箱」
-      if (!e.checked && window.UI) window.UI.pop(el);
-      var row = el.closest('.pk-row');
-      if (row) row.classList.add('leaving');
-      setChecked(curList, e, !e.checked);
+      // 打勾的小動畫；這項留在原本的組裡（打勾的樣子），同時出現在「行李」分頁的那個箱子
+      var on = !e.checked;
+      if (on && window.UI) window.UI.pop(el);
+      setChecked(curList, e, on);
       App.save();
-      setTimeout(function () { render(); }, row && !matchMedia('(prefers-reduced-motion: reduce)').matches ? 220 : 0);
-      App.toast('已放進' + zoneName(e.zone));
+      setTimeout(function () { render(); }, on && !matchMedia('(prefers-reduced-motion: reduce)').matches ? 180 : 0);
+      App.toast(on ? '已放進' + zoneName(e.zone) : '已取消：' + e.name);
       return;
     }
     if ((el = t.closest('[data-uncheck]'))) {
@@ -993,7 +1033,7 @@
   document.addEventListener('pointermove', function (ev) {
     if (!sd || ev.pointerId !== sd.pid) return;
     ev.preventDefault();
-    var box = $('#pack-todo');
+    var box = sd.wrap.parentNode;   // 只在同一組裡上下調整
     var rows = Array.prototype.filter.call(box.children, function (x) { return x.classList.contains('pk-swipe') && x !== sd.wrap; });
     var before = rows.find(function (r) { var b = r.getBoundingClientRect(); return ev.clientY < b.top + b.height / 2; });
     if (before) { if (sd.wrap.nextSibling !== before) box.insertBefore(sd.wrap, before); }
@@ -1160,7 +1200,8 @@
     // 必帶清單裡還沒打勾的：放最上面特別提醒
     var mustTodo = todo.filter(isMust);
     var mustMissing = App.mustList().filter(function (mu) { return !take.some(function (e) { return sameThing(e.name, mu.name); }); });
-    html += '<div class="ck-block' + (mustTodo.length || mustMissing.length ? ' bad' : '') + '"><b>必帶清單</b>' +
+    html += '<div class="ck-block ck-must' + (mustTodo.length || mustMissing.length ? ' bad' : '') + '"><b>' +
+      (mustTodo.length || mustMissing.length ? '必帶：還有 ' + (mustTodo.length + mustMissing.length) + ' 項沒打勾' : '必帶') + '</b>' +
       (mustTodo.length || mustMissing.length ? mustTodo.map(function (e) {
         return '<div class="ck-row"><span><b>' + esc(e.name) + '</b> 還沒放進去 <span class="muted small">' + zoneName(e.zone) + '</span></span>' +
           '<button type="button" class="link" data-ck-done="' + esc(e.id) + '">放進去了</button></div>';
@@ -1185,8 +1226,9 @@
       (pw || '<div class="muted small">護照和錢包都收在隨身小包裡了。</div>') + '</div>';
     if (over.length) html += '<div class="ck-block bad"><b>⚠️ 超重</b>' + over.map(function (s) {
       return '<div>' + esc(s.label) + '超過 ' + fmt(s.weight - s.limit) + ' kg</div>'; }).join('') + '</div>';
-    html += '<div class="ck-block"><b>還沒收好（' + todo.length + ' 件）</b>' +
-      (todo.length ? todo.map(function (e) {
+    var restTodo = todo.filter(function (e) { return !isMust(e); });   // 必帶的上面已經提醒過，這裡不重複
+    html += '<div class="ck-block"><b>還沒收好（' + restTodo.length + ' 件）</b>' +
+      (restTodo.length ? restTodo.map(function (e) {
         return '<div class="ck-row"><span>' + esc(e.name) + ' <span class="muted small">' + zoneName(e.zone) + '</span>' +
           (has(e.name, EASY_BUY) ? ' <span class="pk-tag easy">當地容易買到</span>' : '') + '</span>' +
           '<button type="button" class="link" data-ck-done="' + esc(e.id) + '">收好了</button></div>';

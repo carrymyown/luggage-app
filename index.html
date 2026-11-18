@@ -8,17 +8,17 @@
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-title" content="Carry My Own">
   <!-- 目前的版本（發布時更新；和 version.json 比對，有新版就提示更新） -->
-  <meta name="app-version" content="20261118k">
+  <meta name="app-version" content="20261118l">
   <title>Carry My Own</title>
   <!-- 圖示：瀏覽器分頁（網址前面）、iPad 主畫面、安裝成 app 時用 -->
-  <link rel="icon" type="image/svg+xml" href="icons/favicon.svg?v=20261118k">
-  <link rel="icon" href="icons/favicon-32.png?v=20261118k" sizes="32x32" type="image/png">
-  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png?v=20261118k">
+  <link rel="icon" type="image/svg+xml" href="icons/favicon.svg?v=20261118l">
+  <link rel="icon" href="icons/favicon-32.png?v=20261118l" sizes="32x32" type="image/png">
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png?v=20261118l">
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800;900&family=Noto+Sans+TC:wght@400;500;700;900&display=swap">
-  <link rel="stylesheet" href="style.css?v=20261118k">
+  <link rel="stylesheet" href="style.css?v=20261118l">
 </head>
 <body>
   <main>
@@ -146,16 +146,16 @@
     <!-- 行程 -->
     <section id="view-trips" class="view" hidden>
       <div id="trip-list-view">
-        <div class="page-head">
-          <h1 data-en="TRIPS">行程</h1>
+        <!-- 不放大標題（底部導覽已經顯示在「行程」）：最上方直接是列表／月曆／年度切換和新增旅程 -->
+        <div class="page-top">
+          <div id="trip-mode" class="seg mode-seg">
+            <button type="button" data-mode="list" class="on">列表</button>
+            <button type="button" data-mode="month">月曆</button>
+            <button type="button" data-mode="year">年度時間軸</button>
+          </div>
           <a href="#trips/new" class="btn primary small-btn">＋ 新增旅程</a>
         </div>
         <p id="trip-here" class="trip-here" hidden></p>
-        <div id="trip-mode" class="seg mode-seg">
-          <button type="button" data-mode="list" class="on">列表</button>
-          <button type="button" data-mode="month">月曆</button>
-          <button type="button" data-mode="year">年度時間軸</button>
-        </div>
 
         <div class="soon-row">
           <span class="eyebrow">COMING SOON</span>
@@ -233,22 +233,21 @@
 
     <!-- 打包：清單 LIST／行李 BAGS 兩個分頁 -->
     <section id="view-pack" class="view" hidden>
-      <div class="page-head"><h1 data-en="PACKING">打包</h1></div>
       <div id="pack-empty" class="empty-state" hidden><p class="empty-line">還沒有旅程</p><a href="#trips/new" class="btn primary">新增第一趟</a></div>
 
       <div id="pack-main" hidden>
+        <!-- 不放大標題：最上方直接是兩個平行的分頁：清單（要帶什麼、還沒放進去的）／行李（每個行李箱裡放了什麼） -->
+        <div id="pack-tabs" class="home-switch pk-tabs" role="tablist">
+          <button type="button" data-pack-tab="todo" role="tab">清單<span class="tab-en">LIST</span><small id="pk-todo-n"></small></button>
+          <button type="button" data-pack-tab="bags" role="tab">行李<span class="tab-en">BAGS</span><small id="pk-bags-n"></small></button>
+        </div>
+
         <label class="pk-trip" id="pack-trip-wrap">這趟旅程
           <select id="pack-trip"></select>
         </label>
 
         <!-- 整趟的剩餘公斤數：進度條（已放 / 額度，和首頁、每個行李同一個樣式；打勾就即時變動） -->
         <div id="pack-remain" class="pk-remain"></div>
-
-        <!-- 兩個平行的分頁：清單（要帶什麼、還沒放進去的）／行李（每個行李箱裡放了什麼） -->
-        <div id="pack-tabs" class="home-switch pk-tabs" role="tablist">
-          <button type="button" data-pack-tab="todo" role="tab">清單<span class="tab-en">LIST</span><small id="pk-todo-n"></small></button>
-          <button type="button" data-pack-tab="bags" role="tab">行李<span class="tab-en">BAGS</span><small id="pk-bags-n"></small></button>
-        </div>
 
         <div id="pack-tab-todo">
           <!-- 清單右上角：編輯（一次刪很多項、拖曳調整順序；按「完成」結束） -->
@@ -281,7 +280,6 @@
     <!-- 家 → 抽屜 -->
     <section id="view-drawer" class="view" hidden>
       <div class="home-switch"><a href="#closet">衣櫃<span class="tab-en">WARDROBE</span></a><a href="#drawer" class="on">抽屜<span class="tab-en">DRAWER</span></a><a href="#bags">行李箱<span class="tab-en">LUGGAGE</span></a></div>
-      <div class="page-head"><h1 data-en="HOMES">家</h1></div>
       <div id="dr-tabs" class="tabs"></div>
 
       <form id="dr-add" class="card form dr-add" autocomplete="off">
@@ -321,7 +319,6 @@
     <!-- 家 → 行李箱 -->
     <section id="view-bags" class="view" hidden>
       <div class="home-switch"><a href="#closet">衣櫃<span class="tab-en">WARDROBE</span></a><a href="#drawer">抽屜<span class="tab-en">DRAWER</span></a><a href="#bags" class="on">行李箱<span class="tab-en">LUGGAGE</span></a></div>
-      <div class="page-head"><h1 data-en="HOMES">家</h1></div>
       <p class="muted small">每個家放了哪些行李箱。打包時從這裡選這趟要用哪一個。</p>
       <div id="bg-list"></div>
     </section>
@@ -329,7 +326,7 @@
     <!-- 回程購物・送禮 -->
     <section id="view-shop" class="view" hidden>
       <div class="home-switch"><button type="button" data-shop-tab="buy" class="on">購物</button><button type="button" data-shop-tab="gift">送禮</button></div>
-      <div class="page-head"><h1 id="shop-h1" data-en="SHOPPING">購物</h1></div>
+      <h1 id="shop-h1" data-en="SHOPPING" hidden>購物</h1>
       <div id="shop-empty" class="empty-state" hidden><p class="empty-line">先新增一趟旅程，就能記錄購物和禮物</p><a href="#trips/new" class="btn primary">新增旅程</a></div>
       <div id="shop-main" hidden>
         <label class="pk-trip">這趟旅程
@@ -374,8 +371,7 @@
     <section id="view-closet" class="view" hidden>
       <div id="closet-list">
         <div class="home-switch"><a href="#closet" class="on">衣櫃<span class="tab-en">WARDROBE</span></a><a href="#drawer">抽屜<span class="tab-en">DRAWER</span></a><a href="#bags">行李箱<span class="tab-en">LUGGAGE</span></a></div>
-        <div class="page-head">
-          <h1 data-en="HOMES">家</h1>
+        <div class="page-top page-top-end">
           <a href="#closet/new" class="btn primary small-btn">＋ 新增衣服</a>
         </div>
         <div id="closet-tabs" class="tabs"></div>
@@ -924,25 +920,25 @@
     </div>
   </div>
 
-  <script src="weights.js?v=20261118k"></script>
-  <script src="photos.js?v=20261118k"></script>
-  <script src="clothing.js?v=20261118k"></script>
-  <script src="ui.js?v=20261118k"></script>
-  <script src="app.js?v=20261118k"></script>
-  <script src="closet.js?v=20261118k"></script>
-  <script src="trips.js?v=20261118k"></script>
-  <script src="organize.js?v=20261118k"></script>
-  <script src="packing.js?v=20261118k"></script>
-  <script src="drawer.js?v=20261118k"></script>
-  <script src="bags.js?v=20261118k"></script>
-  <script src="shop.js?v=20261118k"></script>
-  <script src="outfit.js?v=20261118k"></script>
-  <script src="sample-data.js?v=20261118k"></script>
-  <script src="onboard.js?v=20261118k"></script>
-  <script src="intro.js?v=20261118k"></script>
-  <script src="nav.js?v=20261118k"></script>
-  <script src="backup.js?v=20261118k"></script>
+  <script src="weights.js?v=20261118l"></script>
+  <script src="photos.js?v=20261118l"></script>
+  <script src="clothing.js?v=20261118l"></script>
+  <script src="ui.js?v=20261118l"></script>
+  <script src="app.js?v=20261118l"></script>
+  <script src="closet.js?v=20261118l"></script>
+  <script src="trips.js?v=20261118l"></script>
+  <script src="organize.js?v=20261118l"></script>
+  <script src="packing.js?v=20261118l"></script>
+  <script src="drawer.js?v=20261118l"></script>
+  <script src="bags.js?v=20261118l"></script>
+  <script src="shop.js?v=20261118l"></script>
+  <script src="outfit.js?v=20261118l"></script>
+  <script src="sample-data.js?v=20261118l"></script>
+  <script src="onboard.js?v=20261118l"></script>
+  <script src="intro.js?v=20261118l"></script>
+  <script src="nav.js?v=20261118l"></script>
+  <script src="backup.js?v=20261118l"></script>
   <script src="vendor/supabase.js"></script>
-  <script src="cloud.js?v=20261118k"></script>
+  <script src="cloud.js?v=20261118l"></script>
 </body>
 </html>
