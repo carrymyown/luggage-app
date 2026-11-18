@@ -112,6 +112,21 @@
     { name: '首爾的人蔘茶', weight: 0.4, qty: 1, to: '媽媽', city: '台北', status: 'packed', bag: 'checked' }
   ];
 
+  // 範例的英文版：切換到 English 時，範例的家、城市、物品、旅程、行李箱、購物和禮物用這些英文名稱
+  // （只在範例模式套用；使用者自己的資料照原樣顯示）。範例內容改了，這裡也要一起加上英文。
+  var EN_NAMES = {
+    '台北': 'Taipei', '東京': 'Tokyo', '東京的公寓': 'Tokyo flat', '首爾': 'Seoul', '大阪': 'Osaka',
+    '長榮航空': 'EVA Air', '日本航空': 'Japan Airlines', '中華航空': 'China Airlines',
+    '台北・東京・首爾': 'Taipei · Tokyo · Seoul', '在東京的家停留，可以換行李箱': 'Staying at the Tokyo flat — time to swap suitcases', '去首爾找朋友': 'Visiting friends in Seoul',
+    '白色 T 恤': 'White tee', '條紋上衣': 'Striped top', '米色針織衫': 'Beige knit', '牛仔褲': 'Jeans', '黑色長褲': 'Black trousers', '風衣': 'Trench coat',
+    '羊毛大衣': 'Wool coat', '白色運動鞋': 'White sneakers', '黑色樂福鞋': 'Black loafers', '棒球帽': 'Baseball cap', '金色耳環': 'Gold earrings', '金色手錶': 'Gold watch',
+    '黑色洋裝': 'Black dress', '藍色襯衫': 'Blue shirt', '卡其短褲': 'Khaki shorts', '灰色帽T': 'Grey hoodie',
+    '洗面乳': 'Face wash', '牙刷組': 'Toothbrush set', '鳳梨酥禮盒': 'Pineapple cake box', '面膜': 'Face masks', '維他命': 'Vitamins', '充電線': 'Charging cable', '轉接頭': 'Travel adapter',
+    '28 吋托運箱': '28" checked case', '20 吋登機箱': '20" cabin case', '後背包': 'Backpack', '隨身小包': 'Pouch', '東京的托運箱': 'Tokyo checked case',
+    '羊毛圍巾': 'Wool scarf', '首爾的人蔘茶': 'Ginseng tea from Seoul', '媽媽': 'Mom', '眼罩': 'Eye mask'
+  };
+  if (window.I18N) window.I18N.addSample(EN_NAMES);
+
   // 範例內容的版本：改了範例內容就加 1，已經打開過舊範例的裝置會自動換成新的
   var VERSION = 4;
 

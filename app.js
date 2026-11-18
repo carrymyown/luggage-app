@@ -286,6 +286,7 @@
     if (!s.customOptions || typeof s.customOptions !== 'object') s.customOptions = {};
     if (!Array.isArray(s.packLists)) s.packLists = [];
     if (!s.dayPlans || typeof s.dayPlans !== 'object' || Array.isArray(s.dayPlans)) s.dayPlans = {};
+    if (!s.prefs || typeof s.prefs !== 'object' || Array.isArray(s.prefs)) s.prefs = {};   // 個人設定：lang 語言（zh／en），跟著雲端同步
     s.bags.forEach(normalizeBag);
     // 以前 app 自己建立的預設行李（托運行李 4 kg、登機箱 2.5 kg、打包清單自動建立的 0 kg）不是你選的行李箱：
     // 改成「尚未選擇行李箱」（資料保留，空箱不算，等你選真正用的行李箱）
@@ -1835,6 +1836,10 @@
   // ---------- 畫面切換 ----------
   // 網址：#home、#add、#closet（衣櫃）、#closet/new（新增衣服）、#closet/<id>（編輯衣服）
   function route() {
+    // 登入後雲端帶回來的語言設定（換裝置也維持同一個語言）
+    if (!sampleMode() && state.prefs && (state.prefs.lang === 'en' || state.prefs.lang === 'zh') && window.I18N && state.prefs.lang !== window.I18N.lang()) {
+      window.I18N.set(state.prefs.lang, { quiet: true });
+    }
     var parts = location.hash.replace(/^#/, '').split('/');
     // 「放進行李」頁已經整併到打包清單（手動新增）和首頁「我的行李」
     if (parts[0] === 'add') { location.replace('#pack'); return; }
@@ -1858,7 +1863,11 @@
   }
 
   // 給衣櫃（closet.js）使用的共用功能
+  // 語言切換後：重新畫目前的畫面（表單頁不重畫，免得打到一半的內容不見）
+  function rerender() { refreshView(); if (location.hash === '' || location.hash === '#home') renderHome(); }
+
   window.App = {
+    rerender: rerender,
     reserveText: reserveText, openGoal: openGoal,
     saveQuiet: saveQuiet,
     replaceState: replaceState,

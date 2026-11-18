@@ -21,6 +21,13 @@
 - 範例只用虛構內容和台灣用語，不出現中國大陸的城市名稱或用語。
 - 範例資料只存在這台裝置的 `cmo-sample-state`，不同步雲端，也不碰使用者自己的資料（`luggage-app-v1`）。
 
+## 中文／英文（語言切換）
+- 介面文字的翻譯集中在 `lang.js`：繁體中文是原文（畫面上的中文就是 key），`LANG.en.text` 是中文 → 英文對照，`LANG.en.rules` 是含數字、日期、名稱的句型。切換和套用在 `i18n.js`。
+- **以後每次新增或修改功能，新的介面文字都要同時在 `lang.js` 加上英文，不能只寫一種**；範例的新內容也要在 `sample-data.js` 的 `EN_NAMES` 加上英文名稱。
+- 做完用英文模式把相關畫面、提示、確認視窗都看過一次，確認沒有中文殘留；在回報裡列出還沒翻譯完整的地方。
+- 使用者自己輸入的內容（物品、家、城市、朋友、自己新增的選項）不翻譯。選單選項的 value 要用中文原文（存進資料的一律是中文）。
+- 英文用詞：首頁 Overview、行程 Trips、打包 Packing、家 Homes、衣櫃 Wardrobe、抽屜 Drawer、行李箱 Luggage、清單 List、行李 Bags、購物 Shopping、禮物 Gifts、預留空間 Reserved space、必帶 Essentials、穿搭 Outfits。日期英文用「Thu, Nov 20」，時間 24 小時制，重量 kg。
+
 ## 其他固定要求
 - 其他功能不要動。不要清掉瀏覽器或雲端已存的資料。風格維持極簡雜誌感。
 - 程式裡只能放 Supabase 的 publishable key，不要放 service_role key。

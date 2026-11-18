@@ -2384,3 +2384,16 @@ svg * { vector-effect: non-scaling-stroke; }
 .page-top:not(.page-top-end) .small-btn { margin-left: auto; }
 .page-top .mode-seg { display: inline-flex; width: auto; }
 .page-top .mode-seg button { flex: 0 0 auto; padding: 0 14px; overflow: visible; }
+
+/* =====================================================================
+   語言 / Language；英文模式：中文後面的英文小標不重複顯示
+   ===================================================================== */
+.account-lang { margin: 4px 0 18px; }
+.lang-seg { display: inline-flex; }
+.lang-seg button { min-height: 40px; padding: 0 16px; }
+.lang-en .tab-en, .lang-en .lbl-en { display: none !important; }
+.lang-en .sec-head:has(.sec-title) > .eyebrow { display: none; }
+.lang-en h1[data-en="OUTFITS"]::before { content: 'OUTFITS'; }
+/* 英文模式：底部導覽的字比較長，字距收一點，小螢幕也放得下 */
+.lang-en .tabbar a { letter-spacing: 0.04em !important; }
+@media (max-width: 360px) { .lang-en .tabbar a { font-size: 10px !important; } }
