@@ -91,7 +91,7 @@
       var b;
       try { b = JSON.parse(reader.result); } catch (e) { b = null; }
       if (!b || b.app !== 'luggage-app' || !b.localStorage) { App.toast('這不是行李規劃的備份檔'); return; }
-      var when = b.exportedAt ? new Date(b.exportedAt).toLocaleString('zh-TW') : '不明時間';
+      var when = b.exportedAt ? new Date(b.exportedAt).toLocaleString(window.I18N && I18N.lang() === 'en' ? 'en-GB' : 'zh-TW', { hour12: false }) : '不明時間';
       if (!confirm('要用 ' + when + ' 的備份，取代這台裝置上目前的資料嗎？\n（照片 ' + (b.photos || []).length + ' 張）\n\n有登入雲端的話，還原後會再和雲端同步。')) return;
       try {
         // 還原時離開範例模式，回到自己的資料

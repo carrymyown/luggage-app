@@ -953,7 +953,7 @@
     }
     if ((el = e.target.closest('[data-bp-out]'))) {
       var r2 = splitRef(el.getAttribute('data-bp-out'));
-      var name = el.getAttribute('aria-label').replace('拿出來：', '');
+      var name = (el.getAttribute('data-i18n-aria-label') || el.getAttribute('aria-label')).replace('拿出來：', '');   // 英文模式時用中文原文的名稱
       if (!confirm('要把「' + name + '」從行李拿出來嗎？（這趟不帶了）')) return;
       if (r2.kind === 'entry') window.Packing.takeOutEntry(r2.id); else window.Packing.takeOutItem(r2.id);
       toast('已拿出來：' + name);

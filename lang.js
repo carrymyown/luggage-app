@@ -21,7 +21,7 @@ window.LANG = { zh: { name: '繁體中文' }, en: { name: 'English', text: {}, r
     '清單': 'List', '行李': 'Bags', '購物': 'Shopping', '送禮': 'Gifts', '禮物': 'Gifts', '預留空間': 'Reserved space', '必帶': 'Essentials',
     '穿搭': 'Outfits', '新增': 'Add', '新增到': 'Add to', '帳號': 'Account', '帳號、登入與備份': 'Account, sign-in and backup',
     '剩餘公斤數': 'Remaining', '行李裡的物品': 'Items in your bags', '接下來的旅程': 'Upcoming trips', '修改額度': 'Edit allowance',
-    '現在是範例資料・': 'You are viewing sample data · ', '現在是範例資料': 'You are viewing sample data', '登入開始使用': 'Sign in to start',
+    '現在是範例資料・': 'You are viewing sample data · ', '現在是範例資料': 'You are viewing sample data', '現在是範例資料。': 'You are viewing sample data.', '登入開始使用': 'Sign in to start',
     '清除範例，開始使用': 'Clear sample and start', '有新版本・點一下更新': 'New version available · Tap to update',
     '更新中…': 'Updating…', '版本': 'Version', '關閉': 'Close', '取消': 'Cancel', '確定': 'OK', '確認': 'Confirm', '儲存': 'Save',
     '刪除': 'Delete', '修改': 'Edit', '編輯': 'Edit', '完成': 'Done', '略過': 'Skip', '跳過': 'Skip', '下一步': 'Next', '下一個': 'Next',
@@ -136,7 +136,7 @@ window.LANG = { zh: { name: '繁體中文' }, en: { name: 'English', text: {}, r
     '長按可以刪除': 'Press and hold to delete', '箱子裡還有東西，請先拿出來或換到別的箱子': 'This case is not empty — take things out or move them first',
     '還沒有家。到「家 → 衣櫃」新增衣服時可以新增家。': 'No homes yet. You can add one when adding clothes in Homes → Wardrobe.', '加入照片（選填）': 'Add photo (optional)',
     '例如：灰色大箱、RIMOWA 登機箱': 'e.g. grey large case, RIMOWA cabin', '例如 4.2': 'e.g. 4.2', '名字（選填）': 'Name (optional)', '換行李箱': 'Swap suitcase',
-    '硬箱': 'Hard shell', '布箱': 'Soft shell', '五五開': '50/50 split', '三七開': '30/70 split', '20 吋': '20"', '28 吋': '28"', '31 吋': '31"',
+    '28 吋托運箱': '28" checked case', '20 吋登機箱': '20" cabin case', '後背包': 'Backpack', '硬箱': 'Hard shell', '布箱': 'Soft shell', '五五開': '50/50 split', '三七開': '30/70 split', '20 吋': '20"', '28 吋': '28"', '31 吋': '31"',
     '（已經選了這個的行李箱會保留原本的資料）': '(Luggage that already uses it keeps its value)', '🧳 跟著旅程出門': '🧳 Out with a trip', '未設定家': 'No home set', '📍 未設定家': '📍 No home set', '🧳 在行李裡': '🧳 In bags'
   });
 
@@ -413,11 +413,45 @@ window.LANG = { zh: { name: '繁體中文' }, en: { name: 'English', text: {}, r
   R(/^已登入：(.+)$/, function (m, tr) { return 'Signed in: ' + tr(m[1]); });
   R(/^同步失敗：(.+)$/, function (m, tr) { return 'Sync failed: ' + tr(m[1]); });
   R(/^登出失敗：(.+)$/, function (m, tr) { return 'Sign-out failed: ' + tr(m[1]); });
-  R(/^已寄出確認信到 (.+)$/, function (m, tr) { return 'Confirmation email sent to ' + tr(m[1]); });
-  R(/^已寄出重設密碼的信到 (.+)$/, function (m, tr) { return 'Password reset email sent to ' + tr(m[1]); });
+  R(/^已寄出確認信到 (.+?)。?$/, function (m, tr) { return 'Confirmation email sent to ' + tr(m[1]); });
+  R(/^已寄出重設密碼的信到 (.+?)。?$/, function (m, tr) { return 'Password reset email sent to ' + tr(m[1]); });
   // 參考重量的提示
   add({ '參考': 'Based on', '的大約重量': 'typical weight', '秤過之後可以直接改成實際重量。': 'Weigh it and update anytime.',
     '這是參考重量，秤過之後可以直接改成實際重量。': 'This is a typical weight — weigh it and update anytime.', '使用你記錄的重量': 'Using your recorded weight' });
+
+  // 確認視窗
+  R(/^要刪除第 (\d+) 段（(.+)）嗎？$/, function (m, tr) { return 'Remove flight ' + m[1] + ' (' + tr(m[2]) + ')?'; });
+  R(/^要把「(.+)」從行李拿出來嗎？（這趟不帶了）$/, function (m, tr) { return 'Take "' + tr(m[1]) + '" out of your bags? (Not this trip)'; });
+  R(/^要把「(.+)」從行李拿出來嗎？$/, function (m, tr) { return 'Take "' + tr(m[1]) + '" out of your bags?'; });
+
+  R(/^「(.+)」在哪個城市？（用來判斷抵達哪個家）$/, function (m, tr) { return 'Which city is "' + tr(m[1]) + '" in? (Used to detect when you arrive)'; });
+  R(/^「(.+)」改成$/, function (m, tr) { return 'Rename "' + tr(m[1]) + '" to'; });
+  R(/^要刪除「(.+)」這個家嗎？$/, function (m, tr) { return 'Delete the home "' + tr(m[1]) + '"?'; });
+  R(/^這個行李不在這趟的打包清單上。要把「(.+)」從行李拿出來嗎？$/, function (m, tr) { return 'This bag is not on this trip\u2019s list. Take "' + tr(m[1]) + '" out of your bags?'; });
+  R(/^「(.+)」已經打包在(.+)，還要再放一次嗎？$/, function (m, tr) { return '"' + tr(m[1]) + '" is already packed in ' + tr(m[2]) + '. Add it again?'; });
+  R(/^「(.+)」已打包在(.+)。$/, function (m, tr) { return '"' + tr(m[1]) + '" is packed in ' + tr(m[2]) + '.'; });
+  R(/^要從常帶物品移除「(.+)」嗎？照片和標籤也會一起刪除，衣櫃裡也會看不到。$/, function (m, tr) { return 'Remove "' + tr(m[1]) + '" from frequent items? Its photo and tags will be deleted and it will leave your wardrobe.'; });
+  R(/^(.+)這個家已經有「(.+)」了，還是要再新增一筆嗎？$/, function (m, tr) { return '"' + tr(m[2]) + '" is already at ' + tr(m[1]) + '. Add another one?'; });
+  R(/^「(.+)」現在在行李裡。要從行李拿出來，改放在「(.+)」嗎？$/, function (m, tr) { return '"' + tr(m[1]) + '" is in your bags. Take it out and keep it at "' + tr(m[2]) + '"?'; });
+  R(/^要把「(.+)」移到「(.+)」嗎？$/, function (m, tr) { return 'Move "' + tr(m[1]) + '" to "' + tr(m[2]) + '"?'; });
+  R(/^要把「(.+)」從衣櫃刪除嗎？照片也會一起刪除。$/, function (m, tr) { return 'Delete "' + tr(m[1]) + '" from your wardrobe? Its photo will be deleted too.'; });
+  R(/^要刪除自己加的選項「(.+)」嗎？$/, function (m) { return 'Delete your option "' + m[1] + '"?'; });
+  R(/^要刪除行李箱「(.+)」嗎？$/, function (m, tr) { return 'Delete the luggage "' + tr(m[1]) + '"?'; });
+  R(/^這次抵達(.+)不整理行李嗎？行李裡的東西會維持「在行李裡」。$/, function (m, tr) { return 'Skip unpacking at ' + tr(m[1]) + '? Everything stays in your bags.'; });
+  R(/^要刪除「(.+)」這筆送禮紀錄嗎？$/, function (m, tr) { return 'Delete the gift record "' + tr(m[1]) + '"?'; });
+  R(/^要刪除旅程「(.+)」嗎？$/, function (m, tr) { return 'Delete the trip "' + tr(m[1]) + '"?'; });
+  R(/^・購物 (\d+) 筆$/, function (m) { return '· ' + m[1] + ' purchases'; });
+  R(/^・禮物 (\d+) 份$/, function (m) { return '· ' + m[1] + ' gifts'; });
+  R(/^・打包清單 (\d+) 項$/, function (m) { return '· ' + m[1] + ' packing items'; });
+  R(/^要把這些資料合併到目前登入的帳號（(.*)）嗎？$/, function (m) { return 'Merge this data into the account you are signed in with (' + m[1] + ')?'; });
+  R(/^要用 (.+) 的備份，取代這台裝置上目前的資料嗎？$/, function (m, tr) { return 'Replace the data on this device with the backup from ' + tr(m[1]) + '?'; });
+  R(/^（照片 (\d+) 張）$/, function (m) { return '(' + m[1] + ' photos)'; });
+  add({
+    '所有航班段都會一起刪除，這趟的資料也會一起刪除：': 'All its flights and data will be deleted:',
+    '（已經放進某個家的購物和禮物，物品會留在那個家；已經放進行李的衣服和抽屜物品會留在行李裡）': '(Purchases and gifts already left at a home stay there; clothes and drawer items in your bags stay in your bags)',
+    '（已經放進行李的會保留在行李清單裡）': '(Anything already in your bags stays on the bag list)', '（已經放進行李的那件會保留在行李清單裡）': '(The one already in your bags stays on the bag list)',
+    '還有資料沒有同步到雲端': 'Some data has not synced yet', '同步沒有完成': 'Sync did not finish', '新增尺寸': 'Add size', '新增材質': 'Add material', '新增款式': 'Add style'
+  });
 
   // 整理行李、抵達
   add({ '已抵達': 'Arrived at', '下一站': 'Next stop', '購': 'Bought', '旅途中買的': 'Bought on the trip', '放進': 'Pack', '帶走': 'Take' });

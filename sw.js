@@ -3,7 +3,7 @@
  * 有網路時一律抓最新版（同時更新快取）；沒網路時改用快取。
  * 只處理自己網站的檔案，Supabase 等外部連線不經過這裡。
  */
-var CACHE = 'luggage-app-v43';
+var CACHE = 'luggage-app-v44';
 var ASSETS = [
   './', 'index.html', 'style.css', 'lang.js', 'i18n.js', 'weights.js', 'photos.js', 'clothing.js', 'ui.js', 'app.js',
   'closet.js', 'trips.js', 'organize.js', 'packing.js', 'drawer.js', 'bags.js', 'shop.js', 'outfit.js', 'sample-data.js', 'onboard.js', 'intro.js', 'nav.js', 'backup.js', 'cloud.js', 'vendor/supabase.js',
