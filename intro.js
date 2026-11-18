@@ -33,8 +33,8 @@
     // 02 不重複帶：台北、東京兩間房子，裡面都有同樣的牙刷和乳液
     svg(
       '<path' + S + ' d="M160 22v168"/>' +
-      '<text' + T + ' x="80" y="36" text-anchor="middle" font-size="11" font-weight="800" letter-spacing="2.5">TAIPEI</text>' +
-      '<text' + T + ' x="240" y="36" text-anchor="middle" font-size="11" font-weight="800" letter-spacing="2.5">TOKYO</text>' +
+      '<text' + T + ' x="80" y="36" text-anchor="middle" font-size="11" font-weight="500" letter-spacing="2.5">TAIPEI</text>' +
+      '<text' + T + ' x="240" y="36" text-anchor="middle" font-size="11" font-weight="500" letter-spacing="2.5">TOKYO</text>' +
       [80, 240].map(function (cx) {
         return '<path' + S + ' d="M' + (cx - 46) + ' 98L' + cx + ' 58l46 40"/>' +
           '<path' + S + ' d="M' + (cx - 38) + ' 92v86h76V92"/>' +
@@ -46,7 +46,7 @@
           '<path' + S + ' d="M' + (cx + 10) + ' 134v-6h8v6M' + (cx + 14) + ' 128v-6h6"/>' +
           '<path' + S + ' d="M' + (cx - 30) + ' 166h60"/>';
       }).join('') +
-      '<text' + T + ' x="160" y="214" text-anchor="middle" font-size="10" font-weight="700" letter-spacing="3">AT HOME</text>',
+      '<text' + T + ' x="160" y="214" text-anchor="middle" font-size="10" font-weight="500" letter-spacing="3">AT HOME</text>',
       '台北和東京的家，各有一支牙刷和一瓶乳液'),
     // 03 少帶衣服、多搭配：上衣、長褲、鞋子三格 → 六套穿搭
     svg(
@@ -57,7 +57,7 @@
       '<path' + S + ' d="M148 34h24l4 54h-10l-6-38-6 38h-10z"/><path' + S + ' d="M148 42h24"/>' +
       // 鞋子
       '<path' + S + ' d="M228 74V58h12l4 8c8 2 18 4 24 8v6h-40z"/><path' + S + ' d="M228 80h40"/>' +
-      '<text' + T + ' x="160" y="136" text-anchor="middle" font-size="12" font-weight="800" letter-spacing="2.5">3 PIECES → 6 LOOKS</text>' +
+      '<text' + T + ' x="160" y="136" text-anchor="middle" font-size="12" font-weight="500" letter-spacing="2.5">3 PIECES → 6 LOOKS</text>' +
       [0, 1, 2, 3, 4, 5].map(function (i) {
         var x = 64 + i * 34;
         return '<rect x="' + x + '" y="156" width="24" height="24"' + (i % 2 ? S : ' fill="#111" stroke="#111" stroke-width="1.5" stroke-linejoin="round" vector-effect="non-scaling-stroke"') + '/>';
@@ -65,15 +65,15 @@
       '上衣、長褲、鞋子三件，搭出六套'),
     // 04 輕裝優雅：登機證
     svg(
-      '<rect x="26" y="28" width="268" height="176" fill="none" stroke="#111" stroke-width="2" stroke-linejoin="round" vector-effect="non-scaling-stroke"/>' +
-      '<text' + T + ' x="42" y="54" font-size="10" font-weight="800" letter-spacing="3">BOARDING</text>' +
-      '<text' + T + ' x="278" y="54" text-anchor="end" font-size="10" font-weight="700" letter-spacing="2">CARRY-ON ONLY</text>' +
-      '<text' + T + ' x="160" y="116" text-anchor="middle" font-size="38" font-weight="900" letter-spacing="1">TPE → NRT</text>' +
+      '<rect x="26" y="28" width="268" height="176" fill="none" stroke="#111" stroke-width="1.5" stroke-linejoin="round" vector-effect="non-scaling-stroke"/>' +
+      '<text' + T + ' x="42" y="54" font-size="10" font-weight="500" letter-spacing="3">BOARDING</text>' +
+      '<text' + T + ' x="278" y="54" text-anchor="end" font-size="10" font-weight="500" letter-spacing="2">CARRY-ON ONLY</text>' +
+      '<text' + T + ' x="160" y="116" text-anchor="middle" font-size="38" font-weight="500" letter-spacing="1">TPE → NRT</text>' +
       '<path' + S + ' stroke-dasharray="4 5" d="M26 140h268"/>' +
       '<path' + S + ' d="M115 152v40M205 152v40"/>' +
       [['BAGS', '1', 70], ['WEIGHT', '6.8 KG', 160], ['STATUS', 'READY', 250]].map(function (c) {
-        return '<text' + T + ' x="' + c[2] + '" y="166" text-anchor="middle" font-size="8.5" font-weight="600" letter-spacing="2" fill-opacity=".65">' + c[0] + '</text>' +
-          '<text' + T + ' x="' + c[2] + '" y="186" text-anchor="middle" font-size="14" font-weight="800" letter-spacing="1">' + c[1] + '</text>';
+        return '<text' + T + ' x="' + c[2] + '" y="166" text-anchor="middle" font-size="8.5" font-weight="400" letter-spacing="2" fill-opacity=".65">' + c[0] + '</text>' +
+          '<text' + T + ' x="' + c[2] + '" y="186" text-anchor="middle" font-size="14" font-weight="500" letter-spacing="1">' + c[1] + '</text>';
       }).join(''),
       '只帶登機行李的登機證，台北到成田')
   ];

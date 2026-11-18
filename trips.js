@@ -274,7 +274,7 @@
   // 時間欄位：點一下跳出 24 小時制的選擇器（不用打字）
   function timeBtnInner(v) {
     return (v ? '<span class="tv">' + esc(v) + '</span>' : '<span class="tv ph">選擇時間</span>') +
-      '<svg class="clock" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>';
+      '<svg class="clock" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>';
   }
 
   function legHTML(l, i, n) {

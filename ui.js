@@ -25,7 +25,7 @@
   var RE = /(🏠|🧳|📍|⏳|🔁|🗑|👟|✈|⚠)️?/;
   var SKIP = { SCRIPT: 1, STYLE: 1, TEXTAREA: 1, OPTION: 1, SELECT: 1, TITLE: 1, INPUT: 1 };
   function svg(ch) {
-    return '<svg class="ico-i" viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.4" ' +
+    return '<svg class="ico-i" viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.5" ' +
       'stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + P[ch] + '</svg>';
   }
   function swapText(node) {

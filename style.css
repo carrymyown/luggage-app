@@ -2016,3 +2016,118 @@ body.intro-open { overflow: hidden; }
 .intro-text h2 { white-space: nowrap; font-size: min(38px, calc((min(100vw, 560px) - 48px) / 9.6)); }
 @media (min-width: 700px) { .intro-text h2 { font-size: min(38px, calc((min(100vw, 560px) - 64px) / 9.6)); } }
 @media (max-height: 640px) { .intro-text { height: 132px; } .intro-text h2 { font-size: min(32px, calc((100vw - 48px) / 9.6)); } }
+
+/* =====================================================================
+   第六版：細節統一（只改外觀）
+   線：細線 1px、粗線 2px（只在頁首下方），顏色 #111111；次要分隔線 1px #E5E5E5
+   字：只有 logo（700）和剩餘公斤數（500、48px）比較突出，其他都收斂；不用 800／900
+     logo 16px 700 ／ 頁面標題 20px 500 ／ 區塊小標 11px 400 ／ 內文 15px 400 ／ 次要 13px 400 #666 ／ 按鈕 13px 500
+   留白：區塊之間至少 24px、清單每行上下至少 14px、左右邊距 20px（iPad 32px）
+   ===================================================================== */
+:root {
+  --fs-logo: 16px; --fs-title: 20px; --fs-label: 11px; --fs-body: 15px; --fs-meta: 13px; --fs-btn: 13px; --fs-hero: 48px;
+  --c-meta: #666666; --line: #E5E5E5; --rule: #111111;
+}
+/* 字重：預設 400；只有少數地方 500；logo 700 */
+*, *::before, *::after { font-weight: 400 !important; }
+b, strong, h1, h2, h3, .btn, .tab.on, .home-switch .on, .pk-tabs button.on, .chip.on, .seg button.on, .tabbar a.on,
+.sheet-title, .sec-title, .card-head, .trip-name, .bag-row-name b, .pk-zone-head b, .dr-group-head b, .sr-head > span:first-child,
+.next-name, .plus-item > span:first-child, .tc-route, .toast, .update-bar, .intro-text h2, .intro-actions .btn, .tc-value span, .pk-remain b, .shop-remain,
+.intro-page b, .link { font-weight: 500 !important; }
+.logo, .intro-brand { font-weight: 700 !important; }
+
+body { font-size: var(--fs-body); line-height: 1.6; }
+main { padding: 0 20px calc(var(--tab-h) + 40px + env(safe-area-inset-bottom)); }
+@media (min-width: 700px) { main { padding-left: 32px; padding-right: 32px; } }
+
+/* ---------- 每一頁都一樣的頁首 ---------- */
+.app-head {
+  position: sticky; top: 0; z-index: 15; background: #FFFFFF;
+  display: flex; align-items: center; justify-content: space-between;
+  height: 56px; padding: env(safe-area-inset-top, 0px) 0 0; margin: 0 0 24px; border-bottom: 2px solid var(--rule);
+}
+.logo { font-family: var(--display); font-size: var(--fs-logo); letter-spacing: 0.12em; color: #111111; line-height: 1; white-space: nowrap; }
+.app-head .account-btn { position: static; transform: none; width: 40px; height: 40px; margin-right: -8px; }
+.wordmark { display: none; }
+
+/* ---------- 頁面標題、區塊小標 ---------- */
+h1 {
+  font-family: var(--display); font-size: var(--fs-title) !important; line-height: 1.3; letter-spacing: 0.08em; text-transform: uppercase;
+  margin: 0 !important; padding: 0 0 16px !important; border: 0 !important;
+}
+h1[data-en]::before { font-size: var(--fs-label) !important; letter-spacing: 0.16em; text-transform: uppercase; color: var(--c-meta); margin-bottom: 8px; }
+.page-head { border-bottom: 1px solid var(--rule) !important; margin-bottom: 24px !important; align-items: flex-end; }
+.page-head h1 { padding-bottom: 16px !important; }
+.page-head .btn { margin-bottom: 12px; }
+.view > h1 { border-bottom: 1px solid var(--rule) !important; margin-bottom: 24px !important; }
+.eyebrow, .tc-label, .field-title, .filter-label, .sr-head .muted, .intro-info, .pk-home-title, .conn-label {
+  font-size: var(--fs-label) !important; letter-spacing: 0.16em; text-transform: uppercase; color: var(--c-meta);
+}
+.sheet-title, .sec-title, .card-head, .trip-name, .bag-row-name b, .pk-zone-head b, .dr-group-head b, .next-name, .plus-item > span:first-child,
+.tc-route, .empty-line, .empty-big, .pk-all-done, .ob-title, .sr-head > span:first-child {
+  font-family: var(--display); font-size: var(--fs-body) !important; letter-spacing: 0.04em; line-height: 1.5;
+}
+.sheet-title { font-size: var(--fs-title) !important; letter-spacing: 0.08em; text-transform: uppercase; }
+
+/* ---------- 內文、次要資訊、按鈕 ---------- */
+p, li, label, input, select, textarea, .pk-name, .bp-name, .more-name, .sr-info b, .dr-name, .org-name, .chip, .tab, .home-switch a, .home-switch button { font-size: var(--fs-body); }
+.muted, .small, .muted.small, .pk-w-item, .bp-w, .tc-date, .tc-note, .tc-goal, .tc-shop, .bg-tare, .sample-bar, .pk-bag-name, .pk-box-remain, .pk-over,
+.intro-text p, .intro-page, .app-version, label, .cloth .cat, .cloth .packed, .gf-status, .pur-tag, .pk-must, .sample-tag {
+  font-size: var(--fs-meta) !important;
+}
+.muted, .pk-w-item, .bp-w, .tc-date, .tc-note, .pk-bag-name, label, .intro-text p, .sample-bar { color: var(--c-meta); }
+.cloth .cat { color: #111111; letter-spacing: 0.08em; }
+.pur-tag, .pk-must, .sample-tag, .cloth .packed { font-size: var(--fs-label) !important; letter-spacing: 0.12em; }
+.btn, .link, .chip, .tab, .home-switch a, .home-switch button, .pk-tabs button, .seg button, .toast, .update-bar, .intro-skip, .intro-actions .btn {
+  font-size: var(--fs-btn) !important; letter-spacing: 0.12em;
+}
+.btn { min-height: 48px; text-transform: uppercase; }
+.tabbar a { font-size: var(--fs-label) !important; letter-spacing: 0.12em; }
+
+/* ---------- 數字：剩餘公斤數是唯一的大數字；其他數字跟內文一樣 ---------- */
+.tc-value { font-size: var(--fs-hero) !important; line-height: 1.1; letter-spacing: -0.01em; margin: 12px 0 8px; font-variant-numeric: tabular-nums; }
+.tc-value small { font-family: var(--sans); font-size: var(--fs-body) !important; letter-spacing: 0.04em; margin-left: 6px; text-transform: none; }
+.pk-remain b, .shop-card .shop-remain { font-size: var(--fs-hero) !important; letter-spacing: -0.01em; line-height: 1.1; }
+.pk-remain-unit, .pk-remain-label, .shop-card .shop-remain small { font-size: var(--fs-body) !important; }
+.pk-box-remain b, .allow-item b, .total-value, .bp-progress b, .tab small, .pk-tabs small, .intro-info b { font-size: inherit !important; letter-spacing: 0; }
+.tc-value span, .pk-remain b, .shop-remain, .pk-w-item, .bp-w, .bg-tare, .tc-date, .tab small, .pk-tabs small, .pk-box-remain b, .dr-qty input, .stepper input, .app-version, .intro-page, .intro-info b {
+  font-variant-numeric: tabular-nums lining-nums;
+}
+
+/* ---------- 線條：只有頁首下方是 2px，其他一律 1px ---------- */
+.masthead:not(.app-head) { border-bottom: 1px solid var(--rule); }
+.home-sec { border-top: 1px solid var(--rule) !important; padding: 24px 0 !important; }
+.sheet-panel { border-top: 1px solid var(--rule) !important; }
+@media (min-width: 600px) { .sheet-panel { border: 1px solid var(--rule) !important; } }
+.tab.on, .home-switch .on, .pk-tabs button.on { border-bottom-width: 1px !important; }
+.more-search, #pk-add-search, #dr-name { border-bottom-width: 1px !important; }
+input:focus, select:focus, textarea:focus, .time-btn:focus-visible { outline: 1px solid var(--rule) !important; outline-offset: -1px; }
+.arrival-banner, .use-tip, .org-souv { border-left-width: 1px !important; }
+.yd.today, input.invalid { border-width: 1px !important; }
+.pk-check, .bp-check { border-width: 1px !important; }
+.card, .sec-head, .sr-head, .pk-zone-head, .dr-group-head, .pk-tabs { border-color: var(--rule); }
+.intro-progress i { height: 1px; }
+/* 圖示和插畫：線條 1.5px（不隨大小改變）、圓端點和轉角 */
+svg { stroke-linecap: round; stroke-linejoin: round; }
+svg * { vector-effect: non-scaling-stroke; }
+
+/* ---------- 留白：區塊之間至少 24px、清單每行上下至少 14px ---------- */
+.card { padding: 24px 0; }
+.sec-head { margin-bottom: 16px; }
+.pk-zone, .dr-group, .sr-group, .home-sec + .home-sec { margin-top: 24px; }
+.bag-row, .bp-row, .dr-row, .bg-row, .more-row, .pk-todo, .pk-in, .sr-row, .gf-row, .must-row, .ah-row, .plus-item, .org-row { padding-top: 14px !important; padding-bottom: 14px !important; }
+.trip-cards .trip-card { padding: 24px 8px 32px; }
+.tc-label { margin-top: 24px; }
+
+/* ---------- 歡迎頁也照同樣的規則 ---------- */
+.intro-col { padding-left: 20px; padding-right: 20px; }
+@media (min-width: 700px) { .intro-col { padding-left: 32px; padding-right: 32px; } }
+.intro-head { height: 56px; padding: 0; align-items: center; border-bottom: 2px solid var(--rule); }
+.intro-brand { font-size: var(--fs-logo); letter-spacing: 0.12em; }
+.intro-text { height: 120px; padding-top: 16px; }
+.intro-text h2 { font-size: var(--fs-title) !important; line-height: 1.3; letter-spacing: 0.08em; white-space: normal; }
+.intro-text p { margin-top: 10px; }
+@media (max-height: 640px) { .intro-text { height: 110px; } .intro-text h2 { font-size: var(--fs-title) !important; } }
+.tab { border-bottom-width: 1px !important; }
+.app-head .account-btn { position: relative; }
+.app-head .account-btn { top: auto; right: auto; bottom: auto; left: auto; transform: none !important; display: flex; align-items: center; justify-content: center; }
