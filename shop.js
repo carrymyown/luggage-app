@@ -27,6 +27,7 @@
   // 記一筆購物時先選「這是什麼」
   var PURPOSES = [['own', '自己會帶出門'], ['souvenir', '紀念品／放家裡就好'], ['gift', '送人']];
   var PURPOSE_TAG = { own: '自己帶', souvenir: '紀念品', gift: '送人' };
+  var PURPOSE_DESC = { own: '之後還會帶出門；到家後放進衣櫃或抽屜', souvenir: '只算回程重量；到家自動拿出行李', gift: '送給別人；存成「送禮」裡的一份禮物' };
   function purposeOf(p) { return p && p.purpose === 'souvenir' ? 'souvenir' : 'own'; }
 
   function st() { return App.state(); }
@@ -360,7 +361,7 @@
       var here = hereCity();
       buy = { id: App.uid(), tripId: t.id, name: plan ? plan.name : '', weight: plan ? plan.weight : '', qty: plan ? plan.qty : 1, price: '',
         category: '必備品', city: here && here.trip.id === t.id ? here.city : '', bagId: defaultBagId(), homeDest: '', planId: plan ? plan.id : null, isNew: true,
-        purpose: 'own', photoId: null };
+        purpose: plan ? 'own' : '', photoId: null };   // 新的購物：先選「這是什麼」再填
     }
     buyPhoto = { blob: null, removed: false };
     $('#buy-to').value = '';
@@ -385,7 +386,7 @@
     renderBuyForm();
     $('#buy-sheet').hidden = false;
     $('#buy-sheet .org-panel').scrollTop = 0;
-    if (buy.isNew && !plan) setTimeout(function () { $('#buy-name').focus(); }, 50);
+    if (buy.isNew && !plan && buy.purpose) setTimeout(function () { $('#buy-name').focus(); }, 50);
   }
 
   var buyPhoto = { blob: null, removed: false };
@@ -409,9 +410,14 @@
   function renderBuyForm() {
     // 這是什麼：自己會帶出門／紀念品、放家裡就好／送人（已經存好的購物不能改成送人）
     var opts = buy.isNew ? PURPOSES : PURPOSES.filter(function (x) { return x[0] !== 'gift'; });
+    var choosing = !buy.purpose;   // 還沒選：只顯示三個選項（各有一句說明），選了才出現欄位
+    $('#buy-purpose').classList.toggle('choose', choosing);
     $('#buy-purpose').innerHTML = opts.map(function (x) {
-      return '<button type="button" class="' + (buy.purpose === x[0] ? 'on' : '') + '" data-buy-purpose="' + x[0] + '">' + x[1] + '</button>';
+      return '<button type="button" class="' + (buy.purpose === x[0] ? 'on' : '') + '" data-buy-purpose="' + x[0] + '">' +
+        '<span class="bp-label">' + x[1] + '</span>' + (choosing ? '<span class="bp-desc">' + PURPOSE_DESC[x[0]] + '</span>' : '') + '</button>';
     }).join('');
+    $('#buy-fields').hidden = choosing;
+    $('#buy-save').hidden = choosing || buy.locked;
     Array.prototype.forEach.call(document.querySelectorAll('#buy-sheet [data-for]'), function (el) {
       el.hidden = el.getAttribute('data-for').split(' ').indexOf(buy.purpose) < 0;
     });
@@ -474,6 +480,7 @@
   }
 
   function saveBuy() {
+    if (!buy.purpose) { App.toast('請先選「這是什麼」'); return; }
     var name = $('#buy-name').value.trim();
     if (!name) { App.toast('請輸入名稱'); return; }
     // 送人：存成「送禮」分頁裡的一份禮物（在行李裡就算進重量）
@@ -521,7 +528,12 @@
   $('#buy-sheet').addEventListener('click', function (e) {
     var t = e.target, el;
     if (buy && buy.locked && t.closest('[data-buy-bag], [data-buy-city], [data-buy-city-other], [data-buy-home]')) return;
-    if ((el = t.closest('[data-buy-purpose]'))) { buy.purpose = el.getAttribute('data-buy-purpose'); renderBuyForm(); return; }
+    if ((el = t.closest('[data-buy-purpose]'))) {
+      var first = !buy.purpose;
+      buy.purpose = el.getAttribute('data-buy-purpose'); renderBuyForm();
+      if (first) setTimeout(function () { $('#buy-name').focus(); }, 50);
+      return;
+    }
     if ((el = t.closest('[data-buy-bag]'))) { buy.bagId = el.getAttribute('data-buy-bag'); renderBuyForm(); return; }
     if ((el = t.closest('[data-buy-city-other]'))) {
       window.Clothing.askText('在哪個城市買的？', '').then(function (v) { v = (v || '').trim().slice(0, 20); if (v) { buy.city = v; renderBuyForm(); } });

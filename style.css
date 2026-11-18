@@ -2131,3 +2131,38 @@ svg * { vector-effect: non-scaling-stroke; }
 .tab { border-bottom-width: 1px !important; }
 .app-head .account-btn { position: relative; }
 .app-head .account-btn { top: auto; right: auto; bottom: auto; left: auto; transform: none !important; display: flex; align-items: center; justify-content: center; }
+
+/* =====================================================================
+   第七版：英文、數字收斂（不動 logo、頁首、線條）
+   英文小標／選單／按鈕 11–12px、大寫、字距 0.12–0.16em；數字一般粗細、跟內文一樣大
+   ===================================================================== */
+/* 英文小標、選單：11px 400 */
+.eyebrow, .tc-label, .field-title, .filter-label, .sr-head .muted, .intro-info, .pk-home-title, .conn-label, h1[data-en]::before, .tabbar a {
+  font-size: 11px !important; font-weight: 400 !important; letter-spacing: 0.16em !important;
+}
+/* 按鈕：12px 500；文字連結、選項、分頁：12–13px 400（選中的分頁 500） */
+.btn, .intro-actions .btn, .toast, .update-bar { font-size: 12px !important; font-weight: 500 !important; letter-spacing: 0.14em !important; }
+.link, .intro-skip, .tc-goal, .tc-shop { font-size: 12px !important; font-weight: 400 !important; letter-spacing: 0.12em !important; }
+.tab, .home-switch a, .home-switch button, .pk-tabs button, .seg button { font-size: 12px !important; font-weight: 400 !important; letter-spacing: 0.12em !important; }
+.tab.on, .home-switch .on, .pk-tabs button.on, .seg button.on { font-weight: 500 !important; }
+.chip, .chip.on { font-size: 13px !important; font-weight: 400 !important; letter-spacing: 0.06em !important; }
+.pur-tag, .pk-must, .sample-tag, .cloth .packed, .gf-status { font-size: 11px !important; font-weight: 400 !important; letter-spacing: 0.12em !important; }
+.tabbar a.on { font-weight: 500 !important; }
+/* 數字：一般粗細、跟內文一樣大；只有剩餘公斤數大（500） */
+.pk-box-remain b, .allow-item b, .total-value, .bp-progress b, .tab small, .pk-tabs small, .intro-info b, .intro-page b,
+.bag-row b:not(.bag-row-name b), .pk-w-item, .bp-w, .bg-tare, .tc-date, .dr-qty input, .stepper input { font-weight: 400 !important; }
+.tab small, .pk-tabs small { font-size: 12px !important; color: var(--c-meta); }
+.tc-value span, .pk-remain b, .shop-card .shop-remain { font-weight: 500 !important; }
+.tc-route { font-weight: 400 !important; }
+/* 歡迎頁：頁碼、資訊列、說明一般粗細 */
+.intro-page { font-size: 12px !important; letter-spacing: 0.12em; }
+
+/* ---------- 記一筆購物：先選「這是什麼」 ---------- */
+.buy-purpose.choose { display: grid; grid-template-columns: 1fr; gap: 10px; border: 0; margin-bottom: 8px; }
+.buy-purpose.choose button {
+  display: flex; flex-direction: column; align-items: flex-start; gap: 4px; text-align: left; padding: 16px; min-height: 64px;
+  border: 1px solid var(--rule); background: #FFFFFF; color: #111111;
+}
+.buy-purpose.choose .bp-label { font-size: 15px; letter-spacing: 0.04em; font-weight: 500 !important; }
+.buy-purpose.choose .bp-desc { font-size: 13px; color: var(--c-meta); letter-spacing: 0.02em; text-transform: none; }
+.buy-purpose:not(.choose) .bp-label { font-size: 12px; }

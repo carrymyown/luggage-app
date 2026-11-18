@@ -33,8 +33,8 @@
     // 02 不重複帶：台北、東京兩間房子，裡面都有同樣的牙刷和乳液
     svg(
       '<path' + S + ' d="M160 22v168"/>' +
-      '<text' + T + ' x="80" y="36" text-anchor="middle" font-size="11" font-weight="500" letter-spacing="2.5">TAIPEI</text>' +
-      '<text' + T + ' x="240" y="36" text-anchor="middle" font-size="11" font-weight="500" letter-spacing="2.5">TOKYO</text>' +
+      '<text' + T + ' x="80" y="36" text-anchor="middle" font-size="11" font-weight="400" letter-spacing="2.5">TAIPEI</text>' +
+      '<text' + T + ' x="240" y="36" text-anchor="middle" font-size="11" font-weight="400" letter-spacing="2.5">TOKYO</text>' +
       [80, 240].map(function (cx) {
         return '<path' + S + ' d="M' + (cx - 46) + ' 98L' + cx + ' 58l46 40"/>' +
           '<path' + S + ' d="M' + (cx - 38) + ' 92v86h76V92"/>' +
