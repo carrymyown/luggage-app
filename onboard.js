@@ -211,7 +211,7 @@
   }
   function showTips(view) {
     clearBubbles();
-    if (!App.sampleMode() || !$('#onboard-sheet').hidden) return;
+    if (!App.sampleMode() || !$('#onboard-sheet').hidden || (window.Intro && window.Intro.isOpen())) return;   // 介紹畫面開著時先不出現
     var k = TIP_VIEW[view];
     if (k && !seen()[k]) {
       var sec = $('#view-' + view);

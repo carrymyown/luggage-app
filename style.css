@@ -1968,3 +1968,51 @@ input:focus, select:focus, textarea:focus { outline: 2px solid var(--rule); outl
 /* 行程列表的轉機標籤：黑白，不用彩色底 */
 .ct, .ct.through, .ct.recheck, .ct.enter, .ct.transit { background: #FFFFFF !important; color: var(--text) !important; border: 1px solid var(--text) !important; font-family: var(--display); font-weight: 700; letter-spacing: 0.08em; }
 .ct.recheck, .ct.enter { background: var(--text) !important; color: #FFFFFF !important; }
+
+/* =====================================================================
+   歡迎頁：四張意象畫面（純白底、近黑線條、粗體大寫無襯線）
+   標題和資訊列在四頁的位置完全一樣；插畫最寬 480px
+   ===================================================================== */
+.intro { position: fixed; inset: 0; z-index: 200; background: #FFFFFF; color: #111111; display: flex; justify-content: center; }
+body.intro-open { overflow: hidden; }
+.intro-col {
+  width: 100%; max-width: 560px; height: 100%; display: flex; flex-direction: column;
+  padding: calc(10px + env(safe-area-inset-top, 0px)) 24px calc(22px + env(safe-area-inset-bottom, 0px));
+}
+.intro-skiprow { display: flex; justify-content: flex-end; height: 32px; align-items: center; }
+.intro-skip { border: 0; background: none; padding: 6px 0; font-family: var(--display); font-weight: 700; font-size: 0.72rem; letter-spacing: 0.24em; color: #111111; cursor: pointer; text-decoration: underline; text-underline-offset: 4px; }
+.intro-head { display: flex; justify-content: space-between; align-items: baseline; padding: 8px 0 12px; border-bottom: 2px solid #111111; }
+.intro-brand { font-family: var(--display); font-weight: 900; font-size: 0.86rem; letter-spacing: 0.32em; }
+.intro-page { font-family: var(--num); font-variant-numeric: tabular-nums; font-size: 0.78rem; letter-spacing: 0.14em; color: #111111; }
+.intro-page b { font-weight: 800; }
+.intro-track { flex: 1; min-height: 0; display: flex; overflow-x: auto; overflow-y: hidden; scroll-snap-type: x mandatory; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
+.intro-track::-webkit-scrollbar { display: none; }
+.intro-slide { flex: 0 0 100%; scroll-snap-align: start; display: flex; flex-direction: column; min-height: 0; }
+.intro-art { flex: 1; min-height: 160px; display: flex; align-items: center; justify-content: center; padding: 24px 0; }
+.intro-art svg { width: 100%; max-width: 480px; height: 100%; max-height: 360px; display: block; }
+.intro-info { display: flex; justify-content: space-between; align-items: baseline; padding: 0 0 10px; font-family: var(--display); font-size: 0.68rem; letter-spacing: 0.24em; text-transform: uppercase; }
+.intro-info span { font-weight: 600; }
+.intro-info b { font-family: var(--num); font-weight: 800; font-variant-numeric: tabular-nums; letter-spacing: 0.12em; }
+.intro-text { border-top: 1px solid #111111; padding-top: 18px; min-height: 150px; }
+.intro-text h2 { margin: 0; font-family: var(--display); font-weight: 900; font-size: 38px; line-height: 0.98; letter-spacing: -0.01em; text-transform: uppercase; }
+.intro-text p { margin: 14px 0 0; font-size: 0.92rem; color: #444444; letter-spacing: 0.04em; }
+.intro-foot { height: 64px; display: flex; align-items: flex-end; }
+.intro-progress { display: flex; gap: 6px; align-items: center; padding-bottom: 8px; }
+.intro-progress i { display: block; width: 22px; height: 2px; background: #D4D4D4; transition: width .3s var(--ease), background-color .3s var(--ease); }
+.intro-progress i.on { width: 48px; background: #111111; }
+.intro-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; width: 100%; }
+.intro-actions .btn { min-height: 52px; margin: 0; width: 100%; }
+@keyframes intro-in { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+.intro-slide.enter .intro-art { animation: intro-in .3s var(--ease) both; }
+.intro-slide.enter .intro-info, .intro-slide.enter .intro-text { animation: intro-in .3s var(--ease) .06s both; }
+@media (min-width: 700px) {
+  .intro-col { padding-left: 32px; padding-right: 32px; }
+  .intro-art svg { max-height: 420px; }
+}
+@media (max-height: 640px) { .intro-text { min-height: 130px; } .intro-text h2 { font-size: 32px; } }
+@media (prefers-reduced-motion: reduce) { .intro-slide.enter .intro-art, .intro-slide.enter .intro-info, .intro-slide.enter .intro-text { animation: none; } }
+/* 標題不換行、依螢幕寬度縮放（最大 38px）；文字區固定高度，四頁的位置完全一樣 */
+.intro-text { height: 156px; min-height: 0; }
+.intro-text h2 { white-space: nowrap; font-size: min(38px, calc((min(100vw, 560px) - 48px) / 9.6)); }
+@media (min-width: 700px) { .intro-text h2 { font-size: min(38px, calc((min(100vw, 560px) - 64px) / 9.6)); } }
+@media (max-height: 640px) { .intro-text { height: 132px; } .intro-text h2 { font-size: min(32px, calc((100vw - 48px) / 9.6)); } }
