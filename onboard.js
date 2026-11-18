@@ -209,7 +209,7 @@
     { page: 'pack', target: '#pack-tabs', away: '.tabbar a[href="#pack"]',
       title: '先列清單，再打勾', body: '打勾就是放進行李，每個行李箱還能放多少會即時更新。' },
     { page: 'trips', target: '#view-trips .trip-card .trip-route, #view-trips .trip-card, #view-trips .page-head', away: '.tabbar a[href="#trips"]',
-      title: '每一段航班的額度', body: '填好航班和行李額度，到了有家的城市會提醒你整理行李。' }
+      title: '每一段航班的額度', body: '填好航班和行李額度，到了有家的城市會提醒你整理行李。點每天旁邊的小方格，看當天穿搭。' }
   ];
   var PAGE_OF = { home: 'home', closet: 'closet', drawer: 'closet', bags: 'closet', pack: 'pack', trips: 'trips' };
   var COACH_KEY = 'cmo-coach';

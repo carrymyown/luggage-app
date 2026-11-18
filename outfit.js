@@ -411,9 +411,17 @@
     if (c.src === 'add') return '要加帶';
     return '這趟要帶';
   }
-  function thumb(m) {
-    if (!m) return '';
-    return '<span class="od-thumb">' + (m.photoId ? '<img data-photo="' + esc(m.photoId) + '" alt="">' : art(PART_OF[m.clothing.group], m)) + '</span>';
+  function pieceImg(m) {
+    return m.photoId ? '<img data-photo="' + esc(m.photoId) + '" alt="">' : art(PART_OF[m.clothing.group], m);
+  }
+  // 每一天右邊的小方格：已經搭好（按過「確定這套」）→ 上衣和下身疊在一起的小縮圖；還沒搭 → 虛線框＋細線「＋」
+  function lookTile(p) {
+    var ids = p.outfit.picks, done = !!(p.plan && p.plan.confirmed);
+    var pieces = (ids.dress ? [ids.dress] : [ids.top, ids.bottom]).map(function (id) { return id && App.entryById(id); }).filter(Boolean);
+    var sq = done && pieces.length ?
+      '<span class="od-sq' + (pieces.length === 1 ? ' one' : '') + '">' + pieces.map(function (m, i) { return '<span class="od-pc od-pc' + i + '">' + pieceImg(m) + '</span>'; }).join('') + '</span>' :
+      '<span class="od-sq empty"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#111" stroke-width="1" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></span>';
+    return '<span class="od-look" aria-label="' + (done ? '看這天的穿搭' : '搭配這天的穿搭') + '">' + sq + '<span class="od-go">穿搭 ›</span></span>';
   }
 
   var curTrip = null, curDate = '';
@@ -463,15 +471,13 @@
     html += '</section>';
     // 每一天
     html += '<section class="of-days"><div class="sec-head"><span class="eyebrow">DAYS</span></div>' + planned.map(function (p) {
-      var d = p.day, w = p.ctx.w, ids = p.outfit.picks;
-      var items = ['top', 'dress', 'bottom', 'outer', 'shoes'].map(function (k) { return ids[k] && App.entryById(ids[k]); }).filter(Boolean);
+      var d = p.day, w = p.ctx.w;
       return '<a class="od-row" href="#outfit/' + encodeURIComponent(t.id) + '/' + d.date + '">' +
         '<span class="od-date">' + esc(md(d.date)) + '</span>' +
         '<span class="od-main"><span class="od-city">' + esc(d.flight || d.city) + (homeAt(d.city) ? '<span class="muted small">・有家</span>' : '') + '</span>' +
         '<span class="od-weather">' + weatherText(w) + '</span>' +
         (p.acts.length ? '<span class="od-acts muted small">' + esc(p.acts.join('・')) + '</span>' : '') + '</span>' +
-        '<span class="od-thumbs">' + items.slice(0, 4).map(thumb).join('') + '</span>' +
-        (p.plan && p.plan.confirmed ? '<span class="od-ok" title="已確定">✓</span>' : '') + '</a>';
+        lookTile(p) + '</a>';
     }).join('') + '</section>';
     view().innerHTML = html;
     if (window.Photos) Photos.fillThumbs(view());

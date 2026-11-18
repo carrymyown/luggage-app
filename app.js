@@ -712,8 +712,18 @@
       (r.remain == null ? '<div class="tc-note">尚未設定額度</div>' :
         r.tight && r.leg ? '<div class="tc-note">最緊：' + esc(r.leg.from || '?') + ' → ' + esc(r.leg.to || '?') + '</div>' : '') +
       '<div class="tc-goal-row">' + goalHtml + '</div>' +
-      shopLine(t) +
+      shopLine(t) + outfitLine(t) +
       '</div>';
+  }
+  // 今天（或明天）在這趟旅程裡：多一行「今天的穿搭 ›」，點了直接進那天的穿搭頁
+  function outfitLine(t) {
+    if (!window.Outfit) return '';
+    var days = window.Outfit.tripDays(t).map(function (d) { return d.date; });
+    var today = todayStr(), p = today.split('-'), tm = new Date(+p[0], +p[1] - 1, +p[2] + 1);
+    var tomorrow = tm.getFullYear() + '-' + String(tm.getMonth() + 1).padStart(2, '0') + '-' + String(tm.getDate()).padStart(2, '0');
+    var d = days.indexOf(today) >= 0 ? today : days.indexOf(tomorrow) >= 0 ? tomorrow : '';
+    if (!d) return '';
+    return '<button type="button" class="link small tc-shop tc-outfit" data-outfit-day="' + esc(t.id) + '/' + d + '">' + (d === today ? '今天' : '明天') + '的穿搭 ›</button>';
   }
   // 旅程卡底下一行小字：這趟的購物和禮物，點了進這趟的購物／送禮頁
   function shopLine(t) {
@@ -729,6 +739,8 @@
     if (g) { openGoal(g.getAttribute('data-goal')); return; }
     var sp = e.target.closest('[data-shop-trip]');
     if (sp) { if (window.Shop) window.Shop.openTrip(sp.getAttribute('data-shop-trip')); return; }
+    var od = e.target.closest('[data-outfit-day]');
+    if (od) { var x = od.getAttribute('data-outfit-day').split('/'); location.hash = '#outfit/' + encodeURIComponent(x[0]) + '/' + x[1]; return; }
     var c = e.target.closest('[data-trip-card]');
     if (c) location.hash = '#trips/' + encodeURIComponent(c.getAttribute('data-trip-card'));
   });
