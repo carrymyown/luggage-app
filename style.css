@@ -2166,3 +2166,28 @@ svg * { vector-effect: non-scaling-stroke; }
 .buy-purpose.choose .bp-label { font-size: 15px; letter-spacing: 0.04em; font-weight: 500 !important; }
 .buy-purpose.choose .bp-desc { font-size: 13px; color: var(--c-meta); letter-spacing: 0.02em; text-transform: none; }
 .buy-purpose:not(.choose) .bp-label { font-size: 12px; }
+
+/* =====================================================================
+   範例模式的使用提示：黑底白字的提示卡＋虛線框（跟 app 內容明顯不同）
+   ===================================================================== */
+.coach-ring { position: fixed; z-index: 140; pointer-events: none; border: 1px dashed #111111; background: transparent; }
+.coach-card {
+  position: fixed; z-index: 150; width: min(320px, calc(100vw - 24px)); padding: 14px 16px 12px;
+  background: #111111; color: #FFFFFF; border-radius: 0 !important;
+}
+.coach-num { font-family: var(--num); font-size: 11px !important; letter-spacing: 0.16em; color: #BDBDBD; margin-bottom: 6px; font-variant-numeric: tabular-nums; }
+.coach-title { font-size: 14px !important; font-weight: 500 !important; letter-spacing: 0.04em; margin-bottom: 4px; }
+.coach-body { font-size: 13px !important; line-height: 1.6; margin: 0 0 12px; color: #E6E6E6 !important; }
+.coach-btns { display: flex; justify-content: flex-end; gap: 8px; }
+.coach-btn {
+  border: 1px solid #FFFFFF; background: transparent; color: #FFFFFF; font: inherit; font-size: 12px !important; letter-spacing: 0.12em;
+  min-height: 36px; padding: 0 14px; cursor: pointer; border-radius: 0 !important; text-transform: uppercase;
+}
+.coach-btn.primary { background: #FFFFFF; color: #111111; font-weight: 500 !important; }
+.coach-arrow { position: absolute; width: 0; height: 0; margin-left: -7px; border: 7px solid transparent; }
+.coach-card.below .coach-arrow { top: -14px; border-bottom-color: #111111; }
+.coach-card:not(.below) .coach-arrow { bottom: -14px; border-top-color: #111111; }
+.tip-bubble { display: none !important; }
+/* 匯入備份：看不見的選檔案欄位只蓋在文字上，不會擋到旁邊的按鈕 */
+.file-link { overflow: hidden; }
+.file-link input { height: 100% !important; min-height: 0 !important; padding: 0 !important; margin: 0 !important; border: 0 !important; }

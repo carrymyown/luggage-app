@@ -183,51 +183,142 @@
     App.exitSample();
   });
   $('#sample-again').addEventListener('click', function () {
-    if (App.sampleMode()) { $('#account-sheet').hidden = true; App.toast('現在就是範例資料'); return; }
+    if (App.sampleMode()) {
+      // 已經是範例：提示從第 1 個重新開始
+      $('#account-sheet').hidden = true;
+      resetCoach();
+      if (location.hash !== '#home') location.hash = '#home'; else showTips('home');
+      return;
+    }
     if (!confirm('要打開範例資料看看嗎？\n範例只在這台裝置，你自己的資料不會受影響；看完按最上方的「清除範例」就回來。')) return;
+    resetCoach();
     App.enterSample();
   });
 
-  // ---------- 範例模式的提示泡泡：每個地方一次，點一下就消失 ----------
-  var TIPS = {
-    home: '這裡看這趟旅程還能放幾公斤，下面是每個行李',
-    pack: '打勾就代表已經放進行李，上面的公斤數會自動扣掉',
-    closet: '衣櫃放穿戴的東西，抽屜放其他用品，行李箱也在這裡',
-    plus: '從這裡新增衣服、物品、購物和禮物'
-  };
-  var TIP_VIEW = { home: 'home', pack: 'pack', closet: 'closet', drawer: 'closet', bags: 'closet' };
-  var TIP_KEY = 'cmo-tips-seen';
-  function seen() { try { return JSON.parse(localStorage.getItem(TIP_KEY)) || {}; } catch (e) { return {}; } }
-  function markSeen(k) { var o = seen(); o[k] = true; try { localStorage.setItem(TIP_KEY, JSON.stringify(o)); } catch (e) { /* 不影響 */ } }
+  // ---------- 範例模式的使用提示：五個重點，一步一步出現在真實畫面上 ----------
+  // 黑底白字的提示卡＋被說明的地方外圍一圈虛線框；箭頭依照按鈕在畫面上的實際位置計算（捲動、旋轉都跟著更新）
+  // 只在範例模式出現；看到第幾個記在 cmo-coach（帳號選單「再看一次範例」會從第 1 個重新開始）
+  var COACH = [
+    { page: 'home', target: '#view-home .trip-card .tc-value', away: '.tabbar a[href="#home"]',
+      title: '這趟還能放多少', body: '打包、購物、禮物都會自動算進來，快超重會變色提醒。' },
+    { page: 'closet', target: '.home-switch', away: '.tabbar a[href="#closet"]',
+      title: '每個家有什麼', body: '衣服放衣櫃、其他東西放抽屜；家裡已經有的，出門就不用再帶。' },
+    { page: '', target: '#plus-btn',
+      title: '隨時新增', body: '新增衣服、抽屜物品、記一筆購物或禮物，都從這裡開始。' },
+    { page: 'pack', target: '#pack-tabs', away: '.tabbar a[href="#pack"]',
+      title: '先列清單，再打勾', body: '打勾就是放進行李，每個行李箱還能放多少會即時更新。' },
+    { page: 'trips', target: '#view-trips .trip-card .trip-route, #view-trips .trip-card, #view-trips .page-head', away: '.tabbar a[href="#trips"]',
+      title: '每一段航班的額度', body: '填好航班和行李額度，到了有家的城市會提醒你整理行李。' }
+  ];
+  var PAGE_OF = { home: 'home', closet: 'closet', drawer: 'closet', bags: 'closet', pack: 'pack', trips: 'trips' };
+  var COACH_KEY = 'cmo-coach';
+  function coachState() { try { return JSON.parse(localStorage.getItem(COACH_KEY)) || { step: 0, done: false }; } catch (e) { return { step: 0, done: false }; } }
+  function saveCoach(o) { try { localStorage.setItem(COACH_KEY, JSON.stringify(o)); } catch (e) { /* 不影響 */ } }
+  function resetCoach() { saveCoach({ step: 0, done: false }); }
+  try { localStorage.removeItem('cmo-tips-seen'); } catch (e) { /* 舊的小提示不用了 */ }
 
-  function clearBubbles() { document.querySelectorAll('.tip-bubble').forEach(function (el) { el.remove(); }); }
-  function bubble(k, cls, parent, before) {
-    var b = document.createElement('button');
-    b.type = 'button';
-    b.className = 'tip-bubble ' + cls;
-    b.setAttribute('data-tip', k);
-    b.textContent = TIPS[k];
-    if (before) parent.insertBefore(b, before); else parent.appendChild(b);
+  var card = null, ring = null, curView = 'home', curStep = -1, loop = null, scrolledFor = -1;
+  function coachEls() {
+    if (card) return;
+    ring = document.createElement('div'); ring.className = 'coach-ring'; ring.hidden = true;
+    card = document.createElement('div'); card.className = 'coach-card'; card.hidden = true;
+    card.setAttribute('role', 'dialog'); card.setAttribute('aria-live', 'polite');
+    document.body.appendChild(ring); document.body.appendChild(card);
+    card.addEventListener('click', function (e) {
+      var b = e.target.closest('[data-coach]');
+      if (!b) return;
+      var act = b.getAttribute('data-coach'), st0 = coachState();
+      if (act === 'next') { st0.step = Math.min(COACH.length - 1, curStep + 1); saveCoach(st0); render(); return; }
+      st0.done = true; saveCoach(st0); hideCoach();   // 知道了／開始使用：關掉所有提示
+    });
+  }
+  function visible(el) {
+    if (!el) return false;
+    var r = el.getBoundingClientRect();
+    return r.width > 0 && r.height > 0 && !el.closest('[hidden]');
+  }
+  function targetOf(i) {
+    var c = COACH[i];
+    var onPage = !c.page || PAGE_OF[curView] === c.page;
+    if (onPage) {
+      // 依序找：寫在前面的優先（例如行程先找旅程卡片，沒有才用頁面標題）
+      var sels = c.target.split(',');
+      for (var j = 0; j < sels.length; j++) {
+        var list = document.querySelectorAll(sels[j]);
+        for (var k = 0; k < list.length; k++) if (visible(list[k])) return list[k];
+      }
+    }
+    var away = c.away && document.querySelector(c.away);
+    return visible(away) ? away : null;
+  }
+  // 不出現：正式使用（非範例）、已經按過知道了、第一次使用設定或介紹畫面開著
+  function blocked() {
+    return !App.sampleMode() || coachState().done || !$('#onboard-sheet').hidden || (window.Intro && window.Intro.isOpen());
+  }
+  // 暫時藏起來：有視窗開著時（關掉後自動回來）
+  function paused() { return !!document.querySelector('.sheet:not([hidden])'); }
+  function hideCoach() {
+    if (card) { card.hidden = true; ring.hidden = true; }
+    if (loop) { cancelAnimationFrame(loop); loop = null; }
+    curStep = -1;
+  }
+  function render() {
+    coachEls();
+    var st0 = coachState();
+    curStep = st0.step;
+    var last = curStep === COACH.length - 1, c = COACH[curStep];
+    card.innerHTML = '<div class="coach-num">' + (curStep + 1) + ' / ' + COACH.length + '</div>' +
+      '<div class="coach-title">' + c.title + '</div><p class="coach-body">' + c.body + '</p>' +
+      '<div class="coach-btns">' + (last ? '' : '<button type="button" class="coach-btn" data-coach="next">下一個</button>') +
+      '<button type="button" class="coach-btn' + (last ? ' primary' : '') + '" data-coach="done">' + (last ? '開始使用' : '知道了') + '</button></div>' +
+      '<i class="coach-arrow"></i>';
+    scrolledFor = -1;
+    if (!loop) tick();
+  }
+  // 每一格畫面都重新量位置：捲動、旋轉、畫面變動都跟著更新
+  function tick() {
+    loop = requestAnimationFrame(tick);
+    if (curStep < 0) return;
+    if (blocked()) { hideCoach(); return; }
+    if (paused()) { card.hidden = true; ring.hidden = true; return; }
+    var el = targetOf(curStep);
+    if (!el) { card.hidden = true; ring.hidden = true; return; }
+    if (scrolledFor !== curStep) {
+      scrolledFor = curStep;
+      var r0 = el.getBoundingClientRect();
+      if (r0.top < 70 || r0.bottom > innerHeight - 80) el.scrollIntoView({ block: 'center' });
+    }
+    place(el);
+  }
+  function place(el) {
+    var r = el.getBoundingClientRect(), pad = 6, gap = 14, vw = document.documentElement.clientWidth, vh = innerHeight;
+    ring.hidden = false;
+    ring.style.left = (r.left - pad) + 'px'; ring.style.top = (r.top - pad) + 'px';
+    ring.style.width = (r.width + pad * 2) + 'px'; ring.style.height = (r.height + pad * 2) + 'px';
+    card.hidden = false;
+    var w = card.offsetWidth, h = card.offsetHeight;
+    // 放在按鈕下方；下方放不下就放上方（卡片不會蓋住被說明的地方）
+    var bar = document.querySelector('.tabbar'), barTop = bar ? bar.getBoundingClientRect().top : vh;
+    var fitBelow = r.bottom + pad + gap + h <= barTop - 8, fitAbove = r.top - pad - gap - h >= 8;
+    var below = fitBelow || !fitAbove;
+    var top = below ? r.bottom + pad + gap : r.top - pad - gap - h;
+    if (!fitBelow && !fitAbove) top = Math.min(top, barTop - h - 8);   // 上下都放不下：停在導覽列上方，不跑出畫面
+    var cx = r.left + r.width / 2;
+    var left = Math.max(12, Math.min(vw - w - 12, cx - w / 2));
+    card.style.left = Math.round(left) + 'px'; card.style.top = Math.round(Math.max(8, top)) + 'px';
+    card.classList.toggle('below', below);
+    var arrow = card.querySelector('.coach-arrow');
+    arrow.style.left = Math.round(Math.max(16, Math.min(w - 16, cx - left))) + 'px';
   }
   function showTips(view) {
-    clearBubbles();
-    if (!App.sampleMode() || !$('#onboard-sheet').hidden || (window.Intro && window.Intro.isOpen())) return;   // 介紹畫面開著時先不出現
-    var k = TIP_VIEW[view];
-    if (k && !seen()[k]) {
-      var sec = $('#view-' + view);
-      var anchor = view === 'home' ? sec.querySelector('.trip-cards') : view === 'pack' ? $('#pack-main') : sec.querySelector('.page-head');
-      if (anchor) bubble(k, 'tip-page', anchor.parentNode, anchor);
-      return;   // 一次只出現一個泡泡
-    }
-    if (view === 'home' && !seen().plus) bubble('plus', 'tip-plus', document.body);
+    curView = view;
+    if (blocked()) { hideCoach(); return; }
+    // 切到某一頁：直接跳到那一頁的提示
+    var st0 = coachState();
+    var idx = COACH.findIndex(function (c) { return c.page && c.page === PAGE_OF[view]; });
+    if (idx >= 0 && idx !== st0.step && view !== 'home') { st0.step = idx; saveCoach(st0); }
+    render();
   }
-  document.addEventListener('click', function (e) {
-    var b = e.target.closest('.tip-bubble');
-    if (!b) return;
-    markSeen(b.getAttribute('data-tip'));
-    b.remove();
-    if (b.getAttribute('data-tip') === 'home') showTips('home');   // 首頁看完再提示中間的＋
-  });
 
   // ---------- 帳號選單：我的家（新增、改名、刪除） ----------
   function renderHomes() {
@@ -238,7 +329,7 @@
         '<button type="button" class="link small" data-home-city="' + esc(h) + '">城市</button>' +
         '<button type="button" class="link small ah-del" data-home-del="' + esc(h) + '">刪除</button></div>';
     }).join('') : '<p class="muted small">還沒有家。</p>';
-    $('#sample-again').textContent = App.sampleMode() ? '現在是範例資料' : '再看一次範例';
+    $('#sample-again').textContent = '再看一次範例';   // 範例模式中按：提示從第 1 個重新開始
   }
   $('#account-btn').addEventListener('click', renderHomes);
   $('#account-home-add').addEventListener('submit', function (e) {
@@ -301,5 +392,5 @@
     showTips(view);
   }
 
-  window.Onboard = { afterRoute: afterRoute, open: openOnboard, setDefaults: setDefaults };
+  window.Onboard = { afterRoute: afterRoute, open: openOnboard, setDefaults: setDefaults, resetCoach: resetCoach, showTips: function () { showTips(curView); } };
 })();
