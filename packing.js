@@ -696,11 +696,18 @@
       var rows = by[g], n = rows.filter(function (e) { return e.checked; }).length, done = n === rows.length;
       var key = curTrip.id + '|' + g;
       var shut = !editMode && (collapsed[key] != null ? collapsed[key] : done);
-      return '<section class="pk-group' + (done ? ' complete' : '') + (shut ? ' shut' : '') + '" data-group="' + esc(g) + '">' +
+      var ok = done ? '<span class="pk-group-ok" aria-label="這組都放好了">' + CHECK_SVG + '</span>' : '';
+      var chev = '<span class="pk-group-chev" aria-hidden="true">' + (shut ? '+' : '−') + '</span>';
+      // 「必帶」組：標題旁邊一個小小的「編輯」，打開必帶清單（每次產生新清單時自動加進來的東西）
+      var head = g === '必帶' ?
+        '<div class="pk-group-top">' +
+          '<button type="button" class="pk-group-head pk-group-head-main" data-group-toggle="' + esc(g) + '" aria-expanded="' + !shut + '">' +
+            '<b>' + esc(g) + '</b><span class="pk-group-n">' + n + ' / ' + rows.length + '</span>' + ok + '</button>' +
+          '<button type="button" class="link small pk-must-edit" data-must-edit="1">編輯</button>' +
+          '<button type="button" class="pk-group-head pk-group-head-rest" data-group-toggle="' + esc(g) + '" tabindex="-1" aria-hidden="true">' + chev + '</button></div>' :
         '<button type="button" class="pk-group-head" data-group-toggle="' + esc(g) + '" aria-expanded="' + !shut + '">' +
-          '<b>' + esc(g) + '</b><span class="pk-group-n">' + n + ' / ' + rows.length + '</span>' +
-          (done ? '<span class="pk-group-ok" aria-label="這組都放好了">' + CHECK_SVG + '</span>' : '') +
-          '<span class="pk-group-chev" aria-hidden="true">' + (shut ? '+' : '−') + '</span></button>' +
+          '<b>' + esc(g) + '</b><span class="pk-group-n">' + n + ' / ' + rows.length + '</span>' + ok + chev + '</button>';
+      return '<section class="pk-group' + (done ? ' complete' : '') + (shut ? ' shut' : '') + '" data-group="' + esc(g) + '">' + head +
         '<div class="pk-group-body"' + (shut ? ' hidden' : '') + '>' + rows.map(function (e) { return todoRowHTML(e, boxes, act); }).join('') + '</div></section>';
     }).join('');
   }
@@ -1675,10 +1682,9 @@
     }).join('') : '<p class="muted small">必帶清單是空的。</p>';
     $('#must-zone').innerHTML = zoneOptions('checked');
   }
-  $('#must-open').addEventListener('click', function () {
-    $('#account-sheet').hidden = true;
-    renderMust();
-    $('#must-sheet').hidden = false;
+  function openMust() { renderMust(); $('#must-sheet').hidden = false; }
+  document.addEventListener('click', function (ev) {
+    if (ev.target.closest && ev.target.closest('[data-must-edit]')) { ev.preventDefault(); openMust(); }
   });
   $('#must-sheet').addEventListener('click', function (ev) {
     var t = ev.target, d = t.closest('[data-must-del]');

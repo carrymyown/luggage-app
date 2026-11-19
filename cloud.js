@@ -133,7 +133,8 @@
   function tagFor(path) { return BUCKET + '/' + path; }   // 暫存裡記下「已在新空間」
   // 有照片的資料：衣櫃／抽屜物品，加上行李箱
   // 有照片的：衣櫃／抽屜物品、行李箱、購物紀錄（自己會帶出門的）
-  function withPhoto() { var s = App.state(); return s.memory.concat(s.bags || [], (s.shopping || {}).purchases || []).filter(function (m) { return m.photoId; }); }
+  // 另外還有帳號的頭像（state.profile）
+  function withPhoto() { var s = App.state(); return s.memory.concat(s.bags || [], (s.shopping || {}).purchases || [], s.profile ? [s.profile] : []).filter(function (m) { return m && m.photoId; }); }
 
   // 確認照片真的在雲端、而且大小正確
   function verify(path, size) {
@@ -364,28 +365,25 @@
   function render() {
     var box = $('#cloud-box');
     if (!box) return;
+    // 帳號選單只放必要的東西：沒登入時是登入表單；登入後最上方是名字與頭像（profile.js），登出在選單最下面
     if (!client) {
-      box.innerHTML = '<p class="muted small">雲端功能暫時無法使用（可能沒有網路）。資料仍安全地存在這台裝置，有網路後重新整理即可。</p>';
+      box.innerHTML = '<p class="muted small">雲端暫時無法使用</p>';
     } else if (!user) {
       box.innerHTML =
-        '<div class="field-title">登入雲端</div>' +
-        '<p class="muted small">登入後，資料和照片會存到雲端，換裝置也看得到。第一次登入時，這台裝置的資料會自動上傳，不會遺失。</p>' +
+        '<div class="field-title">登入</div>' +
         '<label>Email<input id="cl-email" type="email" inputmode="email" autocomplete="email" autocapitalize="off" placeholder="you@example.com"></label>' +
         '<label>密碼<input id="cl-pass" type="password" autocomplete="current-password" placeholder="至少 6 個字"></label>' +
         '<div class="cloud-btns"><button type="button" id="cl-login" class="btn primary">登入</button>' +
         '<button type="button" id="cl-signup" class="btn ghost">註冊新帳號</button></div>' +
         '<button type="button" id="cl-forgot" class="link small">忘記密碼</button>';
     } else {
-      box.innerHTML =
-        '<div class="cloud-user">已登入：<b>' + esc(user.email || '') + '</b></div>' +
-        '<div id="cloud-status" class="cloud-status"></div>' +
-        '<div class="cloud-btns"><button type="button" id="cl-sync" class="btn ghost">立即同步</button>' +
-        '<button type="button" id="cl-logout" class="btn ghost">登出</button></div>' +
-        '<p class="muted small">登出時會先確認資料都已同步，再清掉這台裝置上的資料；雲端的資料會保留。</p>';
+      box.innerHTML = '';
     }
-    if (App.sampleMode()) box.innerHTML += '<p class="muted small">' + (user ? '現在是範例資料，不會同步到雲端；清除範例後就會回到你自己的資料。' :
-      '現在顯示的是範例資料；登入後會換成你自己的資料，範例不會上傳。') + '</p>';
+    box.hidden = !box.innerHTML;
+    var out = $('#cl-logout');
+    if (out) { out.hidden = !user; out.disabled = false; out.textContent = '登出'; }
     renderStatus();
+    if (window.Profile) window.Profile.render();
   }
 
   function busy(btn, on, label) {

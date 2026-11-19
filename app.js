@@ -287,6 +287,8 @@
     if (!Array.isArray(s.packLists)) s.packLists = [];
     if (!s.dayPlans || typeof s.dayPlans !== 'object' || Array.isArray(s.dayPlans)) s.dayPlans = {};
     if (!s.prefs || typeof s.prefs !== 'object' || Array.isArray(s.prefs)) s.prefs = {};
+    // 名字與頭像（帳號選單、右上角）：跟著雲端同步
+    if (!s.profile || typeof s.profile !== 'object' || Array.isArray(s.profile)) s.profile = { name: '', photoId: null };
     if (!s.cityAvail || typeof s.cityAvail !== 'object' || Array.isArray(s.cityAvail)) s.cityAvail = { byCountry: {}, byCity: {} };   // 城市當地好不好買
     // 衣服標籤新版：顏色補上三種之一（深色／淺色／大地色，詳細顏色保留）、場合「度假」轉成「休閒」
     if (window.Clothing && window.Clothing.fixTags) (s.memory || []).forEach(function (m) { if (m && m.clothing) window.Clothing.fixTags(m.clothing); });   // 個人設定：lang 語言（zh／en），跟著雲端同步
@@ -1868,6 +1870,7 @@
     else if (view === 'outfit') { if (window.Outfit) window.Outfit.show(decodeURIComponent(parts[1] || ''), decodeURIComponent(parts[2] || '')); }
     else if (window.Closet) window.Closet.show(decodeURIComponent(parts.slice(1).join('/')));
     window.scrollTo(0, 0);
+    if (window.Profile) window.Profile.render();   // 右上角的頭像（雲端資料回來時也更新）
     if (window.Onboard) window.Onboard.afterRoute(view);   // 第一次使用設定、範例提示列、使用提示
   }
 

@@ -531,6 +531,14 @@ window.LANG = { zh: { name: '繁體中文' }, en: { name: 'English', text: {}, r
   R(/^(.+)：好買，到當地買$/, function (m, tr) { return tr(m[1]) + ': easy — buy it there'; });
   R(/^(.+)：不好買，帶旅行分裝$/, function (m, tr) { return tr(m[1]) + ': hard — bring travel sizes'; });
 
+  // 帳號選單：名字與頭像；使用提示「上一個」
+  add({
+    '名字': 'Name', '上一個': 'Back', '設定名字': 'Set your name', '名字與頭像': 'Name & photo', '上傳照片': 'Upload photo', '移除照片': 'Remove photo',
+    '例如：小安': 'e.g. Ann', '我的家': 'My homes', '已儲存': 'Saved', '怎麼稱呼你？': 'What should we call you?',
+    '範例模式中不能修改，清除範例後再改': 'Can’t edit while viewing the sample — clear the sample first', '這張照片讀不進來': 'Couldn’t read this photo',
+    '雲端暫時無法使用': 'Cloud is unavailable right now', '照片存不進去': 'Couldn’t save the photo'
+  });
+
   R(/^要放到(.+)的家$/, function (m, tr) { return 'goes to ' + tr(m[1]) + ' home'; });
   R(/^給(.+)$/, function (m, tr) { return 'for ' + tr(m[1]); });
 

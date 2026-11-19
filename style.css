@@ -2187,6 +2187,7 @@ svg * { vector-effect: non-scaling-stroke; }
   min-height: 36px; padding: 0 14px; cursor: pointer; border-radius: 0 !important; text-transform: uppercase;
 }
 .coach-btn.primary { background: #FFFFFF; color: #111111; font-weight: 500 !important; }
+.coach-skip { margin-right: auto; border: 0; background: none; color: #BDBDBD; font: inherit; font-size: 12px !important; letter-spacing: 0.08em; min-height: 36px; padding: 0 4px 0 0; cursor: pointer; text-decoration: underline; text-underline-offset: 3px; }
 .coach-arrow { position: absolute; width: 0; height: 0; margin-left: -7px; border: 7px solid transparent; }
 .coach-card.below .coach-arrow { top: -14px; border-bottom-color: #111111; }
 .coach-card:not(.below) .coach-arrow { bottom: -14px; border-top-color: #111111; }
@@ -2383,6 +2384,11 @@ svg * { vector-effect: non-scaling-stroke; }
 .pk-group-ok { display: inline-flex; align-items: center; justify-content: center; width: 16px; height: 16px; border: 1px solid #111111; color: #111111; }
 .pk-group-chev { margin-left: auto; width: 24px; text-align: center; color: var(--c-meta); font-size: 16px; }
 .pk-group.complete .pk-group-head b { color: var(--c-meta); }
+.pk-group-top { display: flex; align-items: center; border-bottom: 1px solid var(--rule); }
+.pk-group-top .pk-group-head { border-bottom: 0; }
+.pk-group-top .pk-group-head-main { width: auto; flex: none; }
+.pk-must-edit { flex: none; min-height: 44px; padding: 0 4px; margin-left: 6px; color: var(--c-meta); font-size: 12px; }
+.pk-group-top .pk-group-head-rest { flex: 1; min-width: 24px; }
 /* 打勾的項目留在原組：方框填滿、名稱變灰 */
 .pk-todo.done .pk-name { color: var(--c-meta); text-decoration: line-through; text-decoration-thickness: 1px; text-decoration-color: var(--line); }
 .pk-todo.done .pk-check { background: #111111; border-color: #111111; }
@@ -2401,7 +2407,7 @@ svg * { vector-effect: non-scaling-stroke; }
 /* =====================================================================
    語言 / Language；英文模式：中文後面的英文小標不重複顯示
    ===================================================================== */
-.account-lang { margin: 4px 0 18px; }
+.account-lang { margin: 0; }
 .lang-seg { display: inline-flex; }
 .lang-seg button { min-height: 40px; padding: 0 16px; }
 .lang-en .tab-en, .lang-en .lbl-en { display: none !important; }
@@ -2473,3 +2479,32 @@ svg * { vector-effect: non-scaling-stroke; }
 .tabbar { position: fixed !important; left: 0; right: 0; bottom: 0; z-index: 18; padding-bottom: env(safe-area-inset-bottom, 0px); }
 /* 打字時（手機、iPad 的螢幕鍵盤打開）先收起導覽列，才不會蓋住輸入框和按鈕 */
 body.kb-open .tabbar { display: none; }
+
+/* 名字與頭像：圓形（照片或名字第一個字），帳號選單只保留必要項目 */
+.avatar { display: inline-flex; align-items: center; justify-content: center; flex: none; overflow: hidden; border-radius: 50% !important; background: #111111; color: #FFFFFF; font-weight: 500; line-height: 1; }
+.avatar img { width: 100%; height: 100%; object-fit: cover; display: block; border-radius: 50% !important; }
+.avatar.none { background: transparent; color: var(--text); }
+.avatar.sm { width: 28px; height: 28px; font-size: 13px; }
+.avatar.md { width: 44px; height: 44px; font-size: 18px; }
+.avatar.lg { width: 76px; height: 76px; font-size: 30px; }
+.avatar.none.md, .avatar.none.lg { border: 1px solid var(--rule); }
+.account-face { display: inline-flex; line-height: 0; }
+.account-btn.has-avatar .account-dot { top: 2px; right: 2px; }
+.account-profile { display: flex; align-items: center; gap: 14px; width: 100%; padding: 4px 0 16px; margin: 0 0 4px; border: 0; border-bottom: 1px solid var(--rule); background: none; font: inherit; color: var(--text); text-align: left; cursor: pointer; }
+.account-profile[hidden] { display: none; }
+.ap-name { flex: 1; min-width: 0; font-size: 17px; font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ap-chev { color: var(--c-meta); font-size: 18px; }
+.account-list { display: flex; flex-direction: column; margin: 4px 0 14px; }
+.account-item { display: flex; align-items: center; justify-content: space-between; gap: 12px; width: 100%; min-height: 48px; padding: 0; border: 0; border-bottom: 1px solid var(--line); background: none; font: inherit; font-size: 15px; color: var(--text); text-align: left; cursor: pointer; }
+.form .account-list label.account-item { margin: 0; font-size: 15px; color: var(--text); }
+.account-item[hidden] { display: none; }
+.account-item.account-lang { cursor: default; flex-wrap: wrap; padding: 8px 0; }
+.account-label { font-size: 15px; }
+.account-lang .lang-seg { margin: 0; }
+.account-logout { color: var(--c-meta); }
+#cloud-box[hidden] { display: none; }
+.pf-photo-row { display: flex; align-items: center; gap: 18px; margin: 6px 0 14px; }
+.pf-photo-btns { display: flex; flex-direction: column; align-items: flex-start; gap: 8px; }
+.form .pf-photo-btns label.file-link { margin: 0; color: var(--primary); font-size: 0.85rem; }
+.profile-panel .account-homes { margin-top: 18px; }
+#account-sheet .account-list label.account-item { display: flex !important; font-size: 15px !important; letter-spacing: normal !important; text-transform: none !important; color: var(--text) !important; margin: 0 !important; }

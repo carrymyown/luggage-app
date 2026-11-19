@@ -30,6 +30,7 @@
     shownThisVisit = true;
     step = at || 0; pickedBags = {};
     $('#ob-home').value = ''; $('#ob-home-city').value = '';
+    $('#ob-name').value = (window.Profile && window.Profile.data().name) || '';
     var d = st().defaults || {}, a = d.allowance || {};
     $('#ob-airline').value = d.airline || '';
     $('#ob-checked').value = a.checked == null ? '' : a.checked;
@@ -44,14 +45,14 @@
       el.hidden = +el.getAttribute('data-ob-step') !== step;
     });
     Array.prototype.forEach.call(document.querySelectorAll('.ob-dots'), function (el) {
-      el.innerHTML = [1, 2, 3].map(function (i) { return '<i class="' + (i === step ? 'on' : '') + '"></i>'; }).join('');
+      el.innerHTML = [1, 2, 3, 4].map(function (i) { return '<i class="' + (i === step ? 'on' : '') + '"></i>'; }).join('');
     });
     $('#ob-homes').innerHTML = App.homes().map(function (h) { return '<span class="chip on">' + esc(homeLabel(h)) + '</span>'; }).join('');
     $('#ob-bags').innerHTML = BAG_PRESETS.map(function (b, i) {
       return '<button type="button" class="chip' + (pickedBags[i] ? ' on' : '') + '" data-ob-bag="' + i + '">' + (pickedBags[i] ? '✓ ' : '') + b[1] + '</button>';
     }).join('');
     $('#ob-nav').hidden = step === 0;
-    $('#ob-next').textContent = step === 3 ? '完成' : '下一步';
+    $('#ob-next').textContent = step === 4 ? '完成' : '下一步';
   }
 
   function num(v) { var n = parseFloat(v); return isFinite(n) && n >= 0 ? n : ''; }
@@ -64,11 +65,12 @@
 
   // 每一步按「下一步」時存起來；按「跳過」就不存這一步
   function saveStep() {
-    if (step === 1 && ($('#ob-home-city').value.trim() || $('#ob-home').value.trim())) {
+    if (step === 1 && window.Profile) window.Profile.setName($('#ob-name').value);   // 名字（可以跳過，之後在帳號選單改）
+    if (step === 2 && ($('#ob-home-city').value.trim() || $('#ob-home').value.trim())) {
       if (!addHomeFrom($('#ob-home-city'), $('#ob-home'))) return false;   // 要填所在城市
     }
-    if (step === 2) setDefaults($('#ob-airline').value, $('#ob-checked').value, $('#ob-carry').value, $('#ob-personal').value);
-    if (step === 3) {
+    if (step === 3) setDefaults($('#ob-airline').value, $('#ob-checked').value, $('#ob-carry').value, $('#ob-personal').value);
+    if (step === 4) {
       var home = App.homes()[0] || '';
       Object.keys(pickedBags).forEach(function (i) {
         if (!pickedBags[i]) return;
@@ -79,6 +81,7 @@
       pickedBags = {};
     }
     App.save();
+    if (window.Profile) window.Profile.render();
     return true;
   }
 
@@ -108,7 +111,7 @@
 
   function next(skip) {
     if (!skip && saveStep() === false) return;
-    if (step >= 3) { finishOnboard(); return; }
+    if (step >= 4) { finishOnboard(); return; }
     step++;
     renderOnboard();
   }
@@ -199,19 +202,21 @@
   // ---------- 範例模式的使用提示：五個重點，一步一步出現在真實畫面上 ----------
   // 黑底白字的提示卡＋被說明的地方外圍一圈虛線框；箭頭依照按鈕在畫面上的實際位置計算（捲動、旋轉都跟著更新）
   // 只在範例模式出現；看到第幾個記在 cmo-coach（帳號選單「再看一次範例」會從第 1 個重新開始）
+  // 順序：首頁 → 行程（每天的穿搭小方格）→ 行程（每一段航班的額度）→ 打包 → 家 → 中間的＋
+  // 按「下一個」「上一個」時，那一則在別的頁面就自動切過去（page 對應 PAGE_OF；hash 是要切到的網址）
   var COACH = [
-    { page: 'home', target: '#view-home .trip-card .tc-value', away: '.tabbar a[href="#home"]',
+    { page: 'home', hash: '#home', target: '#view-home .trip-card .tc-value', away: '.tabbar a[href="#home"]',
       title: '這趟還能放多少', body: '打包、購物、禮物都會自動算進來，快滿、超重會標示提醒。' },
-    { page: 'closet', target: '.home-switch', away: '.tabbar a[href="#closet"]',
+    { page: 'outfit', hash: 'outfit', target: '#view-outfit .od-sq', away: '#view-trips .trip-card, .tabbar a[href="#trips"]',
+      title: '每天穿什麼', body: '點這裡用衣櫃的衣服搭配，搭好的會自動加進打包清單。' },
+    { page: 'trips', hash: '#trips', target: '#view-trips .trip-card .trip-route, #view-trips .trip-card, #trip-mode', away: '.tabbar a[href="#trips"]',
+      title: '每一段航班的額度', body: '填好航班和行李額度，到了有家的城市會提醒你整理行李。點一趟旅程，看每一天的穿搭。' },
+    { page: 'pack', hash: '#pack', target: '#pack-tabs', away: '.tabbar a[href="#pack"]',
+      title: '先列清單，再打勾', body: '打勾就是放進行李，行李的進度條會即時更新；往左滑或按「編輯」可以刪除。' },
+    { page: 'closet', hash: '#closet', target: '#view-closet .home-switch', away: '.tabbar a[href="#closet"]',
       title: '每個家有什麼', body: '衣服放衣櫃、其他東西放抽屜；家裡已經有的，出門就不用再帶。' },
     { page: '', target: '#plus-btn',
-      title: '隨時新增', body: '新增衣服、抽屜物品、記一筆購物或禮物，都從這裡開始。' },
-    { page: 'pack', target: '#pack-tabs', away: '.tabbar a[href="#pack"]',
-      title: '先列清單，再打勾', body: '打勾就是放進行李，行李的進度條會即時更新；往左滑或按「編輯」可以刪除。' },
-    { page: 'trips', target: '#view-trips .trip-card .trip-route, #view-trips .trip-card, #trip-mode', away: '.tabbar a[href="#trips"]',
-      title: '每一段航班的額度', body: '填好航班和行李額度，到了有家的城市會提醒你整理行李。點一趟旅程，看每一天的穿搭。' },
-    { page: 'outfit', target: '#view-outfit .od-sq.empty, #view-outfit .od-look', away: '#view-trips .trip-card, .tabbar a[href="#trips"]',
-      title: '每天穿什麼', body: '點這裡用衣櫃的衣服搭配，搭好的會自動加進打包清單。' }
+      title: '隨時新增', body: '新增衣服、抽屜物品、記一筆購物或禮物，都從這裡開始。' }
   ];
   var PAGE_OF = { home: 'home', closet: 'closet', drawer: 'closet', bags: 'closet', pack: 'pack', trips: 'trips', outfit: 'outfit' };
   var COACH_KEY = 'cmo-coach';
@@ -220,7 +225,29 @@
   function resetCoach() { saveCoach({ step: 0, done: false }); }
   try { localStorage.removeItem('cmo-tips-seen'); } catch (e) { /* 舊的小提示不用了 */ }
 
-  var card = null, ring = null, curView = 'home', curStep = -1, loop = null, scrolledFor = -1;
+  var card = null, ring = null, curView = 'home', curStep = -1, loop = null, scrolledFor = -1, waitFor = -1;
+  // 那一則提示要切到的網址（每天的穿搭：下一趟旅程的每日列表）
+  function hashOf(c) {
+    if (c.hash !== 'outfit') return c.hash || '';
+    var t = (App.nextTrip && App.nextTrip()) || st().trips[0];
+    return t ? '#outfit/' + encodeURIComponent(t.id) : '#trips';
+  }
+  function onPageOf(i) { var c = COACH[i]; return !c.page || PAGE_OF[curView] === c.page; }
+  // 走到第 i 則：在別的頁面就先切過去（切好之後 afterRoute → showTips 再顯示、捲到按鈕的位置）
+  function goStep(i) {
+    var st0 = coachState();
+    st0.step = Math.max(0, Math.min(COACH.length - 1, i)); saveCoach(st0);
+    var h = hashOf(COACH[st0.step]);
+    if (!onPageOf(st0.step) && h) {
+      waitFor = st0.step;
+      if (card) { card.hidden = true; ring.hidden = true; }
+      location.hash = h;
+      render();
+      return;
+    }
+    waitFor = -1;
+    render();
+  }
   function coachEls() {
     if (card) return;
     ring = document.createElement('div'); ring.className = 'coach-ring'; ring.hidden = true;
@@ -231,8 +258,10 @@
       var b = e.target.closest('[data-coach]');
       if (!b) return;
       var act = b.getAttribute('data-coach'), st0 = coachState();
-      if (act === 'next') { st0.step = Math.min(COACH.length - 1, curStep + 1); saveCoach(st0); render(); return; }
+      if (act === 'next') { goStep(curStep + 1); return; }
+      if (act === 'prev') { goStep(curStep - 1); return; }
       st0.done = true; saveCoach(st0); hideCoach();   // 知道了／開始使用：關掉所有提示
+      if (act === 'start') { if (location.hash !== '#home' && location.hash !== '') location.hash = '#home'; window.scrollTo(0, 0); }   // 最後一則：回到首頁
     });
   }
   function visible(el) {
@@ -242,7 +271,8 @@
   }
   function targetOf(i) {
     var c = COACH[i];
-    var onPage = !c.page || PAGE_OF[curView] === c.page;
+    var onPage = onPageOf(i);
+    if (!onPage && waitFor === i) return null;   // 正在切到那一頁：等切好再顯示
     if (onPage) {
       // 依序找：寫在前面的優先（例如行程先找旅程卡片，沒有才用頁面標題）
       var sels = c.target.split(',');
@@ -277,8 +307,9 @@
     var last = curStep === COACH.length - 1, c = COACH[curStep];
     card.innerHTML = '<div class="coach-num">' + (curStep + 1) + ' / ' + COACH.length + '</div>' +
       '<div class="coach-title">' + c.title + '</div><p class="coach-body">' + c.body + '</p>' +
-      '<div class="coach-btns">' + (last ? '' : '<button type="button" class="coach-btn" data-coach="next">下一個</button>') +
-      '<button type="button" class="coach-btn' + (last ? ' primary' : '') + '" data-coach="done">' + (last ? '開始使用' : '知道了') + '</button></div>' +
+      '<div class="coach-btns">' + (last ? '' : '<button type="button" class="coach-skip" data-coach="done">知道了</button>') +
+      (curStep > 0 ? '<button type="button" class="coach-btn" data-coach="prev">上一個</button>' : '') +
+      (last ? '<button type="button" class="coach-btn primary" data-coach="start">開始使用</button>' : '<button type="button" class="coach-btn primary" data-coach="next">下一個</button>') + '</div>' +
       '<i class="coach-arrow"></i>';
     scrolledFor = -1;
     if (!loop) tick();
@@ -292,9 +323,11 @@
     var el = targetOf(curStep);
     if (!el) { card.hidden = true; ring.hidden = true; return; }
     if (scrolledFor !== curStep) {
+      // 先捲到按鈕的位置（切換頁面後也一樣），箭頭才指得準；捲好的下一格再顯示
       scrolledFor = curStep;
       var r0 = el.getBoundingClientRect();
-      if (r0.top < 70 || r0.bottom > innerHeight - 80) el.scrollIntoView({ block: 'center' });
+      var bar0 = document.querySelector('.tabbar'), bottom0 = bar0 ? bar0.getBoundingClientRect().top : innerHeight;
+      if (r0.top < 70 || r0.bottom > bottom0 - 12) { el.scrollIntoView({ block: 'center' }); card.hidden = true; ring.hidden = true; return; }
     }
     place(el);
   }
@@ -321,10 +354,13 @@
   function showTips(view) {
     curView = view;
     if (blocked()) { hideCoach(); return; }
-    // 切到某一頁：直接跳到那一頁的提示
     var st0 = coachState();
-    var idx = COACH.findIndex(function (c) { return c.page && c.page === PAGE_OF[view]; });
-    if (idx >= 0 && idx !== st0.step && view !== 'home') { st0.step = idx; saveCoach(st0); }
+    if (waitFor >= 0 && onPageOf(waitFor)) waitFor = -1;   // 提示自己切過來的：顯示那一則
+    else if (waitFor < 0 && !onPageOf(st0.step) && view !== 'home') {
+      // 自己點到別的頁面：跳到那一頁的第一則提示
+      var idx = COACH.findIndex(function (c) { return c.page && c.page === PAGE_OF[view]; });
+      if (idx >= 0) { st0.step = idx; saveCoach(st0); }
+    }
     render();
   }
 
@@ -337,9 +373,8 @@
         '<button type="button" class="link small" data-home-city="' + esc(h) + '">城市</button>' +
         '<button type="button" class="link small ah-del" data-home-del="' + esc(h) + '">刪除</button></div>';
     }).join('') : '<p class="muted small">還沒有家。</p>';
-    $('#sample-again').textContent = '再看一次範例';   // 範例模式中按：提示從第 1 個重新開始
   }
-  $('#account-btn').addEventListener('click', renderHomes);
+  $('#account-btn').addEventListener('click', function () { if (window.Profile) window.Profile.render(); });
   $('#account-home-add').addEventListener('submit', function (e) {
     e.preventDefault();
     var v = addHomeFrom($('#account-home-city'), $('#account-home-name'));
@@ -404,5 +439,5 @@
     showTips(view);
   }
 
-  window.Onboard = { afterRoute: afterRoute, open: openOnboard, setDefaults: setDefaults, resetCoach: resetCoach, showTips: function () { showTips(curView); } };
+  window.Onboard = { renderHomes: renderHomes, afterRoute: afterRoute, open: openOnboard, setDefaults: setDefaults, resetCoach: resetCoach, showTips: function () { showTips(curView); } };
 })();

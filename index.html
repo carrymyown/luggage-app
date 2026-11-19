@@ -8,17 +8,17 @@
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-title" content="Carry My Own">
   <!-- 目前的版本（發布時更新；和 version.json 比對，有新版就提示更新） -->
-  <meta name="app-version" content="20261119d">
+  <meta name="app-version" content="20261119e">
   <title>Carry My Own</title>
   <!-- 圖示：瀏覽器分頁（網址前面）、iPad 主畫面、安裝成 app 時用 -->
-  <link rel="icon" type="image/svg+xml" href="icons/favicon.svg?v=20261119d">
-  <link rel="icon" href="icons/favicon-32.png?v=20261119d" sizes="32x32" type="image/png">
-  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png?v=20261119d">
+  <link rel="icon" type="image/svg+xml" href="icons/favicon.svg?v=20261119e">
+  <link rel="icon" href="icons/favicon-32.png?v=20261119e" sizes="32x32" type="image/png">
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png?v=20261119e">
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800;900&family=Noto+Sans+TC:wght@400;500;700;900&display=swap">
-  <link rel="stylesheet" href="style.css?v=20261119d">
+  <link rel="stylesheet" href="style.css?v=20261119e">
 </head>
 <body>
   <main>
@@ -26,7 +26,7 @@
     <header class="masthead app-head">
       <span class="logo" aria-label="Carry My Own">CARRY MY OWN</span>
       <button type="button" id="account-btn" class="account-btn signed-out" aria-label="帳號、登入與備份" title="帳號">
-        <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="8.5" r="3.6"/><path d="M4.8 20c.9-3.6 3.8-5.6 7.2-5.6s6.3 2 7.2 5.6"/></svg>
+        <span class="account-face"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="8.5" r="3.6"/><path d="M4.8 20c.9-3.6 3.8-5.6 7.2-5.6s6.3 2 7.2 5.6"/></svg></span>
         <i class="account-dot" aria-hidden="true"></i>
       </button>
     </header>
@@ -842,35 +842,25 @@
     </div>
   </div>
 
-  <!-- 帳號：登入狀態、登入／登出、備份、行李箱設定 -->
+  <!-- 帳號：最上方名字與頭像（沒登入時是登入表單）→ 語言 → 匯出、匯入備份 → 再看一次範例、介紹 → 登出 -->
   <div id="account-sheet" class="sheet" hidden>
-    <div class="sheet-panel org-panel form account-panel" role="dialog" aria-modal="true" aria-labelledby="account-title">
-      <div id="account-title" class="sheet-title">帳號</div>
+    <div class="sheet-panel org-panel form account-panel" role="dialog" aria-modal="true" aria-label="帳號">
+      <button type="button" id="account-profile" class="account-profile" hidden></button>
       <div id="cloud-box"></div>
-      <!-- 語言：選了立刻切換（登入時也存到雲端） -->
-      <div class="account-lang" data-i18n-skip>
-        <div class="field-title">語言 / Language</div>
-        <div class="seg lang-seg" role="group" aria-label="語言 / Language">
-          <button type="button" data-lang-pick="zh" lang="zh-Hant">繁體中文</button>
-          <button type="button" data-lang-pick="en" lang="en">English</button>
+      <div class="account-list">
+        <!-- 語言：選了立刻切換（登入時也存到雲端） -->
+        <div class="account-item account-lang" data-i18n-skip>
+          <span class="account-label">語言 / Language</span>
+          <div class="seg lang-seg" role="group" aria-label="語言 / Language">
+            <button type="button" data-lang-pick="zh" lang="zh-Hant">繁體中文</button>
+            <button type="button" data-lang-pick="en" lang="en">English</button>
+          </div>
         </div>
-      </div>
-      <div class="account-homes">
-        <div class="field-title">家</div>
-        <div id="account-home-list"></div>
-        <form id="account-home-add" class="home-add-form" autocomplete="off">
-          <input id="account-home-city" maxlength="30" placeholder="所在城市">
-          <input id="account-home-name" maxlength="20" placeholder="名字（選填）">
-          <button type="submit" class="btn ghost dr-add-btn">新增</button>
-        </form>
-      </div>
-      <div class="account-links">
-        <button type="button" id="backup-export" class="link small">匯出備份</button>
-        <label class="link small file-link">匯入備份<input id="backup-import" type="file" accept=".json,application/json"></label>
-        <a class="link small" href="#bags" data-account-close="1">行李箱設定</a>
-        <button type="button" id="must-open" class="link small">必帶清單</button>
-        <button type="button" id="sample-again" class="link small">再看一次範例</button>
-        <button type="button" id="intro-again" class="link small">再看一次介紹</button>
+        <button type="button" id="backup-export" class="account-item">匯出備份</button>
+        <label class="account-item file-link">匯入備份<input id="backup-import" type="file" accept=".json,application/json"></label>
+        <button type="button" id="sample-again" class="account-item">再看一次範例</button>
+        <button type="button" id="intro-again" class="account-item">再看一次介紹</button>
+        <button type="button" id="cl-logout" class="account-item account-logout" hidden>登出</button>
       </div>
       <a id="backup-download" class="btn primary download-btn" hidden>下載備份檔</a>
       <button type="button" id="account-close" class="btn ghost">關閉</button>
@@ -878,7 +868,38 @@
     </div>
   </div>
 
-  <!-- 第一次使用：歡迎畫面（先看範例／直接開始設定），設定三步，每步都可以跳過 -->
+  <!-- 名字與頭像（帳號選單最上方點進來）；我的家也在這裡改 -->
+  <div id="profile-sheet" class="sheet" hidden>
+    <div class="sheet-panel org-panel form profile-panel" role="dialog" aria-modal="true" aria-labelledby="pf-title">
+      <div id="pf-title" class="sheet-title">名字與頭像</div>
+      <form id="pf-form" autocomplete="off">
+        <div class="pf-photo-row">
+          <div id="pf-avatar"></div>
+          <div class="pf-photo-btns">
+            <label class="link small file-link">上傳照片<input id="pf-photo" type="file" accept="image/*"></label>
+            <button type="button" id="pf-photo-remove" class="link small" hidden>移除照片</button>
+          </div>
+        </div>
+        <label>名字<input id="pf-name" maxlength="20" placeholder="例如：小安" enterkeyhint="done"></label>
+      </form>
+      <div class="account-homes">
+        <div class="field-title">我的家</div>
+        <div id="account-home-list"></div>
+        <form id="account-home-add" class="home-add-form" autocomplete="off">
+          <input id="account-home-city" maxlength="30" placeholder="所在城市">
+          <input id="account-home-name" maxlength="20" placeholder="名字（選填）">
+          <button type="submit" class="btn ghost dr-add-btn">新增</button>
+        </form>
+      </div>
+      <div class="cloud-btns">
+        <button type="button" id="pf-cancel" class="btn ghost">取消</button>
+        <button type="button" id="pf-save" class="btn primary">儲存</button>
+      </div>
+    </div>
+  </div>
+  </div>
+
+  <!-- 第一次使用：歡迎畫面（先看範例／直接開始設定），設定四步（名字、家、航空公司、行李箱），每步都可以跳過 -->
   <div id="onboard-sheet" class="sheet onboard-sheet" hidden>
     <div class="sheet-panel org-panel form onboard-panel" role="dialog" aria-modal="true" aria-labelledby="ob-title">
       <img class="ob-wordmark" src="icons/wordmark.png" alt="Carry My Own" width="1200" height="86">
@@ -895,6 +916,13 @@
       <div data-ob-step="1" hidden>
         <div id="ob-dots" class="ob-dots"></div>
         <div class="eyebrow">STEP 1</div>
+        <h2 class="ob-title">怎麼稱呼你？</h2>
+        <label>名字<input id="ob-name" maxlength="20" placeholder="例如：小安" enterkeyhint="done"></label>
+      </div>
+
+      <div data-ob-step="2" hidden>
+        <div class="ob-dots"></div>
+        <div class="eyebrow">STEP 2</div>
         <h2 class="ob-title">你有哪些家？</h2>
         <p class="muted small">輸入家的所在城市，可以新增多個，例如「台北」「東京」。家的名字可以自己取（例如「我的公寓」「爸媽家」），不填就用城市名稱。之後也能在右上角帳號裡修改。</p>
         <form id="ob-home-form" class="home-add-form" autocomplete="off">
@@ -905,9 +933,9 @@
         <div id="ob-homes" class="chips"></div>
       </div>
 
-      <div data-ob-step="2" hidden>
+      <div data-ob-step="3" hidden>
         <div class="ob-dots"></div>
-        <div class="eyebrow">STEP 2</div>
+        <div class="eyebrow">STEP 3</div>
         <h2 class="ob-title">常搭的航空公司和行李額度</h2>
         <p class="muted small">選填。新增旅程時會先幫你填好，每段航班還是可以改。</p>
         <label>航空公司<input id="ob-airline" maxlength="30" placeholder="例如：長榮航空"></label>
@@ -918,9 +946,9 @@
         </div>
       </div>
 
-      <div data-ob-step="3" hidden>
+      <div data-ob-step="4" hidden>
         <div class="ob-dots"></div>
-        <div class="eyebrow">STEP 3</div>
+        <div class="eyebrow">STEP 4</div>
         <h2 class="ob-title">常用的行李箱</h2>
         <p class="muted small">選填。點一下選擇，會放在你的第一個家；之後在「家 → 行李箱」可以補上尺寸、空箱重量。</p>
         <div id="ob-bags" class="chips"></div>
@@ -974,29 +1002,30 @@
     </div>
   </div>
 
-  <script src="lang.js?v=20261119d"></script>
-  <script src="i18n.js?v=20261119d"></script>
-  <script src="weights.js?v=20261119d"></script>
-  <script src="photos.js?v=20261119d"></script>
-  <script src="clothing.js?v=20261119d"></script>
-  <script src="ui.js?v=20261119d"></script>
-  <script src="app.js?v=20261119d"></script>
-  <script src="closet.js?v=20261119d"></script>
-  <script src="trips.js?v=20261119d"></script>
-  <script src="organize.js?v=20261119d"></script>
-  <script src="packing.js?v=20261119d"></script>
-  <script src="drawer.js?v=20261119d"></script>
-  <script src="bags.js?v=20261119d"></script>
-  <script src="shop.js?v=20261119d"></script>
-  <script src="outfit.js?v=20261119d"></script>
-  <script src="consumables.js?v=20261119d"></script>
-  <script src="intimates.js?v=20261119d"></script>
-  <script src="sample-data.js?v=20261119d"></script>
-  <script src="onboard.js?v=20261119d"></script>
-  <script src="intro.js?v=20261119d"></script>
-  <script src="nav.js?v=20261119d"></script>
-  <script src="backup.js?v=20261119d"></script>
+  <script src="lang.js?v=20261119e"></script>
+  <script src="i18n.js?v=20261119e"></script>
+  <script src="weights.js?v=20261119e"></script>
+  <script src="photos.js?v=20261119e"></script>
+  <script src="clothing.js?v=20261119e"></script>
+  <script src="ui.js?v=20261119e"></script>
+  <script src="app.js?v=20261119e"></script>
+  <script src="closet.js?v=20261119e"></script>
+  <script src="trips.js?v=20261119e"></script>
+  <script src="organize.js?v=20261119e"></script>
+  <script src="packing.js?v=20261119e"></script>
+  <script src="drawer.js?v=20261119e"></script>
+  <script src="bags.js?v=20261119e"></script>
+  <script src="shop.js?v=20261119e"></script>
+  <script src="outfit.js?v=20261119e"></script>
+  <script src="consumables.js?v=20261119e"></script>
+  <script src="intimates.js?v=20261119e"></script>
+  <script src="sample-data.js?v=20261119e"></script>
+  <script src="onboard.js?v=20261119e"></script>
+  <script src="profile.js?v=20261119e"></script>
+  <script src="intro.js?v=20261119e"></script>
+  <script src="nav.js?v=20261119e"></script>
+  <script src="backup.js?v=20261119e"></script>
   <script src="vendor/supabase.js"></script>
-  <script src="cloud.js?v=20261119d"></script>
+  <script src="cloud.js?v=20261119e"></script>
 </body>
 </html>
