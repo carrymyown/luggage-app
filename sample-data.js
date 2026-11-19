@@ -26,8 +26,7 @@
 
   // 衣櫃：沒有照片，畫面會用第一個顏色畫成色塊（每日穿搭畫成線條示意圖）；不放品牌
   // group／type／subtype／pattern／seasons／styles／uses 要用 clothing.js 裡的選項（每日穿搭靠這些標籤自動搭配）
-  // 灰色帽T 放在台北、沒放進清單：每日穿搭的總結會建議「多帶這件，可以多 Z 套」
-  // 卡其短褲「以防萬一」放進了清單，但 12 月用不到：總結會列在「這幾件可以不帶」
+  // 卡其短褲「以防萬一」放進了清單，但 12 月每一天的穿搭都沒用到：穿搭總覽最下面「沒穿到，可以不帶」（按「不帶」就從清單移除）
   // 衣櫃五個分頁：衣服（上衣、下身、洋裝、外套、睡衣）、鞋子、包包（黑色托特包）、配件（帽子、耳環、手錶）、貼身衣物
   // 顏色：資料裡記詳細顏色（穿搭用），衣櫃畫面只顯示深色／淺色／大地色；耳環、手錶保留金色
   // 場合：正式、休閒、運動、馬術。白色馬褲只標「馬術」：這趟沒有騎馬，不會自動放進清單，也不會排進穿搭
@@ -36,7 +35,7 @@
     { name: '條紋上衣', group: '上衣', type: 'T 恤', colors: ['海軍藍', '白'], pattern: '條紋', seasons: ['春', '秋'], styles: ['休閒'], home: '台北', weight: 0.25 },
     { name: '米色針織衫', group: '上衣', type: '針織衫', colors: ['米'], pattern: '素色', seasons: ['秋', '冬'], styles: ['休閒', '正式'], home: '台北', weight: 0.35 },
     { name: '牛仔褲', group: '下身', type: '牛仔褲', colors: ['藍'], pattern: '素色', seasons: ['春', '秋', '冬'], styles: ['休閒'], home: '台北', weight: 0.6 },
-    { name: '黑色長褲', group: '下身', type: '長褲', colors: ['黑'], pattern: '素色', seasons: ['春', '秋', '冬'], styles: ['正式', '休閒'], home: '台北', weight: 0.45 },
+    { name: '黑色長褲', group: '下身', type: '長褲', colors: ['黑'], pattern: '素色', seasons: ['春', '秋', '冬'], styles: ['正式', '休閒'], home: TOKYO, weight: 0.45 },   // 放在東京的家：到東京就有，不用帶
     { name: '風衣', group: '外套', type: '外套', colors: ['咖啡'], pattern: '素色', seasons: ['春', '秋'], styles: ['休閒', '正式'], home: '台北', weight: 0.8 },
     { name: '羊毛大衣', group: '外套', type: '大衣', colors: ['灰'], pattern: '素色', seasons: ['冬'], styles: ['正式', '休閒'], home: '台北', weight: 1.2 },
     { name: '白色運動鞋', group: '鞋子', type: '運動鞋', subtype: '休閒運動鞋', uses: ['日常', '走路'], colors: ['白'], home: '台北', weight: 0.7 },
@@ -109,10 +108,10 @@
   var ADD_TO_LIST = ['維他命', '卡其短褲', '洗髮精'];
   // 每日穿搭：每天的活動（第幾天），沒寫的那天用預設（搭機那天＝長途飛行）
   //   第 0 天台北飛東京、第 2 天在東京有正式晚餐（東京的家有黑色洋裝和樂福鞋，不用帶）
-  //   CONFIRM：按過「確定這套」的那幾天（這套的衣服會加進打包清單，不重複）
-  //   前三天已經搭好（每日列表右邊的小方格是穿搭縮圖），之後幾天還沒搭（虛線框＋「＋」）
+  //   CONFIRM：按過「確定這套」的那幾天（這套的衣服會加進打包清單，不重複）；'all'＝每一天都搭好了
+  //   每一天都搭好（每日列表右邊的小方格都是穿搭縮圖，行程列表的摘要「穿搭 8/8」），最下面才會列出「沒穿到，可以不帶」
   var DAY_ACTS = [{ day: 0, acts: ['長途飛行'] }, { day: 1, acts: ['日常逛街'] }, { day: 2, acts: ['正式場合'] }, { day: 5, acts: ['日常逛街'] }, { day: 6, acts: ['運動'] }];
-  var CONFIRM = [0, 1, 2];
+  var CONFIRM = 'all';
   // 已經打勾（放進行李）的東西，其他的還沒打勾
   var PACKED = ['護照', '錢包', '白色 T 恤', '牛仔褲', '充電線', '白色運動鞋'];
 
@@ -155,7 +154,7 @@
   if (window.I18N) window.I18N.addSample(EN_NAMES);
 
   // 範例內容的版本：改了範例內容就加 1，已經打開過舊範例的裝置會自動換成新的
-  var VERSION = 8;
+  var VERSION = 9;
 
   // ================= 產生範例（用各功能自己的新增函式） =================
 
@@ -224,7 +223,8 @@
     // 活動改了（第 6 天運動）：打包清單的貼身衣物建議跟著更新；免洗內褲自己加 3 件放進行李
     window.Packing.prepareTrip(trip, zones, [], []);
     window.Packing.addIntimate(trip, DISPOSABLE.id, DISPOSABLE.qty, DISPOSABLE.pack);
-    CONFIRM.forEach(function (n) { window.Outfit.confirm(trip.id, day(n)); });
+    (CONFIRM === 'all' ? window.Outfit.tripDays(trip).map(function (d) { return d.date; }) : CONFIRM.map(day))
+      .forEach(function (d) { window.Outfit.confirm(trip.id, d); });
 
     PURCHASES.forEach(function (p) {
       window.Shop.writePurchase(null, { tripId: trip.id, date: day(p.day), name: p.name, weight: p.weight, qty: p.qty, price: p.price,

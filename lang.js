@@ -552,6 +552,16 @@ window.LANG = { zh: { name: '繁體中文' }, en: { name: 'English', text: {}, r
   });
   R(/^快速檢查：(.+)的家：保養品、洗漱用品、保健品、食品$/, function (m, tr) { return 'Quick check at ' + tr(m[1]) + ' home: skincare, toiletries, health, food'; });
 
+  // 行程摘要、穿搭總覽「沒穿到，可以不帶」、確定後回上一頁
+  add({
+    '已更新穿搭': 'Outfit updated', '穿搭沒有存好，請再試一次': 'Outfit not saved — please try again',
+    '沒穿到，可以不帶': 'Not worn — leave behind?', '不帶': 'Leave behind'
+  });
+  R(/^穿搭 (\d+)\/(\d+)$/, function (m) { return 'Outfits ' + m[1] + '/' + m[2]; });
+  R(/^這幾件已經打包，但這趟的穿搭都沒用到，不帶可以少 ([\d.]+) kg$/, function (m) { return 'Packed but not used in any outfit. Leaving these saves ' + m[1] + ' kg.'; });
+  R(/^還有 (\d+) 天沒搭，搭完再告訴你哪些可以不帶$/, function (m) { return m[1] + (m[1] === '1' ? ' day' : ' days') + ' left to style. We\'ll show what to leave behind once you\'re done.'; });
+  R(/^這趟不帶：(.+)$/, function (m, tr) { return 'Leaving behind: ' + tr(m[1]); });
+
   R(/^要放到(.+)的家$/, function (m, tr) { return 'goes to ' + tr(m[1]) + ' home'; });
   R(/^給(.+)$/, function (m, tr) { return 'for ' + tr(m[1]); });
 

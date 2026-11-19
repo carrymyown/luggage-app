@@ -361,12 +361,13 @@
   }
 
   // 登出清資料後到重新載入前，不再寫入任何資料（避免把剛清掉的資料又存回去）
-  var locked = false;
+  var locked = false, saveOk = true;
   function save() {
-    if (locked) return;
+    if (locked) { saveOk = false; return false; }
     delete state.pristine;
+    saveOk = true;
     try { localStorage.setItem(dataKey(), JSON.stringify(state)); }
-    catch (e) { toast('無法儲存（瀏覽器可能在私密模式）'); }
+    catch (e) { saveOk = false; toast('無法儲存（瀏覽器可能在私密模式）'); }
     // 有登入雲端的話，稍後自動同步（範例模式不同步）
     if (window.Cloud && !sampleMode()) window.Cloud.schedule();
     // 有設預留空間：打包快吃到預留空間就提醒
@@ -438,12 +439,12 @@
   }
 
   var toastTimer;
-  function toast(msg) {
+  function toast(msg, ms) {
     var el = $('#toast');
     el.textContent = msg;
     el.classList.add('show');
     clearTimeout(toastTimer);
-    toastTimer = setTimeout(function () { el.classList.remove('show'); }, 1800);
+    toastTimer = setTimeout(function () { el.classList.remove('show'); }, ms || 1800);
   }
 
   // ---------- 下一段航班 ----------
@@ -1890,6 +1891,7 @@
   function rerender() { refreshView(); if (location.hash === '' || location.hash === '#home') renderHome(); }
 
   window.App = {
+    lastSaveOk: function () { return saveOk; },
     rerender: rerender,
     reserveText: reserveText, openGoal: openGoal,
     saveQuiet: saveQuiet,

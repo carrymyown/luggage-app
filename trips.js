@@ -128,13 +128,19 @@
     return '<a class="card trip-card" href="#outfit/' + encodeURIComponent(t.id) + '">' +
       '<div class="trip-head"><span class="trip-name">' + esc(t.name) + (t.sample ? '<span class="sample-tag">範例</span>' : '') + '</span>' +
       (isNext ? '<span class="next-badge">下一趟</span>' : '') + '</div>' +
-      '<div class="muted small">' + (dates.length ? fmtDate(dates[0]) + (dates.length > 1 ? ' ～ ' + fmtDate(dates[dates.length - 1]) : '') : '日期未定') +
-      '・' + t.legs.length + ' 段航班</div>' +
+      '<div class="muted small">' + (dates.length ? fmtDate(dates[0]) + (dates.length > 1 ? ' ～ ' + fmtDate(dates[dates.length - 1]) : '') : '日期未定') + '</div>' +
+      // 摘要：讓人看出裡面有內容（例如「3 段航班・穿搭 2/5」；還沒有穿搭只顯示航班數）
+      '<div class="muted small trip-sum">' + tripSummary(t) + '</div>' +
       '<div class="trip-route">' + cities.map(function (c) {
         return '<span class="city' + (homeFor(c) ? ' is-home' : '') + '">' + (homeFor(c) ? '🏠' : '') + esc(c) + '</span>';
       }).join('<span class="arrow">→</span>') + '</div>' +
       connTags(t) +
+      '<span class="trip-chev" aria-hidden="true">›</span>' +
       '</a>';
+  }
+  function tripSummary(t) {
+    var pg = window.Outfit && window.Outfit.progress ? window.Outfit.progress(t) : { done: 0, total: 0 };
+    return t.legs.length + ' 段航班' + (pg.done > 0 ? '・穿搭 ' + pg.done + '/' + pg.total : '');
   }
 
   function renderList() {

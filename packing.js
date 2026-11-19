@@ -735,8 +735,7 @@
     var done = take.filter(function (e) { return e.checked; });
 
     document.querySelectorAll('[data-pack-tab]').forEach(function (b) { b.classList.toggle('on', b.getAttribute('data-pack-tab') === packTab); });
-    $('#pk-todo-n').textContent = todo.length;
-    $('#pk-bags-n').textContent = done.length;
+    // 分頁只顯示文字（不放數字）；每組的進度（例如「上衣 2 / 4」）和行李的進度條照舊
     $('#pack-tab-todo').hidden = packTab !== 'todo';
     $('#pack-tab-bags').hidden = packTab !== 'bags';
 

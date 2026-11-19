@@ -428,6 +428,13 @@
   }
 
   var curTrip = null, curDate = '';
+  // 進入某一天的穿搭前在哪一頁（按「確定」後回到那裡）
+  var dayFrom = '', dayFromHistory = false;
+  window.addEventListener('hashchange', function (e) {
+    var to = location.hash, from = (e.oldURL || '').split('#')[1];
+    from = from != null ? '#' + from : '';
+    if (/^#outfit\/[^/]+\/\d{4}-\d{2}-\d{2}/.test(to) && !/^#outfit\/[^/]+\/\d{4}-\d{2}-\d{2}/.test(from)) { dayFrom = from || ''; dayFromHistory = !!from; }
+  });
   function view() { return $('#view-outfit'); }
 
   function show(tid, date) {
@@ -446,34 +453,35 @@
     loadWeather(t, function () { if (location.hash.indexOf('#outfit/' + encodeURIComponent(t.id)) === 0) { if (curDate) renderDay(); else renderList(); } });
   }
 
+  // 標題：旅程名稱・日期（例如「台灣投票・11/20–11/26」；英文「Nov 20–Nov 26」）
+  function shortDate(d) {
+    var p = d.split('-');
+    if (window.I18N && window.I18N.lang() === 'en') return ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'][+p[1] - 1] + ' ' + (+p[2]);
+    return (+p[1]) + '/' + (+p[2]);
+  }
+  function titleOf(t) {
+    var days = tripDays(t);
+    var range = days.length ? shortDate(days[0].date) + (days.length > 1 ? '–' + shortDate(days[days.length - 1].date) : '') : '';
+    return (t.name || '') + (t.name && range ? '・' : '') + range;
+  }
+  // 每天都搭好了沒（按過「確定這套」）：{ done, total }（行程列表的摘要「穿搭 2/5」也用這裡）
+  function progress(t) {
+    var days = tripDays(t), done = 0;
+    days.forEach(function (d) { var pl = planOf(t.id, d.date, false); if (pl && pl.confirmed) done++; });
+    return { done: done, total: days.length };
+  }
+
   function renderList() {
     var t = curTrip, planned = planTrip(t), sm = summary(t, planned);
     var r = App.tripRemain(t);
-    var html = '<div class="page-head"><h1 data-en="OUTFITS">' + esc(t.name || '穿搭') + '</h1>' +
+    var html = '<div class="page-head"><h1>' + esc(titleOf(t) || '穿搭') + '</h1>' +
       '<a class="btn ghost small-btn" href="#trips/' + encodeURIComponent(t.id) + '">編輯旅程</a></div>';
     if (!planned.length) {
       view().innerHTML = html + '<div class="empty-state"><p class="empty-line">先填上航班日期，就能看每一天的穿搭</p><a class="btn primary" href="#trips/' + encodeURIComponent(t.id) + '">填寫航班</a></div>';
       return;
     }
-    // 整趟總結（最重要）
-    html += '<section class="of-summary">' +
-      '<div class="eyebrow">CAPSULE</div>' +
-      '<p class="of-big">這 <b data-roll="of-n">' + sm.count + '</b> 件衣服，可以搭出 <b data-roll="of-y">' + sm.looks + '</b> 套</p>' +
-      '<p class="muted small of-kg">清單上的衣服共 ' + App.fmtWeight(sm.weight) + (r.remain == null ? '・這趟還沒設定額度' :
-        '・這趟還能放 <span data-roll="of-r">' + kg(r.remain) + '</span> kg・清單全部放進去後約 <span data-roll="of-a">' + kg(r.remain - sm.todo) + '</span> kg') + '</p>';
-    if (sm.unused.length) {
-      html += '<div class="of-tip"><div class="of-tip-title">這幾件可以不帶</div>' +
-        '<div class="of-chips">' + sm.unused.map(function (m) { return '<span class="of-chip">' + esc(m.name) + '</span>'; }).join('') + '</div>' +
-        '<button type="button" class="btn ghost small-btn" data-of-drop="1">從打包清單移除（' + sm.unused.length + ' 件）</button></div>';
-    }
-    if (sm.best) {
-      html += '<div class="of-tip"><div class="of-tip-title">多帶「' + esc(sm.best.m.name) + '」，可以多 ' + sm.best.z + ' 套</div>' +
-        '<p class="muted small">' + App.fmtWeight(sm.best.m.weight || 0) + '</p>' +
-        '<button type="button" class="btn ghost small-btn" data-of-add="' + esc(sm.best.m.id) + '">加入打包清單</button></div>';
-    }
-    html += '</section>';
-    // 每一天
-    html += '<section class="of-days"><div class="sec-head"><span class="eyebrow">DAYS</span></div>' + planned.map(function (p) {
+    // 1. 每一天的穿搭（最上面）
+    html += '<section class="of-days">' + planned.map(function (p) {
       var d = p.day, w = p.ctx.w;
       return '<a class="od-row" href="#outfit/' + encodeURIComponent(t.id) + '/' + d.date + '">' +
         '<span class="od-date">' + esc(md(d.date)) + '</span>' +
@@ -482,9 +490,28 @@
         (p.acts.length ? '<span class="od-acts muted small">' + esc(p.acts.join('・')) + '</span>' : '') + '</span>' +
         lookTile(p) + '</a>';
     }).join('') + '</section>';
+    // 2. 整趟：X 件衣服搭出 Y 套、還能放幾公斤
+    html += '<section class="of-summary">' +
+      '<p class="of-big">這 <b data-roll="of-n">' + sm.count + '</b> 件衣服，可以搭出 <b data-roll="of-y">' + sm.looks + '</b> 套</p>' +
+      '<p class="muted small of-kg">清單上的衣服共 ' + App.fmtWeight(sm.weight) + (r.remain == null ? '・這趟還沒設定額度' :
+        '・這趟還能放 <span data-roll="of-r">' + kg(r.remain) + '</span> kg・清單全部放進去後約 <span data-roll="of-a">' + kg(r.remain - sm.todo) + '</span> kg') + '</p></section>';
+    // 3. 沒穿到，可以不帶（最下面）：每一天都搭好之後才列出；還有日子沒搭只顯示一行灰字
+    var pg = progress(t), left = pg.total - pg.done;
+    if (left > 0) {
+      html += '<section class="of-unworn"><p class="muted small of-unworn-wait">還有 ' + left + ' 天沒搭，搭完再告訴你哪些可以不帶</p></section>';
+    } else if (sm.unused.length) {
+      var uw = sm.unused.reduce(function (s0, m) { return s0 + (Number(m.weight) || 0); }, 0);
+      html += '<section class="of-unworn"><div class="of-unworn-title">沒穿到，可以不帶</div>' +
+        '<p class="muted small of-unworn-note">這幾件已經打包，但這趟的穿搭都沒用到，不帶可以少 ' + kg(uw) + ' kg</p>' +
+        sm.unused.map(function (m) {
+          return '<div class="of-uw-row"><span class="of-uw-ph">' + pieceImg(m) + '</span>' +
+            '<span class="of-uw-name">' + esc(m.name) + '<span class="muted small">' + esc(App.fmtWeight(m.weight || 0)) + '</span></span>' +
+            '<button type="button" class="btn ghost small-btn" data-of-leave="' + esc(m.id) + '">不帶</button></div>';
+        }).join('') + '</section>';
+    }
     view().innerHTML = html;
     if (window.Photos) Photos.fillThumbs(view());
-    if (window.UI) UI.rollAll(view());   // 拿掉、加進衣服後數字平滑滾動
+    if (window.UI) UI.rollAll(view());   // 拿掉衣服後數字平滑滾動
   }
   function kg(v) { return (Math.round(v * 10) / 10).toFixed(1); }
 
@@ -668,9 +695,20 @@
       return;
     }
     if (t.closest('[data-of-confirm]')) {
-      var n = confirm(curTrip.id, curDate);
-      App.toast(n ? '已確定這套，加了 ' + n + ' 件到打包清單' : '已確定這套');
-      renderDay();
+      // 存好這套 → 回到進來穿搭前的那一頁，下方短暫顯示「已更新穿搭」；存不進去就留在原地顯示錯誤
+      var ok = false;
+      try { confirm(curTrip.id, curDate); ok = App.lastSaveOk ? App.lastSaveOk() : true; } catch (err) { ok = false; }
+      if (!ok) { App.toast('穿搭沒有存好，請再試一次'); return; }
+      var back = dayFrom && dayFrom.indexOf('#outfit/' + encodeURIComponent(curTrip.id) + '/') !== 0 ? dayFrom : '#outfit/' + encodeURIComponent(curTrip.id);
+      if (dayFromHistory && back === dayFrom) history.back(); else location.hash = back;
+      setTimeout(function () { App.toast('已更新穿搭', 2000); }, 60);
+      return;
+    }
+    if ((el = t.closest('[data-of-leave]'))) {
+      var lm = App.entryById(el.getAttribute('data-of-leave'));
+      var lk = window.Packing.removeFromTrip(curTrip, [el.getAttribute('data-of-leave')]);
+      App.save(); renderList();
+      if (lk && lm) App.toast('這趟不帶：' + lm.name);
       return;
     }
     if (t.closest('[data-of-drop]')) {
@@ -695,5 +733,5 @@
     show(decodeURIComponent(parts[1] || ''), decodeURIComponent(parts[2] || ''));
   }
 
-  window.Outfit = { show: show, refresh: refresh, setActs: setActs, confirm: confirm, tripDays: tripDays, planTrip: planTrip, summary: summary, ACTS: ACTS };
+  window.Outfit = { progress: progress, show: show, refresh: refresh, setActs: setActs, confirm: confirm, tripDays: tripDays, planTrip: planTrip, summary: summary, ACTS: ACTS };
 })();
