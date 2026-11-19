@@ -240,7 +240,30 @@
     $('#tf-acts').innerHTML = P.actOptions().map(function (a) {
       return '<button type="button" class="chip' + (acts.indexOf(a) >= 0 ? ' on' : '') + '" data-tf-act="' + esc(a) + '">' + esc(a) + '</button>';
     }).join('');
+    renderAvail();
   }
+  // 當地好不好買：這趟沒有家的城市（標記會依國家記住）
+  function renderAvail() {
+    var C = window.Consumables;
+    if (!C || !draft) return;
+    var cities = [];
+    draft.legs.forEach(function (l) { var c = (l.to || '').trim(); if (c && !homeFor(c) && cities.indexOf(c) < 0) cities.push(c); });
+    $('#tf-avail-wrap').hidden = !cities.length;
+    $('#tf-avail').innerHTML = cities.map(function (c) {
+      var v = C.availOf(c), co = C.countryOf(c);
+      return '<div class="av-row"><span class="av-city">' + esc(c) + (co ? '<span class="muted small">' + esc(co) + '</span>' : '') + '</span>' +
+        '<div class="seg av-seg" role="group" aria-label="' + esc(c) + '">' + [['', '不標記'], ['easy', '好買'], ['hard', '不好買']].map(function (o) {
+          return '<button type="button" class="' + (v === o[0] ? 'on' : '') + '" data-tf-avail="' + o[0] + '" data-tf-avail-city="' + esc(c) + '">' + o[1] + '</button>';
+        }).join('') + '</div></div>';
+    }).join('');
+  }
+  document.addEventListener('click', function (e) {
+    var b = e.target.closest('[data-tf-avail-city]');
+    if (!b || !window.Consumables) return;
+    window.Consumables.setAvail(b.getAttribute('data-tf-avail-city'), b.getAttribute('data-tf-avail'));
+    App.save();
+    renderAvail();
+  });
   document.addEventListener('click', function (e) {
     var c = e.target.closest('[data-tf-season], [data-tf-act]');
     if (!c || !draft) return;
@@ -451,6 +474,7 @@
       if (field === 'to') { $('#tf-legs [data-home="' + i + '"]').innerHTML = homeBadge(l.to); autoEndHome(); }
       if (['date', 'depTime', 'arrDate', 'arrTime', 'to', 'from'].indexOf(field) >= 0) refreshConn(+i);
       if ((field === 'to' || field === 'date') && !Array.isArray(draft.seasons)) renderPackSettings();   // 自動判斷的季節跟著更新
+      else if (field === 'to') renderAvail();   // 城市改了：當地好不好買跟著更新
     }
   });
 

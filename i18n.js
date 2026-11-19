@@ -47,7 +47,7 @@
       if (s.indexOf('\n') >= 0) return s.split('\n').map(function (x) { return text(x); }).join('\n');
       // 括號：（…）
       var b = s.match(/^(.*?)（(.+)）$/);
-      if (b) { var a1 = b[1] ? part(b[1]) : '', a2 = part(b[2]); if (a1 !== b[1] || a2 !== b[2]) return (a1 ? a1 + ' ' : '') + '(' + a2 + ')'; }
+      if (b && !/[・、，；→]/.test(b[1])) { var a1 = b[1] ? part(b[1]) : '', a2 = part(b[2]); if (a1 !== b[1] || a2 !== b[2]) return (a1 ? a1 + ' ' : '') + '(' + a2 + ')'; }
       // 用「・」「，」「：」等分開的：每一段各自翻（名稱照原樣）
       var ps = s.split(SEP);
       if (ps.length > 1) {
@@ -58,7 +58,7 @@
           if (t !== p) changed = true;
           return t;
         });
-        if (changed) return outp.join('').replace(/^\s+|\s+$/g, '');
+        if (changed) return outp.join('').replace(/^\s+/, '');   // 結尾的分隔（例如「・」）保留空格，接下一段文字
       }
       // 前面是 emoji 或符號
       var e = s.match(/^([^㐀-鿿A-Za-z0-9「]+)(.+)$/);

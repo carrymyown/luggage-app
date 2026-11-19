@@ -286,7 +286,8 @@
     if (!s.customOptions || typeof s.customOptions !== 'object') s.customOptions = {};
     if (!Array.isArray(s.packLists)) s.packLists = [];
     if (!s.dayPlans || typeof s.dayPlans !== 'object' || Array.isArray(s.dayPlans)) s.dayPlans = {};
-    if (!s.prefs || typeof s.prefs !== 'object' || Array.isArray(s.prefs)) s.prefs = {};   // 個人設定：lang 語言（zh／en），跟著雲端同步
+    if (!s.prefs || typeof s.prefs !== 'object' || Array.isArray(s.prefs)) s.prefs = {};
+    if (!s.cityAvail || typeof s.cityAvail !== 'object' || Array.isArray(s.cityAvail)) s.cityAvail = { byCountry: {}, byCity: {} };   // 城市當地好不好買   // 個人設定：lang 語言（zh／en），跟著雲端同步
     s.bags.forEach(normalizeBag);
     // 以前 app 自己建立的預設行李（托運行李 4 kg、登機箱 2.5 kg、打包清單自動建立的 0 kg）不是你選的行李箱：
     // 改成「尚未選擇行李箱」（資料保留，空箱不算，等你選真正用的行李箱）
@@ -632,7 +633,8 @@
       return sum;
     }, 0);
   }
-  function reserveOf(trip) { return { goal: goalOf(trip), used: shoppingWeight(trip) }; }
+  // 已用：行李裡的購物和禮物，加上補貨要在路上買的預估重量
+  function reserveOf(trip) { return { goal: goalOf(trip), used: shoppingWeight(trip) + (window.Consumables ? window.Consumables.plannedWeight(trip) : 0) }; }
   function kgShort(v) { var r = Math.round((Number(v) || 0) * 10) / 10; return String(Object.is(r, -0) ? 0 : r); }
   // 預留空間那一行的文字：「預留空間 已用 2 / 5 kg」，沒設定：「設定預留空間」
   function reserveText(trip) {
@@ -753,6 +755,7 @@
     var n0 = nextLeg();
     if (n0 && window.Packing) window.Packing.tripZones(n0.trip);   // 先確定這趟每種行李用哪個箱子（和打包清單同一份）
     if (window.Shop) window.Shop.renderHomeBits();
+    if (window.Consumables) window.Consumables.renderHome();   // 補貨提醒
     if (window.Organize) window.Organize.check();
     var trips = upcomingTrips();
     $('#trip-none').hidden = trips.length > 0;
@@ -1838,6 +1841,8 @@
   function route() {
     // 免洗內褲：旅程中每過一天扣掉一件（行李變輕）
     if (window.Intimates && window.Intimates.consume()) save();
+    // 補貨：抵達那個家之後，在路上買的、網路訂好的消耗品補成「滿」
+    if (window.Consumables && window.Consumables.applyArrivals()) save();
     // 登入後雲端帶回來的語言設定（換裝置也維持同一個語言）
     if (!sampleMode() && state.prefs && (state.prefs.lang === 'en' || state.prefs.lang === 'zh') && window.I18N && state.prefs.lang !== window.I18N.lang()) {
       window.I18N.set(state.prefs.lang, { quiet: true });

@@ -487,9 +487,38 @@ window.LANG = { zh: { name: '繁體中文' }, en: { name: 'English', text: {}, r
   R(/^剩 (\d+)$/, function (m) { return m[1] + ' left'; });
   R(/^已新增：(.+)$/, function (m, tr) { return 'Added: ' + tr(m[1]); });
 
+  // 消耗品、補貨、當地好不好買
+  add({
+    '滿': 'Full', '一半': 'Half', '這是消耗品（會用完的保養品、洗漱用品、保健品、食品）': 'This runs out (skincare, toiletries, supplements, food)',
+    '補貨提醒': 'Restock', '網路訂到家': 'Order online to home', '不用提醒': 'No reminder', '改選': 'Change', '已訂': 'Ordered', '記得下單': 'Order now',
+    '已加進購物計畫': 'Added to shopping plans', '這趟不再提醒': 'No more reminders this trip', '已取消': 'Cancelled', '全部略過': 'Skip all',
+    '離開前點一下更新用量，快用完的會在下次回來前提醒你。': 'Tap to update before you leave — we will remind you about anything running low before you are back.',
+    '當地好不好買': 'Easy to buy locally?', '會依國家記住，下次經過同一個國家自動帶入': 'Remembered per country and filled in next time',
+    '好買：消耗品建議到當地買；不好買：建議帶旅行分裝的份量。': 'Easy: buy consumables there. Hard: bring travel-size amounts.',
+    '不標記': 'Not set', '好買': 'Easy', '不好買': 'Hard', '到當地買': 'Buy locally', '上一個城市': 'the previous city',
+    '台灣': 'Taiwan', '日本': 'Japan', '韓國': 'Korea', '泰國': 'Thailand', '香港': 'Hong Kong', '澳門': 'Macau', '新加坡': 'Singapore', '馬來西亞': 'Malaysia',
+    '越南': 'Vietnam', '菲律賓': 'Philippines', '印尼': 'Indonesia', '澳洲': 'Australia', '紐西蘭': 'New Zealand', '英國': 'UK', '法國': 'France', '美國': 'USA'
+  });
+  R(/^(.+)的家：(.+?)(快用完|沒了)$/, function (m, tr) { return tr(m[1]) + ' home: ' + tr(m[2]) + (m[3] === '沒了' ? ' is out' : ' is running low'); });
+  R(/^在(.+)買$/, function (m, tr) { return 'Buy in ' + tr(m[1]); });
+  R(/^在(.+)買・已加進購物計畫，抵達時自動補成「滿」$/, function (m, tr) { return 'Buying in ' + tr(m[1]) + ' · added to shopping plans; set to Full when you arrive'; });
+  R(/^(.+) 提醒你下單$/, function (m, tr) { return 'reminder on ' + tr(m[1]); });
+  R(/^抵達前 (\d+) 天提醒你下單$/, function (m) { return 'We will remind you to order ' + m[1] + ' days before you arrive'; });
+  R(/^快速檢查：(.+)的家的消耗品$/, function (m, tr) { return 'Quick check: consumables at ' + tr(m[1]) + ' home'; });
+  R(/^省下 ([\d.]+ ?k?g)$/, function (m) { return 'saves ' + m[1]; });
+  R(/^(.+)的家有$/, function (m, tr) { return 'At your ' + tr(m[1]) + ' home'; });
+  R(/^沒有家的 (\d+) 晚$/, function (m) { return m[1] + (m[1] === '1' ? ' night' : ' nights') + ' away from home'; });
+  R(/^建議帶旅行分裝 約 (.+)$/, function (m) { return 'bring a travel size, about ' + m[1]; });
+  R(/^到當地買、家裡已經有，這趟一共省下 ([\d.]+) kg$/, function (m) { return 'Buying locally and using what is at home saves ' + m[1] + ' kg on this trip'; });
+
+  R(/^要放到(.+)的家$/, function (m, tr) { return 'goes to ' + tr(m[1]) + ' home'; });
+  R(/^給(.+)$/, function (m, tr) { return 'for ' + tr(m[1]); });
+
   // 最後才比對的通用句型（前面都不符合時）
   R(/^在(.+)$/, function (m, tr) { var t = tr(m[1]); return 'At ' + t; });
   R(/^從(.+)帶出$/, function (m, tr) { return 'from ' + tr(m[1]); });
   R(/^從(.+)$/, function (m, tr) { return 'from ' + tr(m[1]); });
   R(/^(.+?)\s*›$/, function (m, tr) { var t = tr(m[1]); return t === m[1] ? null : t + ' ›'; });
+  // 優先比對（要排在日期句型前面）
+  window.LANG.en.rules.unshift([/^(.+) 抵達$/, function (m, tr) { return 'arriving ' + tr(m[1]); }]);
 })();

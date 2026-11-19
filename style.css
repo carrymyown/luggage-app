@@ -2420,3 +2420,36 @@ svg * { vector-effect: non-scaling-stroke; }
 .pk-int-note { display: block; width: 100%; margin-top: 2px; }
 .pk-todo-sub { flex-wrap: wrap; }
 .must-linked { display: block; }
+
+/* =====================================================================
+   消耗品：補貨提醒、快速檢查、城市當地好不好買、到當地買
+   ===================================================================== */
+.restock-box { margin-top: 8px; }
+.rs-head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; padding-bottom: 8px; border-bottom: 1px solid var(--rule); }
+.rs-row { padding: 12px 0; border-bottom: 1px solid var(--line); }
+.rs-text { display: flex; flex-direction: column; gap: 2px; margin-bottom: 8px; }
+.rs-text b { font-size: 15px; font-weight: 500 !important; }
+.rs-btns { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.rs-done { margin: 0; font-size: 13px; color: var(--c-meta); }
+.rs-online { display: inline-flex; align-items: center; gap: 8px; font-size: 13px; min-height: 36px; }
+.rs-online.due { color: #111111; font-weight: 500 !important; }
+.qc { border: 1px solid var(--line); padding: 12px 14px; margin: 4px 0 18px; }
+.qc-head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
+.qc-hint { margin: 4px 0 8px; }
+.qc-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 8px 0; border-top: 1px solid var(--line); }
+.qc-name { flex: 1; min-width: 0; font-size: 14px; }
+.qc-levels { flex: none; display: flex; }
+.qc-lv { min-width: 52px; min-height: 40px; padding: 0 8px; border: 1px solid var(--line); margin-left: -1px; background: #FFFFFF; color: var(--c-meta); font: inherit; font-size: 12px !important; letter-spacing: 0.04em; cursor: pointer; border-radius: 0; }
+.qc-lv.on { background: #111111; border-color: #111111; color: #FFFFFF; position: relative; }
+@media (max-width: 400px) { .qc-row { flex-wrap: wrap; } .qc-levels { width: 100%; } .qc-lv { flex: 1; min-width: 0; } }
+.av-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 8px 0; border-top: 1px solid var(--line); }
+.av-city { display: flex; flex-direction: column; font-size: 14px; }
+.av-seg button { min-height: 36px; padding: 0 12px; }
+.pk-saved { margin: 10px 0 0; color: var(--text); }
+.pk-local-note { display: block; margin-top: 2px; }
+.pk-take-back { flex: none; }
+.dr-level.lv-low, .dr-level.lv-out { color: var(--text); font-weight: 500 !important; }
+.lang-en .rs-head .eyebrow { display: none; }
+/* 出發前檢查：要注意的項目用近黑色加粗（全 app 只用黑白灰，進度條除外） */
+.ck-block.bad, .ck-block.bad b, .ck-block.bad .ck-row, .ck-block.bad .ck-row b { color: var(--text) !important; }
+.ck-block.bad > b { font-weight: 500 !important; }

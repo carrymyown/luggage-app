@@ -291,8 +291,42 @@
       add(e);
     });
     if (syncIntimates(list, t)) added++;
+    syncConsumables(list, t);
     touch(list);
     return added;
+  }
+
+  // ---------- 消耗品：到當地買／家裡已經有／帶旅行分裝的份量 ----------
+  // 目的地的家有（用量不是「沒了」）→ 家裡已經有；這趟沒有家的城市都好買 → 到當地買（變灰放下方）；
+  // 有不好買的城市 → 要帶，依沒有家的晚數建議旅行分裝的份量。自己按「改成要帶」的不再自動改。
+  function syncConsumables(list, t) {
+    var C = window.Consumables;
+    if (!C || !t) return false;
+    var plan = C.tripPlan(t), changed = false;
+    list.entries.forEach(function (e) {
+      var m = e.catalogId && App.entryById(e.catalogId);
+      if (!m || !C.isConsumable(m) || e.checked || ['take', 'home', 'local'].indexOf(e.status) < 0) return;
+      if (e.consumOverride === 'take') return;
+      var want = '', note = '', w = Number(m.weight) || 0;
+      var dest = C.atDestination(t, m);
+      if (dest) {
+        want = 'home';
+        note = (App.homeCity ? App.homeCity(dest.home) : dest.home) + '的家有' + (C.isConsumable(dest.m) ? '・' + C.levelName(C.levelOf(dest.m)) : '');
+      } else if (plan.decision === 'local') {
+        want = 'local';
+        note = '到當地買・省下 ' + App.fmtWeight(w * e.qty);
+      } else if (plan.decision === 'hard' && plan.awayNights) {
+        want = 'travel';
+        w = C.travelWeight(m, plan.awayNights);
+        note = '沒有家的 ' + plan.awayNights + ' 晚・建議帶旅行分裝 約 ' + App.fmtWeight(w);
+      }
+      var status = want === 'home' ? 'home' : want === 'local' ? 'local' : 'take';
+      if (e.status !== status) { e.status = status; if (status === 'take') e.zone = defaultZone(list, e); changed = true; }
+      if ((e.consum || '') !== want) { e.consum = want; changed = true; }
+      if ((e.consumNote || '') !== note) { e.consumNote = note; changed = true; }
+      if (e.weight !== w) { e.weight = w; changed = true; }
+    });
+    return changed;
   }
 
   // ---------- 貼身衣物：依住幾晚自動建議數量（自己改過的數量不會被蓋掉） ----------
@@ -352,7 +386,7 @@
       if (e.itemId) byItem[e.itemId] = e;
       // 衣櫃、抽屜裡改過名稱或重量：清單跟著用最新的（同一樣東西只有一個重量）
       var m = e.catalogId && App.entryById(e.catalogId);
-      if (m && (e.name !== m.name || e.weight !== m.weight)) { e.name = m.name; e.weight = m.weight; changed = true; }
+      if (m && (e.name !== m.name || (e.weight !== m.weight && e.consum !== 'travel'))) { e.name = m.name; if (e.consum !== 'travel') e.weight = m.weight; changed = true; }   // 旅行分裝的份量另外算
     });
     items.forEach(function (it) {
       if (byItem[it.id]) {
@@ -505,6 +539,7 @@
     syncTripSettings(t, curList);
     var ch = reconcile(curList);
     if (syncIntimates(curList, t)) { touch(curList); ch = true; }
+    if (syncConsumables(curList, t)) { touch(curList); ch = true; }
     if (ch) App.save();
     render();
   }
@@ -516,6 +551,7 @@
     if (list.needsGenerate) { delete list.needsGenerate; generate(list, t); }
     syncTripSettings(t, list);
     syncIntimates(list, t);
+    syncConsumables(list, t);
     Object.keys(zones).forEach(function (k) { setTripZone(t, k, zones[k]); });
     (addNames || []).forEach(function (name) {
       var m = st().memory.find(function (x) { return x.name === name; });
@@ -609,6 +645,7 @@
         '<div class="pk-todo-sub"><span class="pk-w-item">' + esc(App.fmtWeight(w)) + '</span>' +
           (over ? '<span class="pk-over">會超重 ' + fmt(w - b.remain) + ' kg</span>' : '') +
           intimateNote(e) +
+          (e.consum === 'travel' && e.consumNote ? '<span class="muted small pk-int-note">' + esc(e.consumNote) + '</span>' : '') +   // 不好買：旅行分裝的份量
         '</div>' +
       '</div>' +
       '<label class="pk-zone-tag"><span>' + zoneName(e.zone) + '</span>' +
@@ -714,8 +751,24 @@
     UI.animateBars($('#view-pack'));
     $('#pack-home').innerHTML = home.map(function (e) {
       return '<button type="button" class="pk-row pk-simple gray" data-take="' + esc(e.id) + '" aria-label="改成要帶：' + esc(e.name) + '">' +
-        '<span class="pk-name">' + esc(e.name) + '</span><span class="pk-w-item">' + esc(App.fmtWeight(e.weight * e.qty)) + '</span></button>';
+        '<span class="pk-name">' + esc(e.name) + (e.consumNote ? '<span class="muted small pk-local-note">' + esc(e.consumNote) + '</span>' : '') + '</span>' +
+        '<span class="pk-w-item">' + esc(App.fmtWeight(e.weight * e.qty)) + '</span></button>';
     }).join('');
+    // 到當地買：變灰放下方，點一下拉回要帶
+    var local = list.entries.filter(function (e) { return e.status === 'local'; });
+    $('#pack-local-wrap').hidden = !local.length || packTab !== 'todo';
+    $('#pack-local').innerHTML = local.map(function (e) {
+      return '<button type="button" class="pk-row pk-simple gray" data-take="' + esc(e.id) + '" aria-label="改成要帶：' + esc(e.name) + '">' +
+        '<span class="pk-name">' + esc(e.name) + '<span class="muted small pk-local-note">' + esc(e.consumNote || '到當地買') + '</span></span>' +
+        '<span class="link small pk-take-back">改成要帶</span></button>';
+    }).join('');
+    // 這趟因為「到當地買」和「家裡已經有」一共省下多少公斤
+    var saved = local.concat(home).reduce(function (sum, e) {
+      var m = e.catalogId && App.entryById(e.catalogId);
+      return sum + (m && e.consum === 'local' ? Number(m.weight) || 0 : Number(e.weight) || 0) * (e.qty || 1);
+    }, 0);
+    $('#pack-saved').hidden = !(saved > 0) || packTab !== 'todo';
+    $('#pack-saved').textContent = saved > 0 ? '到當地買、家裡已經有，這趟一共省下 ' + UI.kg(saved) + ' kg' : '';
   }
 
   // 放進去會不會超重：會的話先問一下
@@ -804,6 +857,10 @@
     if ((el = t.closest('[data-take]'))) {
       var e3 = entryById(el.getAttribute('data-take'));
       e3.status = 'take'; e3.zone = defaultZone(curList, e3); touch(curList);
+      if (e3.consum) {   // 消耗品：自己拉回要帶的，之後不再自動改成到當地買
+        e3.consumOverride = 'take'; e3.consum = ''; e3.consumNote = '';
+        var m3 = e3.catalogId && App.entryById(e3.catalogId); if (m3) e3.weight = m3.weight;
+      }
       App.toast('已改成要帶：' + e3.name);
       commit();
       return;
@@ -1305,6 +1362,9 @@
     var over = zoneStats(list, curTrip).filter(function (s) { return s.level === 'bad'; });
 
     var html = '';
+    // 離開出發的家前：快速檢查這個家的消耗品（一頁看完，可以全部略過）
+    var oh = routeHomes(curTrip).origin;
+    if (oh && window.Consumables) html += window.Consumables.quickCheck(oh, 'ck:' + curTrip.id);
     // 必帶清單裡還沒打勾的：放最上面特別提醒
     var mustTodo = todo.filter(isMust);
     var mustMissing = App.mustList().filter(function (mu) { return !linkedMust(mu.name) && !take.some(function (e) { return sameThing(e.name, mu.name); }); });

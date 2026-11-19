@@ -104,7 +104,7 @@
     return getJSON('https://geocoding-api.open-meteo.com/v1/search?count=1&language=zh&format=json&name=' + encodeURIComponent(q)).then(function (j) {
       var r = j && j.results && j.results[0];
       if (!r) throw new Error('no city');
-      var g = { lat: r.latitude, lon: r.longitude };
+      var g = { lat: r.latitude, lon: r.longitude, country: r.country || '' };   // 國家：當地好不好買會依國家記住
       var c2 = wcache(); c2[k] = g; wsave(c2);
       return g;
     });

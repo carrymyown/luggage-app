@@ -47,13 +47,16 @@
   ];
 
   // 抽屜：分別放在台北和東京的公寓；count 空白代表「有，不記數量」
+  // level：消耗品的用量（滿／一半／快用完／沒了）。東京的公寓的洗面乳「快用完」→ 首頁補貨提醒「東京的家：洗面乳快用完」
+  //   洗髮精（消耗品、一半）放進這趟的清單；首爾標「好買」→ 打包清單建議「到當地買・省下 300 g」
   var DRAWER = [
     { key: 'passport', name: '護照', category: '必備品', weight: 0.04, home: '台北', unit: '本' },
     { name: '錢包', category: '必備品', weight: 0.15, home: '台北', unit: '個' },
     { name: '充電線', category: '電線電器', weight: 0.05, home: '台北', count: 1, unit: '包' },
     { name: '轉接頭', category: '電線電器', weight: 0.06, home: TOKYO, count: 2, unit: '個' },
-    { name: '洗面乳', category: '保養品', weight: 0.12, home: TOKYO, count: 1, unit: '條' },
+    { name: '洗面乳', category: '保養品', weight: 0.12, home: TOKYO, count: 1, unit: '條', level: 'low' },
     { name: '面膜', category: '保養品', weight: 0.03, home: '台北', count: 5, unit: '片' },
+    { name: '洗髮精', category: '必備品', weight: 0.3, home: '台北', count: 1, unit: '瓶', level: 'half' },
     { name: '維他命', category: '保健品', weight: 0.15, home: '台北', count: 1, unit: '瓶' },
     { name: '牙刷組', category: '必備品', weight: 0.05, home: TOKYO, count: 1, unit: '組' },
     { key: 'cake', name: '鳳梨酥禮盒', category: '禮物', weight: 0.5, home: '台北', count: 1, unit: '盒' }
@@ -93,7 +96,7 @@
   var PACK_ZONES = { pouch: 'pouch', personal: 'personal', carry: 'carry', checked: 'checked' };
   // 打包（清單 LIST）：會依照衣櫃、季節和必帶清單自動列出；另外用「＋ 加入」加進這幾樣抽屜裡的東西
   // 打勾的會移到「行李 BAGS」分頁，每個行李名稱下方一條進度條（已放 / 額度）
-  var ADD_TO_LIST = ['面膜', '維他命', '卡其短褲'];
+  var ADD_TO_LIST = ['面膜', '維他命', '卡其短褲', '洗髮精'];
   // 每日穿搭：每天的活動（第幾天），沒寫的那天用預設（搭機那天＝長途飛行）
   //   第 0 天台北飛東京、第 2 天在東京有正式晚餐（東京的家有黑色洋裝和樂福鞋，不用帶）
   //   CONFIRM：按過「確定這套」的那幾天（這套的衣服會加進打包清單，不重複）
@@ -122,6 +125,9 @@
   };
   var DISPOSABLE = { id: 'int-disposable', qty: 3, pack: true };
 
+  // 城市「當地好不好買」（行程 → 編輯旅程）：首爾好買、大阪不好買（會依國家記住）
+  var AVAIL = [['大阪', 'hard'], ['首爾', 'easy']];
+
   // 範例的英文版：切換到 English 時，範例的家、城市、物品、旅程、行李箱、購物和禮物用這些英文名稱
   // （只在範例模式套用；使用者自己的資料照原樣顯示）。範例內容改了，這裡也要一起加上英文。
   var EN_NAMES = {
@@ -133,12 +139,12 @@
     '黑色洋裝': 'Black dress', '藍色襯衫': 'Blue shirt', '卡其短褲': 'Khaki shorts', '灰色帽T': 'Grey hoodie',
     '洗面乳': 'Face wash', '牙刷組': 'Toothbrush set', '鳳梨酥禮盒': 'Pineapple cake box', '面膜': 'Face masks', '維他命': 'Vitamins', '充電線': 'Charging cable', '轉接頭': 'Travel adapter',
     '28 吋托運箱': '28" checked case', '20 吋登機箱': '20" cabin case', '後背包': 'Backpack', '隨身小包': 'Pouch', '東京的托運箱': 'Tokyo checked case',
-    '羊毛圍巾': 'Wool scarf', '首爾的人蔘茶': 'Ginseng tea from Seoul', '媽媽': 'Mom', '眼罩': 'Eye mask'
+    '洗髮精': 'Shampoo', '羊毛圍巾': 'Wool scarf', '首爾的人蔘茶': 'Ginseng tea from Seoul', '媽媽': 'Mom', '眼罩': 'Eye mask'
   };
   if (window.I18N) window.I18N.addSample(EN_NAMES);
 
   // 範例內容的版本：改了範例內容就加 1，已經打開過舊範例的裝置會自動換成新的
-  var VERSION = 5;
+  var VERSION = 6;
 
   // ================= 產生範例（用各功能自己的新增函式） =================
 
@@ -167,6 +173,7 @@
       var m = window.Drawer.create({ name: d.name, weight: d.weight, unit: d.unit, category: d.category, estimated: true,
         home: d.home, count: d.count, extra: { sample: true } });
       if (d.key) drawerIds[d.key] = m.id;
+      if (d.level) window.Consumables.setLevel(m.id, d.level);   // 標成消耗品＋用量
     });
 
     var bagIds = {};
@@ -188,6 +195,9 @@
       })
     });
     trip.sample = true;
+
+    // 當地好不好買（產生打包清單前先標好，才會建議到當地買）
+    AVAIL.forEach(function (a) { window.Consumables.setAvail(a[0], a[1]); });
 
     // 貼身衣物的數量（產生打包清單前先記好，建議數量才會扣掉目的地的家已經有的）
     Object.keys(INTIMATES).forEach(function (h) {

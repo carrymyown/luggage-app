@@ -77,7 +77,8 @@
           return '<div class="dr-row' + ((m.count === 0 || m.stock === 'out') ? ' out' : '') + '">' +
             '<button type="button" class="dr-main" data-dr-open="' + esc(m.id) + '">' +
             '<span class="dr-name">' + esc(m.name) + (m.sample ? '<span class="sample-tag">範例</span>' : '') + '</span>' +
-            '<span class="muted small">' + esc(weightText(m)) + (showLoc || loc.state !== 'home' ? '・' + esc(App.locText(loc)) : '') + '</span></button>' +
+            '<span class="muted small">' + esc(weightText(m)) + (showLoc || loc.state !== 'home' ? '・' + esc(App.locText(loc)) : '') +
+              (window.Consumables && m.consumable ? '・<span class="dr-level lv-' + window.Consumables.levelOf(m) + '">' + window.Consumables.levelName(window.Consumables.levelOf(m)) + '</span>' : '') + '</span></button>' +
             qtyHTML(m) + '</div>';
         }).join('') + '</div>';
     }).join('');
@@ -279,6 +280,17 @@
     $('#drd-homes').innerHTML = App.homes().filter(function (h) { return h !== here || loc.state === 'pending'; }).map(function (h) {
       return '<button type="button" class="chip" data-drd-home="' + esc(h) + '">' + (loc.state === 'none' ? '放在 ' : '移到 ') + esc(h) + '</button>';
     }).join('');
+    // 消耗品：保養品、洗漱用品、保健品、食品可以標成消耗品，用量四格（滿、一半、快用完、沒了）
+    var CS = window.Consumables;
+    var can = CS && (CS.canConsume(m) || m.consumable);
+    $('#drd-consum-wrap').hidden = !can;
+    if (can) {
+      $('#drd-consum').checked = !!m.consumable;
+      $('#drd-level').hidden = !m.consumable;
+      $('#drd-level').innerHTML = CS.LEVELS.map(function (l) {
+        return '<button type="button" class="' + (CS.levelOf(m) === l[0] ? 'on' : '') + '" data-drd-level="' + l[0] + '">' + l[1] + '</button>';
+      }).join('');
+    }
     var packed = !!App.packedItem(m);
     $('#drd-bag').hidden = packed;
     $('#drd-pack').textContent = packed ? '從行李拿出來' : '放進行李';
@@ -301,6 +313,8 @@
   $('#dr-sheet').addEventListener('click', function (e) {
     var t = e.target, el;
     if (!cur) return;
+    if ((el = t.closest('[data-drd-level]'))) { window.Consumables.setLevel(cur.id, el.getAttribute('data-drd-level')); App.save(); renderDetail(); return; }
+    if (t.id === 'drd-consum') { window.Consumables.setConsumable(cur.id, t.checked); App.save(); renderDetail(); return; }
     if ((el = t.closest('[data-drd-mode]'))) {
       if (el.getAttribute('data-drd-mode') === 'count') { if (cur.count == null) cur.count = cur.stock === 'out' ? 0 : 1; cur.countUnit = cur.countUnit || cur.unit || '個'; }
       else { cur.stock = cur.count === 0 ? 'out' : 'have'; cur.count = null; }

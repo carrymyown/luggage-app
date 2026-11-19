@@ -131,6 +131,8 @@
       return loc && loc.state === 'home' && loc.home === cur.home;
     });
     $('#org-home-wrap').hidden = !atHome.length && cur.last;
+    // 離開這個家前：快速檢查這個家的消耗品（一頁看完，可以全部略過）
+    $('#org-consum').innerHTML = window.Consumables ? window.Consumables.quickCheck(cur.home, 'org:' + cur.home + ':' + cur.date) : '';
     $('#org-home').innerHTML = atHome.length ? atHome.map(function (m) {
       var on = !!picked[m.id];
       return '<button type="button" class="org-row org-pick' + (on ? ' on' : '') + '" data-org-pick="' + esc(m.id) + '">' +
