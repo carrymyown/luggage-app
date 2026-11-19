@@ -8,17 +8,17 @@
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-title" content="Carry My Own">
   <!-- 目前的版本（發布時更新；和 version.json 比對，有新版就提示更新） -->
-  <meta name="app-version" content="20261119e">
+  <meta name="app-version" content="20261119f">
   <title>Carry My Own</title>
   <!-- 圖示：瀏覽器分頁（網址前面）、iPad 主畫面、安裝成 app 時用 -->
-  <link rel="icon" type="image/svg+xml" href="icons/favicon.svg?v=20261119e">
-  <link rel="icon" href="icons/favicon-32.png?v=20261119e" sizes="32x32" type="image/png">
-  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png?v=20261119e">
+  <link rel="icon" type="image/svg+xml" href="icons/favicon.svg?v=20261119f">
+  <link rel="icon" href="icons/favicon-32.png?v=20261119f" sizes="32x32" type="image/png">
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png?v=20261119f">
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800;900&family=Noto+Sans+TC:wght@400;500;700;900&display=swap">
-  <link rel="stylesheet" href="style.css?v=20261119e">
+  <link rel="stylesheet" href="style.css?v=20261119f">
 </head>
 <body>
   <main>
@@ -328,6 +328,8 @@
             </label>
             <label>單位<select id="dr-add-unit"></select></label>
           </div>
+          <!-- 剩多少：只有保養品、洗漱用品、保健品、食品才出現（一行四格） -->
+          <div id="dr-add-level-wrap" class="dr-level-field" hidden><span class="dr-level-label">剩多少</span><div id="dr-add-level" class="seg dr-level-seg"></div></div>
           <label id="dr-next-wrap" class="pk-only next-pack" hidden><input id="dr-next" type="checkbox"><span>加入下一趟的打包清單 <span id="dr-next-trip" class="muted small"></span></span></label>
         </div>
       </form>
@@ -393,10 +395,10 @@
         <div id="closet-tabs" class="tabs"></div>
         <div id="closet-sub" class="chips filter closet-sub" hidden></div>
         <div class="filters">
-          <div class="filter-row"><span class="filter-label">家</span><div id="closet-f-home" class="chips filter"></div></div>
-          <div class="filter-row"><span class="filter-label">顏色</span><div id="closet-f-color" class="chips filter"></div></div>
-          <div class="filter-row"><span class="filter-label">季節</span><div id="closet-f-season" class="chips filter"></div></div>
-          <div class="filter-row"><span class="filter-label">場合</span><div id="closet-f-style" class="chips filter"></div></div>
+          <div class="filter-row"><div id="closet-f-home" class="chips filter" role="group" aria-label="家"></div></div>
+          <div class="filter-row"><div id="closet-f-color" class="chips filter" role="group" aria-label="顏色"></div></div>
+          <div class="filter-row"><div id="closet-f-season" class="chips filter" role="group" aria-label="季節"></div></div>
+          <div class="filter-row"><div id="closet-f-style" class="chips filter" role="group" aria-label="場合"></div></div>
         </div>
         <div id="closet-grid" class="closet-grid"></div>
         <!-- 貼身衣物：只記數量（不用照片），依家分開 -->
@@ -661,13 +663,9 @@
         </div>
         <div id="drd-unit" class="chips dr-units"></div>
       </div>
-      <div id="drd-stock" class="seg dr-stock dr-stock-big"></div>
-      <!-- 消耗品：用量四格（依家分開，每個家的這一筆各自記） -->
-      <div id="drd-consum-wrap" hidden>
-        <label class="pk-only"><input id="drd-consum" type="checkbox"> 記錄剩多少（保養品、洗漱用品、保健品會自動記錄）</label>
-        <div id="drd-level-wrap" hidden><span class="field-title">剩多少</span>
-        <div id="drd-level" class="seg dr-stock dr-stock-big"></div></div>
-      </div>
+      <div id="drd-stock" class="seg dr-stock dr-stock-big" hidden></div>
+      <!-- 剩多少：只有保養品、洗漱用品、保健品、食品才出現（一行四格；依家分開，每個家的這一筆各自記） -->
+      <div id="drd-level-wrap" class="dr-level-field" hidden><span class="dr-level-label">剩多少</span><div id="drd-level" class="seg dr-level-seg"></div></div>
 
       <div class="field-title">目前位置</div>
       <div id="drd-loc" class="loc-now"></div>
@@ -856,8 +854,10 @@
             <button type="button" data-lang-pick="en" lang="en">English</button>
           </div>
         </div>
-        <button type="button" id="backup-export" class="account-item">匯出備份</button>
-        <label class="account-item file-link">匯入備份<input id="backup-import" type="file" accept=".json,application/json"></label>
+        <div class="account-item account-backup">
+          <button type="button" id="backup-export" class="link small">匯出備份</button>
+          <label class="link small file-link">匯入備份<input id="backup-import" type="file" accept=".json,application/json"></label>
+        </div>
         <button type="button" id="sample-again" class="account-item">再看一次範例</button>
         <button type="button" id="intro-again" class="account-item">再看一次介紹</button>
         <button type="button" id="cl-logout" class="account-item account-logout" hidden>登出</button>
@@ -1002,30 +1002,30 @@
     </div>
   </div>
 
-  <script src="lang.js?v=20261119e"></script>
-  <script src="i18n.js?v=20261119e"></script>
-  <script src="weights.js?v=20261119e"></script>
-  <script src="photos.js?v=20261119e"></script>
-  <script src="clothing.js?v=20261119e"></script>
-  <script src="ui.js?v=20261119e"></script>
-  <script src="app.js?v=20261119e"></script>
-  <script src="closet.js?v=20261119e"></script>
-  <script src="trips.js?v=20261119e"></script>
-  <script src="organize.js?v=20261119e"></script>
-  <script src="packing.js?v=20261119e"></script>
-  <script src="drawer.js?v=20261119e"></script>
-  <script src="bags.js?v=20261119e"></script>
-  <script src="shop.js?v=20261119e"></script>
-  <script src="outfit.js?v=20261119e"></script>
-  <script src="consumables.js?v=20261119e"></script>
-  <script src="intimates.js?v=20261119e"></script>
-  <script src="sample-data.js?v=20261119e"></script>
-  <script src="onboard.js?v=20261119e"></script>
-  <script src="profile.js?v=20261119e"></script>
-  <script src="intro.js?v=20261119e"></script>
-  <script src="nav.js?v=20261119e"></script>
-  <script src="backup.js?v=20261119e"></script>
+  <script src="lang.js?v=20261119f"></script>
+  <script src="i18n.js?v=20261119f"></script>
+  <script src="weights.js?v=20261119f"></script>
+  <script src="photos.js?v=20261119f"></script>
+  <script src="clothing.js?v=20261119f"></script>
+  <script src="ui.js?v=20261119f"></script>
+  <script src="app.js?v=20261119f"></script>
+  <script src="closet.js?v=20261119f"></script>
+  <script src="trips.js?v=20261119f"></script>
+  <script src="organize.js?v=20261119f"></script>
+  <script src="packing.js?v=20261119f"></script>
+  <script src="drawer.js?v=20261119f"></script>
+  <script src="bags.js?v=20261119f"></script>
+  <script src="shop.js?v=20261119f"></script>
+  <script src="outfit.js?v=20261119f"></script>
+  <script src="consumables.js?v=20261119f"></script>
+  <script src="intimates.js?v=20261119f"></script>
+  <script src="sample-data.js?v=20261119f"></script>
+  <script src="onboard.js?v=20261119f"></script>
+  <script src="profile.js?v=20261119f"></script>
+  <script src="intro.js?v=20261119f"></script>
+  <script src="nav.js?v=20261119f"></script>
+  <script src="backup.js?v=20261119f"></script>
   <script src="vendor/supabase.js"></script>
-  <script src="cloud.js?v=20261119e"></script>
+  <script src="cloud.js?v=20261119f"></script>
 </body>
 </html>

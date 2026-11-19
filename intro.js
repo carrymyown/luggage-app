@@ -147,9 +147,7 @@
   $('#intro-start').addEventListener('click', function () {
     close();
     if (!App.signedIn()) {
-      var b = $('#account-btn');
-      if (b) b.click(); else $('#account-sheet').hidden = false;
-      setTimeout(function () { var em = $('#cl-email'); if (em) em.focus(); }, 300);
+      if (window.Cloud && window.Cloud.openLogin) window.Cloud.openLogin(); else $('#account-sheet').hidden = false;
     }
   });
   // 先看範例：沒登入時畫面本來就是範例；已登入就打開範例模式（你的資料不受影響）

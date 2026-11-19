@@ -21,7 +21,7 @@
   var esc = App.esc;
 
   var LEVELS = [['full', '滿'], ['half', '一半'], ['low', '快用完'], ['out', '沒了']];
-  var CATS = ['保養品', '保健品', '食品', '必備品'];
+  var CATS = ['保養品', '保健品', '食品'];   // 加上洗漱用品（依名稱判斷，見 isWash）
   var ONLINE_DAYS = 5;   // 網路訂到家：抵達前幾天提醒下單
   // 常見城市 → 國家（沒有網路也能依國家記住）；查不到的用天氣查詢時記下的國家
   var COUNTRY = {
@@ -38,11 +38,11 @@
   var WASH_KW = ['牙膏', '牙刷', '牙線', '漱口', '洗髮', '潤髮', '護髮', '沐浴', '洗面', '洗臉', '卸妝', '洗手', '刮鬍', '隱形眼鏡', '生理', '衛生棉', '止汗', '體香'];
   function isWash(m) { var n = App.norm(m && m.name || ''); return WASH_KW.some(function (k) { return n.indexOf(App.norm(k)) >= 0; }); }
   // 保養品、保健品、洗漱用品：自動記錄剩多少（自己取消勾選的 m.consumable === false 不算）；其他品類自己勾
-  function autoConsum(m) { return m.category === '保養品' || m.category === '保健品' || ((m.category === '必備品' || m.category === '食品') && isWash(m)); }
-  function isConsumable(m) { return !!(m && !App.isCloth(m) && (m.consumable === true || (m.consumable !== false && autoConsum(m)))); }
+  function isConsumable(m) { return canConsume(m) && m.consumable !== false; }
   // 打包時看「當地買／家裡有／旅行分裝」的：保養品和洗漱用品（保健品、藥品照常帶）
   function isToiletry(m) { return isConsumable(m) && m.category !== '保健品' && (m.category === '保養品' || m.category === '必備品' || isWash(m)); }
-  function canConsume(m) { return !!(m && !App.isCloth(m) && CATS.indexOf(m.category) >= 0); }
+  // 「剩多少」只給會用完的東西：保養品、洗漱用品（依名稱）、保健品、食品；護照、電線、特殊類、禮物都不顯示（已經存的資料保留）
+  function canConsume(m) { return !!(m && !App.isCloth(m) && (m.category === '保養品' || m.category === '保健品' || m.category === '食品' || (m.category === '必備品' && isWash(m)))); }
   function levelOf(m) { return LEVELS.some(function (l) { return l[0] === m.level; }) ? m.level : 'full'; }
   function levelName(lv) { return (LEVELS.find(function (l) { return l[0] === lv; }) || LEVELS[0])[1]; }
   function homeOfM(m) { var loc = App.locOf(m); return loc && loc.state === 'home' ? loc.home : (m.home || ''); }
@@ -269,10 +269,10 @@
   // ---------- 快速檢查：這個家的消耗品，每樣點一下更新用量（一頁看完，可以全部略過） ----------
   var skipped = {};
   function quickCheck(home, key) {
-    var list = consumablesAt(home, true);   // 只列這個家的保養品和洗漱用品
+    var list = consumablesAt(home);   // 只列這個家會用完的東西：保養品、洗漱用品、保健品、食品
     if (!list.length || skipped[key || home]) return '';
     return '<div class="qc" data-qc="' + esc(key || home) + '">' +
-      '<div class="qc-head"><span class="field-title">快速檢查：' + esc(App.homeCity ? App.homeCity(home) : home) + '的家的保養品和洗漱用品</span>' +
+      '<div class="qc-head"><span class="field-title">快速檢查：' + esc(App.homeCity ? App.homeCity(home) : home) + '的家：保養品、洗漱用品、保健品、食品</span>' +
       '<button type="button" class="link small" data-qc-skip="' + esc(key || home) + '">全部略過</button></div>' +
       '<p class="muted small qc-hint">離開前點一下更新用量，快用完的會在下次回來前提醒你。</p>' +
       list.map(function (m) {

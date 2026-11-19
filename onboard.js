@@ -128,7 +128,7 @@
     if (t.closest('[data-ob-login]')) {
       // 已經有帳號：先登入，資料同步回來後就不會再出現這個畫面
       $('#onboard-sheet').hidden = true;
-      $('#account-sheet').hidden = false;
+      if (window.Cloud && window.Cloud.openLogin) window.Cloud.openLogin(); else $('#account-sheet').hidden = false;
       return;
     }
     if (t.id === 'ob-sample') { App.enterSample(); return; }
@@ -178,9 +178,7 @@
     $('#sample-clear').hidden = !on || !inAcc;
   }
   $('#sample-login').addEventListener('click', function () {
-    var b = $('#account-btn');
-    if (b) b.click(); else $('#account-sheet').hidden = false;
-    setTimeout(function () { var em = $('#cl-email'); if (em) em.focus(); }, 300);
+    if (window.Cloud && window.Cloud.openLogin) window.Cloud.openLogin(); else $('#account-sheet').hidden = false;
   });
   $('#sample-clear').addEventListener('click', function () {
     if (!confirm('要清除範例資料，開始使用嗎？')) return;
@@ -202,21 +200,21 @@
   // ---------- 範例模式的使用提示：五個重點，一步一步出現在真實畫面上 ----------
   // 黑底白字的提示卡＋被說明的地方外圍一圈虛線框；箭頭依照按鈕在畫面上的實際位置計算（捲動、旋轉都跟著更新）
   // 只在範例模式出現；看到第幾個記在 cmo-coach（帳號選單「再看一次範例」會從第 1 個重新開始）
-  // 順序：首頁 → 行程（每天的穿搭小方格）→ 行程（每一段航班的額度）→ 打包 → 家 → 中間的＋
-  // 按「下一個」「上一個」時，那一則在別的頁面就自動切過去（page 對應 PAGE_OF；hash 是要切到的網址）
+  // 順序：首頁（剩餘公斤數）→ 行程（每一段航班的額度）→ 行程（每天的穿搭小方格）→ 中間的＋ → 打包 → 家（衣櫃、抽屜、行李箱）
+  // 按「下一個」「上一個」時，那一則在別的頁面就自動切過去（page 對應 PAGE_OF；hash 是要切到的網址）；頁數照實際數量顯示
   var COACH = [
     { page: 'home', hash: '#home', target: '#view-home .trip-card .tc-value', away: '.tabbar a[href="#home"]',
       title: '這趟還能放多少', body: '打包、購物、禮物都會自動算進來，快滿、超重會標示提醒。' },
-    { page: 'outfit', hash: 'outfit', target: '#view-outfit .od-sq', away: '#view-trips .trip-card, .tabbar a[href="#trips"]',
-      title: '每天穿什麼', body: '點這裡用衣櫃的衣服搭配，搭好的會自動加進打包清單。' },
     { page: 'trips', hash: '#trips', target: '#view-trips .trip-card .trip-route, #view-trips .trip-card, #trip-mode', away: '.tabbar a[href="#trips"]',
-      title: '每一段航班的額度', body: '填好航班和行李額度，到了有家的城市會提醒你整理行李。點一趟旅程，看每一天的穿搭。' },
+      title: '每一段航班的額度', body: '填好航班和行李額度，到了有家的城市會提醒你整理行李。' },
+    { page: 'outfit', hash: 'outfit', target: '#view-outfit .od-sq', away: '#view-trips .trip-card, .tabbar a[href="#trips"]',
+      title: '每天穿什麼', body: '每天右邊的小方格是當天的穿搭，點一下用衣櫃的衣服搭配，搭好的會自動加進打包清單。' },
+    { page: '', target: '#plus-btn',
+      title: '隨時新增', body: '新增到衣櫃、抽屜、購物、禮物，都從中間的＋開始。' },
     { page: 'pack', hash: '#pack', target: '#pack-tabs', away: '.tabbar a[href="#pack"]',
       title: '先列清單，再打勾', body: '打勾就是放進行李，行李的進度條會即時更新；往左滑或按「編輯」可以刪除。' },
     { page: 'closet', hash: '#closet', target: '#view-closet .home-switch', away: '.tabbar a[href="#closet"]',
-      title: '每個家有什麼', body: '衣服放衣櫃、其他東西放抽屜；家裡已經有的，出門就不用再帶。' },
-    { page: '', target: '#plus-btn',
-      title: '隨時新增', body: '新增衣服、抽屜物品、記一筆購物或禮物，都從這裡開始。' }
+      title: '家：衣櫃、抽屜、行李箱', body: '每個家有哪些衣服、抽屜裡的東西和行李箱；家裡已經有的，出門就不用再帶。' }
   ];
   var PAGE_OF = { home: 'home', closet: 'closet', drawer: 'closet', bags: 'closet', pack: 'pack', trips: 'trips', outfit: 'outfit' };
   var COACH_KEY = 'cmo-coach';
@@ -225,7 +223,7 @@
   function resetCoach() { saveCoach({ step: 0, done: false }); }
   try { localStorage.removeItem('cmo-tips-seen'); } catch (e) { /* 舊的小提示不用了 */ }
 
-  var card = null, ring = null, curView = 'home', curStep = -1, loop = null, scrolledFor = -1, waitFor = -1;
+  var card = null, ring = null, curView = 'home', curStep = -1, loop = null, scrolledFor = -1, waitFor = -1, shownFor = -1, stable = 0, lastKey = '';
   // 那一則提示要切到的網址（每天的穿搭：下一趟旅程的每日列表）
   function hashOf(c) {
     if (c.hash !== 'outfit') return c.hash || '';
@@ -308,10 +306,10 @@
     card.innerHTML = '<div class="coach-num">' + (curStep + 1) + ' / ' + COACH.length + '</div>' +
       '<div class="coach-title">' + c.title + '</div><p class="coach-body">' + c.body + '</p>' +
       '<div class="coach-btns">' + (last ? '' : '<button type="button" class="coach-skip" data-coach="done">知道了</button>') +
-      (curStep > 0 ? '<button type="button" class="coach-btn" data-coach="prev">上一個</button>' : '') +
+      '<button type="button" class="coach-btn" data-coach="prev"' + (curStep > 0 ? '' : ' disabled') + '>上一個</button>' +
       (last ? '<button type="button" class="coach-btn primary" data-coach="start">開始使用</button>' : '<button type="button" class="coach-btn primary" data-coach="next">下一個</button>') + '</div>' +
       '<i class="coach-arrow"></i>';
-    scrolledFor = -1;
+    scrolledFor = -1; shownFor = -1; stable = 0; lastKey = '';
     if (!loop) tick();
   }
   // 每一格畫面都重新量位置：捲動、旋轉、畫面變動都跟著更新
@@ -321,13 +319,20 @@
     if (blocked()) { hideCoach(); return; }
     if (paused()) { card.hidden = true; ring.hidden = true; return; }
     var el = targetOf(curStep);
-    if (!el) { card.hidden = true; ring.hidden = true; return; }
+    if (!el) { card.hidden = true; ring.hidden = true; stable = 0; return; }
     if (scrolledFor !== curStep) {
       // 先捲到按鈕的位置（切換頁面後也一樣），箭頭才指得準；捲好的下一格再顯示
       scrolledFor = curStep;
       var r0 = el.getBoundingClientRect();
       var bar0 = document.querySelector('.tabbar'), bottom0 = bar0 ? bar0.getBoundingClientRect().top : innerHeight;
-      if (r0.top < 70 || r0.bottom > bottom0 - 12) { el.scrollIntoView({ block: 'center' }); card.hidden = true; ring.hidden = true; return; }
+      if (r0.top < 70 || r0.bottom > bottom0 - 12) { el.scrollIntoView({ block: 'center' }); card.hidden = true; ring.hidden = true; stable = 0; return; }
+    }
+    // 等畫面和按鈕位置準備好（連續幾格位置都沒變）再顯示，箭頭才指得準
+    if (shownFor !== curStep) {
+      var rr = el.getBoundingClientRect(), key = Math.round(rr.left) + ',' + Math.round(rr.top) + ',' + Math.round(rr.width) + ',' + Math.round(rr.height);
+      if (key === lastKey) stable++; else { stable = 0; lastKey = key; }
+      if (stable < 8) { card.hidden = true; ring.hidden = true; return; }
+      shownFor = curStep;
     }
     place(el);
   }

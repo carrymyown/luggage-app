@@ -369,13 +369,15 @@
     if (!client) {
       box.innerHTML = '<p class="muted small">雲端暫時無法使用</p>';
     } else if (!user) {
+      // 沒登入：最上方一個「登入」按鈕，按了才展開 Email／密碼
       box.innerHTML =
-        '<div class="field-title">登入</div>' +
+        '<button type="button" id="cl-show-login" class="btn primary account-login"' + (loginOpen ? ' hidden' : '') + '>登入</button>' +
+        '<div id="cl-form"' + (loginOpen ? '' : ' hidden') + '>' +
         '<label>Email<input id="cl-email" type="email" inputmode="email" autocomplete="email" autocapitalize="off" placeholder="you@example.com"></label>' +
         '<label>密碼<input id="cl-pass" type="password" autocomplete="current-password" placeholder="至少 6 個字"></label>' +
         '<div class="cloud-btns"><button type="button" id="cl-login" class="btn primary">登入</button>' +
         '<button type="button" id="cl-signup" class="btn ghost">註冊新帳號</button></div>' +
-        '<button type="button" id="cl-forgot" class="link small">忘記密碼</button>';
+        '<button type="button" id="cl-forgot" class="link small">忘記密碼</button></div>';
     } else {
       box.innerHTML = '';
     }
@@ -385,6 +387,18 @@
     renderStatus();
     if (window.Profile) window.Profile.render();
   }
+
+  // 「登入」：展開登入表單（範例提示列、介紹最後一頁、第一次使用的「登入」也用這裡）
+  var loginOpen = false;
+  function openLogin() {
+    loginOpen = true;
+    render();
+    $('#account-sheet').hidden = false;
+    setTimeout(function () { var em = $('#cl-email'); if (em) em.focus(); }, 300);
+  }
+  document.addEventListener('click', function (e) {
+    if (e.target.closest && e.target.closest('#account-btn')) { if (loginOpen) { loginOpen = false; render(); } }
+  }, true);
 
   function busy(btn, on, label) {
     if (!btn) return;
@@ -439,6 +453,7 @@
         alert('已寄出重設密碼的信到 ' + email + '。\n點信裡的連結後，會請你輸入新密碼。');
       }).catch(function (err) { App.toast(friendly(err)); });
     }
+    if (id === 'cl-show-login') { openLogin(); return; }
     if (id === 'cl-sync') sync();
     if (id === 'cl-logout') logout(e.target);
   });
@@ -470,6 +485,7 @@
       alert('現在是範例資料。\n請先按最上方的「清除範例，開始使用」回到你的資料，再登出。');
       return;
     }
+    if (!confirm('要登出嗎？')) return;
     busy(btn, true, '檢查同步中…');
     clearTimeout(timer);
     Promise.resolve(syncing).then(unsynced).then(function (why) {
@@ -595,6 +611,6 @@
     render();
   }
 
-  window.Cloud = { waitingForData: waitingForData, schedule: schedule, sync: sync, queueDelete: queueDelete, merge3: merge3, render: render, status: function () { return status; } };
+  window.Cloud = { openLogin: openLogin, waitingForData: waitingForData, schedule: schedule, sync: sync, queueDelete: queueDelete, merge3: merge3, render: render, status: function () { return status; } };
   init();
 })();

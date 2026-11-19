@@ -539,6 +539,19 @@ window.LANG = { zh: { name: '繁體中文' }, en: { name: 'English', text: {}, r
     '雲端暫時無法使用': 'Cloud is unavailable right now', '照片存不進去': 'Couldn’t save the photo'
   });
 
+  // 新的必帶清單、一直顯示的組別、抽屜剩多少、使用提示
+  add({
+    '簽證／入境文件': 'Visa / entry documents', '處方藥': 'Prescription medicine', '家裡的鑰匙': 'House keys',
+    '還沒加，點這裡從衣櫃挑': 'Nothing yet — tap to pick from your wardrobe', '還沒加，點這裡從抽屜挑': 'Nothing yet — tap to pick from your drawer',
+    '還沒加，點這裡編輯必帶清單': 'Nothing yet — tap to edit your essentials', '不記數量': 'No count',
+    '填好航班和行李額度，到了有家的城市會提醒你整理行李。': 'Add each flight and its allowance — we will remind you to sort your bags when you reach a city with a home.',
+    '每天右邊的小方格是當天的穿搭，點一下用衣櫃的衣服搭配，搭好的會自動加進打包清單。': 'The small square on the right of each day is that day’s outfit. Tap it to style pieces from your wardrobe — they go straight onto your packing list.',
+    '新增到衣櫃、抽屜、購物、禮物，都從中間的＋開始。': 'Add to your wardrobe, drawer, shopping or gifts — it all starts from the ＋ in the middle.',
+    '家：衣櫃、抽屜、行李箱': 'Homes: wardrobe, drawer, luggage',
+    '每個家有哪些衣服、抽屜裡的東西和行李箱；家裡已經有的，出門就不用再帶。': 'What each home has — clothes, drawer items and luggage. Anything already there doesn’t need packing.'
+  });
+  R(/^快速檢查：(.+)的家：保養品、洗漱用品、保健品、食品$/, function (m, tr) { return 'Quick check at ' + tr(m[1]) + ' home: skincare, toiletries, health, food'; });
+
   R(/^要放到(.+)的家$/, function (m, tr) { return 'goes to ' + tr(m[1]) + ' home'; });
   R(/^給(.+)$/, function (m, tr) { return 'for ' + tr(m[1]); });
 

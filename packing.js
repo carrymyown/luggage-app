@@ -33,7 +33,8 @@
     return !!x && !!y && (x === y || (Math.min(x.length, y.length) >= 2 && (x.indexOf(y) >= 0 || y.indexOf(x) >= 0)));
   }
   function mustFor(name) { return App.mustList().find(function (m) { return sameThing(m.name, name); }) || null; }
-  function isMust(e) { return !e.intimateId && !!(e.must || mustFor(e.name)); }   // 貼身衣物在自己的組，不算必帶
+  // 還在必帶清單裡的才算必帶（從必帶清單拿掉的，回到自己的分類）；貼身衣物在自己的組，不算必帶
+  function isMust(e) { return !e.intimateId && !!mustFor(e.name); }
   // 預設放哪個行李（那個行李這趟沒帶時，依序改放下一個）
   var PREFER = {
     pouch: ['pouch', 'personal', 'carry', 'checked'], personal: ['personal', 'carry', 'checked', 'pouch'],
@@ -674,7 +675,10 @@
   }
 
   // ---------- 清單依品項分組：打包時一類一類去拿 ----------
-  var PK_GROUPS = ['必帶', '上衣', '下身', '洋裝／連身', '外套', '睡衣', '貼身衣物', '鞋子', '帽子／圍巾', '首飾配件', '保養品', '保健品', '電線電器', '特殊類', '食品', '禮物', '其他'];
+  var PK_GROUPS = ['必帶', '上衣', '下身', '洋裝／連身', '外套', '睡衣', '貼身衣物', '鞋子', '首飾盒', '包包', '配件', '保養品', '保健品', '電線電器', '特殊類', '食品', '禮物', '其他'];
+  // 一直顯示的組別（沒有東西也出現，當作提醒）：點下方的灰字直接打開挑選畫面
+  var ALWAYS_GROUPS = { '必帶': 'must', '上衣': 'closet', '下身': 'closet', '鞋子': 'closet', '首飾盒': 'closet', '貼身衣物': 'closet', '保養品': 'drawer' };
+  var JEWEL_TYPES = ['耳環', '項鍊', '戒指', '手環', '手錶', '錶帶', '首飾盒'];
   var DRAWER_GROUPS = ['保養品', '保健品', '電線電器', '特殊類', '食品', '禮物'];
   // 必帶清單裡的東西只在「必帶」；衣服用衣櫃的大類；其他用抽屜的品類；都不是就放「其他」
   function groupOfEntry(e) {
@@ -682,7 +686,8 @@
     if (isMust(e)) return '必帶';
     var m = e.catalogId && App.entryById(e.catalogId);
     var cg = m && m.clothing && m.clothing.group;
-    if (cg) return cg === '帽子' || cg === '圍巾' ? '帽子／圍巾' : cg === '配件' ? '首飾配件' : PK_GROUPS.indexOf(cg) >= 0 ? cg : '其他';
+    if (cg === '配件') { var ty = m.clothing.type; return JEWEL_TYPES.indexOf(ty) >= 0 ? '首飾盒' : ty === '包包' ? '包包' : '配件'; }
+    if (cg) return cg === '帽子' || cg === '圍巾' ? '配件' : PK_GROUPS.indexOf(cg) >= 0 ? cg : '其他';
     if (e.giftId) return '禮物';
     var c = e.category || (m && m.category) || '';
     return DRAWER_GROUPS.indexOf(c) >= 0 ? c : '其他';
@@ -692,10 +697,13 @@
   function groupsHTML(take, boxes, act) {
     var by = {};
     take.forEach(function (e) { var g = groupOfEntry(e); (by[g] = by[g] || []).push(e); });
-    return PK_GROUPS.filter(function (g) { return by[g]; }).map(function (g) {
-      var rows = by[g], n = rows.filter(function (e) { return e.checked; }).length, done = n === rows.length;
+    return PK_GROUPS.filter(function (g) { return by[g] || ALWAYS_GROUPS[g]; }).map(function (g) {
+      var rows = by[g] || [], n = rows.filter(function (e) { return e.checked; }).length, done = rows.length > 0 && n === rows.length;
       var key = curTrip.id + '|' + g;
-      var shut = !editMode && (collapsed[key] != null ? collapsed[key] : done);
+      var shut = !editMode && rows.length > 0 && (collapsed[key] != null ? collapsed[key] : done);
+      var pick = ALWAYS_GROUPS[g];
+      var empty = rows.length ? '' : '<button type="button" class="pk-group-empty" data-empty-pick="' + pick + '">' +
+        (pick === 'must' ? '還沒加，點這裡編輯必帶清單' : pick === 'drawer' ? '還沒加，點這裡從抽屜挑' : '還沒加，點這裡從衣櫃挑') + '</button>';
       var ok = done ? '<span class="pk-group-ok" aria-label="這組都放好了">' + CHECK_SVG + '</span>' : '';
       var chev = '<span class="pk-group-chev" aria-hidden="true">' + (shut ? '+' : '−') + '</span>';
       // 「必帶」組：標題旁邊一個小小的「編輯」，打開必帶清單（每次產生新清單時自動加進來的東西）
@@ -708,7 +716,7 @@
         '<button type="button" class="pk-group-head" data-group-toggle="' + esc(g) + '" aria-expanded="' + !shut + '">' +
           '<b>' + esc(g) + '</b><span class="pk-group-n">' + n + ' / ' + rows.length + '</span>' + ok + chev + '</button>';
       return '<section class="pk-group' + (done ? ' complete' : '') + (shut ? ' shut' : '') + '" data-group="' + esc(g) + '">' + head +
-        '<div class="pk-group-body"' + (shut ? ' hidden' : '') + '>' + rows.map(function (e) { return todoRowHTML(e, boxes, act); }).join('') + '</div></section>';
+        '<div class="pk-group-body"' + (shut ? ' hidden' : '') + '>' + empty + rows.map(function (e) { return todoRowHTML(e, boxes, act); }).join('') + '</div></section>';
     }).join('');
   }
 
@@ -743,8 +751,8 @@
     $('#pack-edit').hidden = packTab !== 'todo' || (!take.length && !editMode);
     $('#pack-add').hidden = editMode;
     $('#view-pack').classList.toggle('pk-editing', editMode);
-    $('#pack-todo').innerHTML = take.length ? (!todo.length ? '<p class="pk-all-done">全部都放進去了</p>' : '') + groupsHTML(all, boxes, act) :
-      '<p class="muted small">清單是空的。點「＋ 加到清單」從衣櫃、抽屜挑，或直接輸入。</p>';
+    // 清單是空的也列出一直顯示的組別（必帶、上衣、下身、鞋子、首飾盒、貼身衣物、保養品），每組下方一行灰字可以直接去挑
+    $('#pack-todo').innerHTML = (take.length && !todo.length ? '<p class="pk-all-done">全部都放進去了</p>' : '') + groupsHTML(all, boxes, act);
     $('#pack-done-note').innerHTML = '';
     renderAsk();
 
@@ -923,6 +931,11 @@
       touch(curList);
       App.toast(av === 'easy' ? ac + '：好買，到當地買' : av === 'hard' ? ac + '：不好買，帶旅行分裝' : '之後可以在行程裡標記');
       commit();
+      return;
+    }
+    if ((el = t.closest('[data-empty-pick]'))) {
+      var ep = el.getAttribute('data-empty-pick');
+      if (ep === 'must') openMust(); else openAdd(null, ep);
       return;
     }
     if (t.id === 'pack-add') { openAdd(); return; }
@@ -1229,7 +1242,7 @@
   // ---------- 手動新增 ----------
   // zone：從「行李」分頁某個行李的「＋ 放進這個行李」打開 → 挑的東西直接放進那個行李（打勾）
   var addZone = null;
-  function openAdd(zone) {
+  function openAdd(zone, tab) {
     if (!curList || $('#pack-main').hidden) return;
     addZone = zone && activeZones(curList).indexOf(zone) >= 0 ? zone : null;
     $('#pk-add-title').textContent = addZone ? '放進' + zoneName(addZone) : '加到打包清單';
@@ -1244,7 +1257,7 @@
     (window.REFERENCE_WEIGHTS || []).forEach(function (r) { if (names.indexOf(r.name) < 0) names.push(r.name); });
     $('#pk-add-names').innerHTML = names.map(function (n) { return '<option value="' + esc(n) + '">'; }).join('');
     $('#pk-add-search').value = '';
-    setAddTab('closet');
+    setAddTab(tab === 'drawer' || tab === 'input' ? tab : 'closet');
     $('#pk-add-sheet').hidden = false;
   }
 

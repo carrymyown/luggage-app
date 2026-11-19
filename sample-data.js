@@ -56,14 +56,14 @@
   // level：剩多少（滿／一半／快用完／沒了）。保養品、保健品、洗漱用品會自動記錄剩多少
   //   東京的公寓的洗面乳「快用完」→ 首頁補貨提醒「東京的家洗面乳快用完了」（在上一個城市買好帶過去／網購寄到家）
   //   洗髮精（一半）放進這趟的清單；首爾標「好買」→ 打包清單建議「到當地買・省下 300 g」，不在要帶的清單上
-  //   面膜是一片一片記數量的：取消「記錄剩多少」（consumable: false），照常帶
+  //   抽屜只有會用完的東西（保養品、洗漱用品、保健品、食品）顯示「剩多少」；護照、錢包、電線、禮物不顯示
   var DRAWER = [
     { key: 'passport', name: '護照', category: '必備品', weight: 0.04, home: '台北', unit: '本' },
     { name: '錢包', category: '必備品', weight: 0.15, home: '台北', unit: '個' },
     { name: '充電線', category: '電線電器', weight: 0.05, home: '台北', count: 1, unit: '包' },
     { name: '轉接頭', category: '電線電器', weight: 0.06, home: TOKYO, count: 2, unit: '個' },
     { name: '洗面乳', category: '保養品', weight: 0.12, home: TOKYO, count: 1, unit: '條', level: 'low' },
-    { name: '面膜', category: '保養品', weight: 0.03, home: '台北', count: 5, unit: '片', consumable: false },
+    { name: '面膜', category: '保養品', weight: 0.03, home: '台北', count: 5, unit: '片' },
     { name: '洗髮精', category: '必備品', weight: 0.3, home: '台北', count: 1, unit: '瓶', level: 'half' },
     { name: '維他命', category: '保健品', weight: 0.15, home: '台北', count: 1, unit: '瓶' },
     { name: '牙刷組', category: '必備品', weight: 0.05, home: TOKYO, count: 1, unit: '組' },
@@ -97,14 +97,16 @@
     ]
   };
 
-  // 必帶清單：預設內容（護照、錢包、手機、行動電源…）之外，示範自己加一樣
+  // 必帶清單：預設內容是「忘了會出問題、當地也買不到」的東西（護照、簽證／入境文件、錢包、信用卡、現金、手機、充電線、處方藥、家裡的鑰匙），
+  // 示範自己加一樣（打包頁「必帶」旁邊的「編輯」可以增加、刪除）
   var MUST_EXTRA = [{ name: '眼罩', zone: 'personal', weight: 0.02 }];
 
   // 這趟用哪幾個行李箱（對應上面 BAGS 的 key）
   var PACK_ZONES = { pouch: 'pouch', personal: 'personal', carry: 'carry', checked: 'checked' };
   // 打包（清單 LIST）：會依照衣櫃、季節和必帶清單自動列出；另外用「＋ 加入」加進這幾樣抽屜裡的東西
   // 打勾的會移到「行李 BAGS」分頁，每個行李名稱下方一條進度條（已放 / 額度）
-  var ADD_TO_LIST = ['面膜', '維他命', '卡其短褲', '洗髮精'];
+  // 「保養品」組故意不加東西：一直顯示的組別沒東西時，下方灰字「還沒加，點這裡從抽屜挑」
+  var ADD_TO_LIST = ['維他命', '卡其短褲', '洗髮精'];
   // 每日穿搭：每天的活動（第幾天），沒寫的那天用預設（搭機那天＝長途飛行）
   //   第 0 天台北飛東京、第 2 天在東京有正式晚餐（東京的家有黑色洋裝和樂福鞋，不用帶）
   //   CONFIRM：按過「確定這套」的那幾天（這套的衣服會加進打包清單，不重複）
@@ -153,7 +155,7 @@
   if (window.I18N) window.I18N.addSample(EN_NAMES);
 
   // 範例內容的版本：改了範例內容就加 1，已經打開過舊範例的裝置會自動換成新的
-  var VERSION = 7;
+  var VERSION = 8;
 
   // ================= 產生範例（用各功能自己的新增函式） =================
 
@@ -183,7 +185,6 @@
         home: d.home, count: d.count, extra: { sample: true } });
       if (d.key) drawerIds[d.key] = m.id;
       if (d.level) window.Consumables.setLevel(m.id, d.level);   // 剩多少
-      if (d.consumable === false) window.Consumables.setConsumable(m.id, false);   // 取消「記錄剩多少」
     });
 
     var bagIds = {};

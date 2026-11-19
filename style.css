@@ -221,7 +221,7 @@ input:focus, select:focus { outline: 2px solid var(--primary); outline-offset: -
 .btn.primary { background: var(--primary); color: #fff; font-size: 1.05rem; }
 .btn.primary:active { opacity: .85; }
 .btn.ghost { background: var(--bg); color: var(--primary); }
-.link { border: 0; background: none; color: var(--primary); font: inherit; cursor: pointer; padding: 4px; }
+.link { border: 0; background: none; color: var(--primary); font: inherit; cursor: pointer; padding: 4px 0; }   /* 左右不留空：文字對齊左右邊線 */
 
 /* 常帶物品 chips */
 .chips { display: flex; flex-wrap: wrap; gap: 8px; }
@@ -397,7 +397,7 @@ input:focus, select:focus { outline: 2px solid var(--primary); outline-offset: -
 
 .field-title { font-weight: 700; margin: 4px 0 8px; color: var(--text); }
 .chips.pick { margin-bottom: 16px; }
-.unit-text { align-self: center; margin-top: 4px; color: var(--muted); font-weight: 700; padding: 0 4px; }
+.unit-text { align-self: center; margin-top: 4px; color: var(--muted); font-weight: 700; padding: 0 0 0 6px; }
 
 .pack-box { margin-top: 14px; }
 .pack-box .row { display: flex; gap: 10px; align-items: center; }
@@ -1203,7 +1203,7 @@ input:focus, select:focus { outline: 1px solid var(--primary); }
 .bag-row-name { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
 .bag-row-name b { font-family: var(--serif); font-weight: 400; font-size: 1.15rem; letter-spacing: 0.04em; }
 .bag-row-w { flex: none; font-variant-numeric: tabular-nums; }
-.bag-chev { flex: none; width: 22px; text-align: center; color: var(--muted); font-size: 1.2rem; font-weight: 300; }
+.bag-chev { flex: none; width: 22px; text-align: right; color: var(--muted); font-size: 1.2rem; font-weight: 300; }
 .bag-panel { padding: 0 0 20px; }
 .bp-progress { display: flex; justify-content: space-between; align-items: baseline; padding: 10px 0; border-top: 1px dashed var(--line); }
 .bp-progress b { font-family: var(--serif); font-weight: 400; font-size: 1.2rem; }
@@ -2187,6 +2187,7 @@ svg * { vector-effect: non-scaling-stroke; }
   min-height: 36px; padding: 0 14px; cursor: pointer; border-radius: 0 !important; text-transform: uppercase;
 }
 .coach-btn.primary { background: #FFFFFF; color: #111111; font-weight: 500 !important; }
+.coach-btn:disabled { opacity: 0.35; cursor: default; }
 .coach-skip { margin-right: auto; border: 0; background: none; color: #BDBDBD; font: inherit; font-size: 12px !important; letter-spacing: 0.08em; min-height: 36px; padding: 0 4px 0 0; cursor: pointer; text-decoration: underline; text-underline-offset: 3px; }
 .coach-arrow { position: absolute; width: 0; height: 0; margin-left: -7px; border: 7px solid transparent; }
 .coach-card.below .coach-arrow { top: -14px; border-bottom-color: #111111; }
@@ -2220,7 +2221,7 @@ svg * { vector-effect: non-scaling-stroke; }
 .ow-rain { font-size: 12px; letter-spacing: 0.04em; border-bottom: 1px solid currentColor; }
 .ow-avg { font-size: 11px !important; letter-spacing: 0.08em; }
 /* 每一天右邊的穿搭小方格（44×44、方角）＋「穿搭 ›」；整行都可以點 */
-.od-look { display: flex; flex-direction: column; align-items: center; gap: 6px; min-width: 56px; min-height: 44px; }
+.od-look { display: flex; flex-direction: column; align-items: flex-end; gap: 6px; min-width: 56px; min-height: 44px; }   /* 方格和「穿搭 ›」都貼齊右邊線 */
 .od-sq { position: relative; width: 44px; height: 44px; display: block; background: #FFFFFF; border: 1px solid var(--line); overflow: hidden; border-radius: 0; }
 .od-sq.empty { border: 1px dashed #111111; display: flex; align-items: center; justify-content: center; }
 .od-pc { position: absolute; width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; }
@@ -2366,7 +2367,7 @@ svg * { vector-effect: non-scaling-stroke; }
 #pack-main > .pk-tabs-row + .pk-trip { margin-top: 12px; }
 #drd-level-wrap .field-title { display: block; margin: 12px 0 6px; }
 .pk-tabs-row { position: relative; }
-.pk-tabs-row .pk-edit-btn { position: absolute; right: 0; top: 0; bottom: 1px; min-height: 0; padding: 0 2px; color: var(--muted); }
+.pk-tabs-row .pk-edit-btn { position: absolute; right: 0; top: 0; bottom: 1px; min-height: 0; padding: 0; color: var(--muted); }
 .pk-list-tools .pk-add-btn { width: 100%; }
 .pk-zone .pk-zone-add { display: flex; width: 100%; margin: 10px 0 22px; }
 .pk-ask { margin: 0 0 12px; padding: 14px 16px; }
@@ -2382,7 +2383,7 @@ svg * { vector-effect: non-scaling-stroke; }
 .pk-group-head b { font-size: 15px; font-weight: 500 !important; letter-spacing: 0.06em; }
 .pk-group-n { font-size: 12px; color: var(--c-meta); font-variant-numeric: tabular-nums; letter-spacing: 0.04em; }
 .pk-group-ok { display: inline-flex; align-items: center; justify-content: center; width: 16px; height: 16px; border: 1px solid #111111; color: #111111; }
-.pk-group-chev { margin-left: auto; width: 24px; text-align: center; color: var(--c-meta); font-size: 16px; }
+.pk-group-chev { margin-left: auto; width: 24px; text-align: right; color: var(--c-meta); font-size: 16px; }
 .pk-group.complete .pk-group-head b { color: var(--c-meta); }
 .pk-group-top { display: flex; align-items: center; border-bottom: 1px solid var(--rule); }
 .pk-group-top .pk-group-head { border-bottom: 0; }
@@ -2507,4 +2508,68 @@ body.kb-open .tabbar { display: none; }
 .pf-photo-btns { display: flex; flex-direction: column; align-items: flex-start; gap: 8px; }
 .form .pf-photo-btns label.file-link { margin: 0; color: var(--primary); font-size: 0.85rem; }
 .profile-panel .account-homes { margin-top: 18px; }
-#account-sheet .account-list label.account-item { display: flex !important; font-size: 15px !important; letter-spacing: normal !important; text-transform: none !important; color: var(--text) !important; margin: 0 !important; }
+#account-sheet .account-backup { justify-content: flex-start; gap: 24px; cursor: default; }
+#account-sheet .account-backup .link, #account-sheet .account-backup label.file-link { margin: 0 !important; font-size: 13px !important; color: var(--text) !important; letter-spacing: 0.04em; }
+.account-login { width: 100%; margin: 0 0 8px; }
+#cl-form[hidden], .account-login[hidden] { display: none; }
+
+/* 打包清單：一直顯示的組別沒有東西時，下方一行灰字（點了直接去挑） */
+.pk-group-empty { display: flex; align-items: center; width: 100%; min-height: 48px; padding: 0; border: 0; border-bottom: 1px solid var(--line); background: none; font: inherit; font-size: 13px; color: var(--c-meta); text-align: left; cursor: pointer; }
+
+/* 抽屜「剩多少」：一行四格（只有會用完的東西才出現），高度跟輸入欄位一樣，不換行 */
+.dr-level-field { display: flex; align-items: center; gap: 12px; margin: 0 0 16px; }
+.dr-level-label { flex: none; font-size: 0.9rem; color: var(--muted); }
+.dr-level-field .dr-level-seg { flex: 1; min-width: 0; margin: 0; }
+.dr-level-seg { display: flex; flex-wrap: nowrap; margin: 0; }
+.dr-level-seg button { flex: 1 1 0; min-width: 0; min-height: 44px; padding: 0 4px; font-size: 13px !important; white-space: nowrap; letter-spacing: 0.04em !important; }
+.dr-row .dr-level-seg { flex: none; margin-left: auto; }
+.dr-row .dr-level-seg button { flex: none; min-height: 32px; padding: 0 8px; font-size: 12px !important; }
+
+/* 衣櫃篩選：不放小標，每一排之間一條很細的分隔線 */
+.filters .filter-row { padding: 8px 0; border-top: 1px solid var(--line); }
+.filters .filter-row:first-child { border-top: 0; padding-top: 0; }
+.filters .filter-row .chips.filter { margin-bottom: 0; }
+
+/* =====================================================================
+   對齊與間距整理：所有內容對齊同一條左邊線、右邊線；間距只用 8／16／24／40px
+   ===================================================================== */
+:root { --gap-xs: 8px; --gap-s: 16px; --gap-m: 24px; --gap-l: 40px; }
+/* 分頁列第一個分頁的字貼齊左邊線 */
+.tabs .tab:first-child { padding-left: 0; }
+/* 手機：衣櫃／抽屜／行李箱的英文換到下一行時，跟中文同一條左邊線 */
+@media (max-width: 599px) { .home-switch .tab-en { display: block; margin-left: 0; margin-top: 2px; } }
+/* 清單類的組別：組和組之間 24px，標題列一樣高，標題下方一條線 */
+.pk-group { margin-top: var(--gap-m); }
+.dr-group.card { border-top: 0; padding: 0; margin: var(--gap-m) 0 0; background: transparent; }
+.dr-group-head { align-items: center; min-height: 44px; margin: 0; border-bottom: 1px solid var(--rule); }
+.dr-group-head b { font-family: inherit; font-size: 15px; font-weight: 500 !important; letter-spacing: 0.06em; }
+.dr-group-head .muted { font-size: 12px; color: var(--c-meta); }
+/* 抽屜每一列一樣高，名稱、數量、剩多少垂直置中 */
+.dr-row { border-top: 0; border-bottom: 1px solid var(--line); min-height: 64px; padding: var(--gap-xs) 0; align-items: center; }
+.dr-row .dr-qty, .dr-row .dr-level-seg { align-self: center; }
+/* 有單位的輸入欄（g、kg、約）：單位放在框裡面，欄位寬度和旁邊的欄位一樣 */
+.input-unit:not(:has(select)) { position: relative; display: block; }
+.input-unit:not(:has(select)) input { width: 100%; padding-right: 34px; }
+.input-unit:not(:has(select)) .unit-text { position: absolute; right: 12px; top: calc(50% + 2px); transform: translateY(-50%); margin: 0; padding: 0; pointer-events: none; }
+.input-unit:not(:has(select)) .approx { position: absolute; left: 8px; top: calc(50% + 2px); transform: translateY(-50%); margin: 0; padding: 2px 6px; font-size: 11px; z-index: 1; pointer-events: none; }
+.input-unit:not(:has(select)) .approx:not([hidden]) + input { padding-left: 42px; }
+/* 抽屜新增：數量加減和旁邊的「單位」一樣寬、一樣高 */
+.dr-add-qty { display: flex; width: 100%; margin-top: 4px; }
+.dr-add-qty .dr-step { width: 44px; height: 44px; flex: none; }
+.dr-add-qty input { flex: 1; width: auto; min-width: 0; height: 44px; min-height: 44px; }
+/* 所有輸入欄、選單一樣高（44px） */
+input:not([type=checkbox]):not([type=radio]):not([type=file]):not([type=range]), select { height: 44px; min-height: 44px; box-sizing: border-box; }
+.dr-level-field .dr-level-seg button { min-height: 42px; }
+#dr-add.card { border-top: 0; padding-top: var(--gap-xs); padding-bottom: var(--gap-xs); }
+.dr-add-row .btn { height: 44px; min-height: 44px; align-self: center; margin-top: 4px; }
+/* 有清單、表單的彈出視窗都一樣寬（560px）；只有一個問題的小視窗維持窄版 */
+#pk-add-sheet .ask-panel, #pk-edit-sheet .ask-panel, #int-sheet .ask-panel, #profile-sheet .sheet-panel, #account-sheet .sheet-panel { max-width: 560px; }
+/* 分頁按鈕（衣櫃／抽屜／行李箱、清單／行李、衣服／鞋子…）一樣高；篩選選項一樣高、一樣字級 */
+.tabs .tab, .home-switch a, .home-switch button, .pk-tabs button { min-height: 40px; display: inline-flex; align-items: center; box-sizing: border-box; padding-top: 0; padding-bottom: 0; }
+@media (max-width: 599px) { .home-switch:not(.pk-tabs) a, .home-switch:not(.pk-tabs) button { flex-direction: column; align-items: flex-start; justify-content: center; } }
+.closet-sub .chip, .filters .chip { min-height: 34px; padding: 4px 10px; font-size: 13px !important; }
+.pk-tabs button { white-space: nowrap; flex-wrap: nowrap; }
+
+/* 衣服的小分類那一排也跟下面的篩選一樣，用細線分開 */
+.closet-sub { margin: 0; padding: 0 0 8px; }
+.closet-sub:not([hidden]) + .filters .filter-row:first-child { border-top: 1px solid var(--line); padding-top: 8px; }

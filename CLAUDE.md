@@ -12,12 +12,12 @@
   - 購物（自己買、自己留的）`Shop.writePurchase`；要送人的一律是禮物 `Shop.writeGift`（旅途中買的 source 'trip'）
   - 禮物 `Shop.writeGift`
   - 常搭航空公司與額度 `Onboard.setDefaults`
-  - 必帶清單 `App.addMust(名字, 預設行李, 重量)`（預設內容在 app.js 的 `DEFAULT_MUST`）
+  - 必帶清單 `App.addMust(名字, 預設行李, 重量)`（預設內容在 app.js 的 `DEFAULT_MUST`：「忘了會出問題、當地也買不到」的東西；打包清單的「必帶、上衣、下身、鞋子、首飾盒、貼身衣物、保養品」一直顯示，沒東西時下方灰字可以直接去挑）
   - 預留空間（這趟想留給購物和送禮的重量，以前叫購物目標）：`Trips.create` 的 `shopGoal`
   - 每日穿搭：當天活動 `Outfit.setActs(旅程 id, 日期, 活動[])`、確定這套 `Outfit.confirm(旅程 id, 日期)`（自動搭配靠衣服的 pattern／seasons／styles／uses 標籤，範例衣服要填）
   - 貼身衣物（衣櫃裡只記數量的襪子、內衣褲）：數量 `Intimates.setCount(項目 id, 家, 數量)`、新增項目 `Intimates.create`、加進某趟清單 `Packing.addIntimate(旅程, 項目 id, 數量, 是否放進行李)`；建議數量由 `Intimates.suggest` 依住幾晚、天氣、活動、目的地的家已有的自動算
   - 衣櫃畫面分五頁（衣服／鞋子／包包／配件／貼身衣物），資料裡的 group 不變；顏色存詳細的 `colors`（穿搭用），畫面只顯示 `tone`（深色／淺色／大地色，`Clothing.toneOf`），首飾、手錶、錶帶保留金銀色；`styles` 是場合（正式／休閒／運動／馬術）
-  - 消耗品（抽屜物品剩多少：滿／一半／快用完／沒了；保養品、保健品、洗漱用品自動記錄）：`Consumables.setLevel(物品 id, 用量)`（同時標成消耗品）、取消記錄 `Consumables.setConsumable(物品 id, false)`；城市當地好不好買：`Consumables.setAvail(城市, 'easy'|'hard'|'')`（也記成那個國家的預設）；補貨選擇：`Consumables.chooseRestock(旅程, 物品 id, 'buy'|'online'|'none', 上一個城市)`
+  - 消耗品（抽屜物品剩多少：滿／一半／快用完／沒了；只有保養品、洗漱用品、保健品、食品顯示和記錄，`Consumables.canConsume`）：`Consumables.setLevel(物品 id, 用量)`（同時標成消耗品）、取消記錄 `Consumables.setConsumable(物品 id, false)`；城市當地好不好買：`Consumables.setAvail(城市, 'easy'|'hard'|'')`（也記成那個國家的預設）；補貨選擇：`Consumables.chooseRestock(旅程, 物品 id, 'buy'|'online'|'none', 上一個城市)`
   - 範例內容改了，把 `sample-data.js` 的 `VERSION` 加 1，打開過舊範例的裝置會自動換成新的
   - 表單存檔時也呼叫同一個函式，所以兩邊不會分岔。新增功能時，請照這個做法，把「新增一筆」寫成函式，表單和範例共用。
 - **每次新增或修改功能、欄位、選項時**，都要一起檢查並更新 `sample-data.js`，讓範例能示範到最新的功能。在回報裡寫明「範例改了什麼」；沒改也要說明為什麼不需要改。

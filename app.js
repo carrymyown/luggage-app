@@ -77,15 +77,17 @@
   // 「家」是每個帳號自己的清單（第一次使用時設定，帳號選單裡可以新增、改名、刪除）。
   // 這三個只用在很舊、還沒有存「家」清單的資料，讓那時候的資料不會遺失；新帳號從空的開始
   var DEFAULT_HOMES = ['曼谷', '台灣', '昆明'];
-  // 每趟必帶清單（預設內容；帳號選單裡可以增加、刪除、改預設行李）
+  // 每趟必帶清單：「忘了會出問題、當地也買不到」的東西（預設內容；打包頁「必帶」旁的「編輯」可以增加、刪除、改預設行李）
   // id 固定：兩台裝置各自建立預設清單時，雲端合併不會重複
   // zone：pouch 隨身小包／personal 背包／carry 手提／checked 托運（這趟沒帶托運時會改放背包）
   var DEFAULT_MUST = [
-    ['must-passport', '護照', 'pouch', 0.04], ['must-wallet', '錢包', 'pouch', 0.15], ['must-phone', '手機', 'pouch', 0.2], ['must-card', '信用卡／現金', 'pouch', 0.05],
-    ['must-powerbank', '行動電源', 'carry', 0.2], ['must-cable', '充電線一包', 'carry', 0.15], ['must-earphone', '耳機', 'carry', 0.05],
-    ['must-adapter', '轉接頭', 'checked', 0.1], ['must-toothbrush', '牙刷', 'checked', 0.03], ['must-pajamas', '睡衣', 'checked', 0.35],
-    ['must-underwear', '內衣褲', 'checked', 0.2], ['must-socks', '襪子', 'checked', 0.1], ['must-medicine', '常備藥', 'checked', 0.1], ['must-skincare', '基本保養品', 'checked', 0.3]
+    ['must-passport', '護照', 'pouch', 0.04], ['must-visa', '簽證／入境文件', 'pouch', 0.02], ['must-wallet', '錢包', 'pouch', 0.15],
+    ['must-credit', '信用卡', 'pouch', 0.02], ['must-cash', '現金', 'pouch', 0.03], ['must-phone', '手機', 'pouch', 0.2],
+    ['must-cable', '充電線', 'carry', 0.1], ['must-rx', '處方藥', 'carry', 0.05], ['must-keys', '家裡的鑰匙', 'pouch', 0.05]
   ];
+  // 第一版預設必帶清單裡的其他東西（行動電源、耳機、轉接頭、牙刷、睡衣、內衣褲、襪子、常備藥、基本保養品）移出必帶，回到各自的分類
+  var OLD_DEFAULT_MUST = ['must-card', 'must-powerbank', 'must-earphone', 'must-adapter', 'must-toothbrush', 'must-pajamas', 'must-underwear', 'must-socks', 'must-medicine', 'must-skincare'];
+  var MUST_VERSION = 2;
   function defaultMust() { return DEFAULT_MUST.map(function (x) { return { id: x[0], name: x[1], zone: x[2], weight: x[3] }; }); }
 
   function defaultState() {
@@ -310,7 +312,16 @@
     if (!Array.isArray(s.trips)) s.trips = [];
     s.trips.forEach(normalizeTrip);
     // 必帶清單：以前沒有 → 用預設內容（之後你刪光了也不會再自動加回來）
-    if (!Array.isArray(s.mustList)) s.mustList = defaultMust();
+    if (!Array.isArray(s.mustList)) { s.mustList = defaultMust(); s.mustVersion = MUST_VERSION; }
+    // 必帶清單第 2 版：拿掉舊的預設項目（自己加的保留），補上新的預設項目（簽證／入境文件、信用卡、現金、處方藥、家裡的鑰匙）
+    if ((s.mustVersion || 1) < MUST_VERSION) {
+      s.mustList = s.mustList.filter(function (m) { return m && OLD_DEFAULT_MUST.indexOf(m.id) < 0; });
+      s.mustList.forEach(function (m) { if (m.id === 'must-cable' && m.name === '充電線一包') { m.name = '充電線'; m.weight = 0.1; } });
+      defaultMust().forEach(function (d) { if (!s.mustList.some(function (m) { return m.id === d.id || norm(m.name) === norm(d.name); })) s.mustList.push(d); });
+      var order = DEFAULT_MUST.map(function (x) { return x[0]; });
+      s.mustList.sort(function (a, b) { var i = order.indexOf(a.id), j = order.indexOf(b.id); return (i < 0 ? 99 : i) - (j < 0 ? 99 : j); });
+      s.mustVersion = MUST_VERSION;
+    }
     // 家的所在城市：以前沒有這個欄位，所在城市先用家的名字（例如曼谷、台北），不會遺失
     if (!s.homeCities || typeof s.homeCities !== 'object' || Array.isArray(s.homeCities)) s.homeCities = {};
     s.homes.forEach(function (h) { if (!s.homeCities[h]) s.homeCities[h] = h; });

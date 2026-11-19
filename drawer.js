@@ -49,6 +49,14 @@
     }).join('');
   }
 
+  function CS() { return window.Consumables; }
+  function levelSeg(m, attr) {
+    var lv = m.consumable === false ? '' : CS().levelOf(m);
+    return '<div class="seg dr-level-seg">' + CS().LEVELS.map(function (l) {
+      return '<button type="button" class="' + (lv === l[0] ? 'on' : '') + '" ' + attr + '="' + l[0] + '"' + (m.id ? ' data-id="' + esc(m.id) + '"' : '') + '>' + l[1] + '</button>';
+    }).join('') + '</div>';
+  }
+  // 右邊：記數量的顯示加減；不記數量的，會用完的東西（保養品、洗漱用品、保健品、食品）顯示「剩多少」四格，其他不顯示
   function qtyHTML(m) {
     if (m.count != null) {
       return '<div class="dr-qty">' +
@@ -56,10 +64,8 @@
         '<span class="dr-num' + (m.count === 0 ? ' zero' : '') + '">' + m.count + '<small>' + esc(m.countUnit || '個') + '</small></span>' +
         '<button type="button" class="dr-step" data-dr-step="1" data-id="' + esc(m.id) + '" aria-label="增加">＋</button></div>';
     }
-    var s = m.stock || 'have';
-    return '<div class="seg dr-stock">' + STOCK.map(function (x) {
-      return '<button type="button" class="' + (s === x[0] ? 'on ' + x[0] : '') + '" data-dr-stock="' + x[0] + '" data-id="' + esc(m.id) + '">' + x[1] + '</button>';
-    }).join('') + '</div>';
+    if (CS() && CS().canConsume(m)) return levelSeg(m, 'data-dr-level');
+    return '';
   }
 
   function render() {
@@ -74,11 +80,12 @@
         rows.map(function (m) {
           var loc = App.locOf(m);
           var showLoc = !tab || tab === PACKED;
-          return '<div class="dr-row' + ((m.count === 0 || m.stock === 'out') ? ' out' : '') + '">' +
+          var lvOut = CS() && CS().isConsumable(m) && CS().levelOf(m) === 'out';
+          return '<div class="dr-row' + ((m.count === 0 || lvOut) ? ' out' : '') + '">' +
             '<button type="button" class="dr-main" data-dr-open="' + esc(m.id) + '">' +
             '<span class="dr-name">' + esc(m.name) + (m.sample ? '<span class="sample-tag">範例</span>' : '') + '</span>' +
             '<span class="muted small">' + esc(weightText(m)) + (showLoc || loc.state !== 'home' ? '・' + esc(App.locText(loc)) : '') +
-              (window.Consumables && window.Consumables.isConsumable(m) ? '・<span class="dr-level lv-' + window.Consumables.levelOf(m) + '">' + window.Consumables.levelName(window.Consumables.levelOf(m)) + '</span>' : '') + '</span></button>' +
+              (m.count != null && CS() && CS().isConsumable(m) ? '・<span class="dr-level lv-' + CS().levelOf(m) + '">' + CS().levelName(CS().levelOf(m)) + '</span>' : '') + '</span></button>' +
             qtyHTML(m) + '</div>';
         }).join('') + '</div>';
     }).join('');
@@ -99,6 +106,7 @@
       m.count = Math.max(0, (m.count || 0) + +el.getAttribute('data-dr-step'));
       App.save(); render(); return;
     }
+    if ((el = t.closest('[data-dr-level]'))) { CS().setLevel(el.getAttribute('data-id'), el.getAttribute('data-dr-level')); App.save(); render(); return; }
     if ((el = t.closest('[data-dr-stock]'))) {
       var m2 = App.entryById(el.getAttribute('data-id'));
       m2.stock = el.getAttribute('data-dr-stock');
@@ -132,6 +140,20 @@
     }).join('');
   }
 
+  // 新增：品類是會用完的東西才顯示「剩多少」（預設滿）
+  var addLevel = 'full';
+  function renderAddLevel() {
+    var c = CS() && CS().canConsume({ name: $('#dr-name').value, category: $('#dr-add-cat').value });
+    $('#dr-add-level-wrap').hidden = !c;
+    if (c) $('#dr-add-level').innerHTML = CS().LEVELS.map(function (l) {
+      return '<button type="button" class="' + (addLevel === l[0] ? 'on' : '') + '" data-add-level="' + l[0] + '">' + l[1] + '</button>';
+    }).join('');
+  }
+  $('#dr-add-cat').addEventListener('change', renderAddLevel);
+  $('#dr-add-level').addEventListener('click', function (e) {
+    var b = e.target.closest('[data-add-level]'); if (!b) return;
+    addLevel = b.getAttribute('data-add-level'); renderAddLevel();
+  });
   function fillOptions() {
     $('#dr-add-cat').innerHTML = cats().map(function (c) { return '<option>' + esc(c) + '</option>'; }).join('');
     $('#dr-add-unit').innerHTML = UNITS.map(function (u) { return '<option>' + u + '</option>'; }).join('');
@@ -164,6 +186,7 @@
       fromRef = false;
     }
     checkDup();
+    renderAddLevel();
   });
   $('#dr-add-weight').addEventListener('input', function () { fromRef = false; $('#dr-add-approx').hidden = true; });
 
@@ -206,14 +229,17 @@
     $('#dr-next').checked = false;
     $('#dr-dup').hidden = true;
     $('#dr-add-approx').hidden = true;
+    addLevel = 'full'; $('#dr-add-level-wrap').hidden = true;
   }
 
   // ---------- 新增一筆抽屜用品（表單和範例資料都用這裡，格式才會一樣） ----------
   // o：{ name, weight(kg), unit, category, estimated, home, count（數量，可空白）, id?, extra?,
   //      packTrip?（要加進打包清單的旅程：畫面上勾了「加入下一趟的打包清單」） }
+  //      level?（剩多少：full／half／low／out，只有保養品、洗漱用品、保健品、食品會記）
   function create(o) {
     var m = App.makeDrawerEntry(o);
     st().memory.push(m);
+    if (o.level && CS() && CS().canConsume(m)) CS().setLevel(m.id, o.level);
     if (o.packTrip && window.Packing) window.Packing.addToTrip(o.packTrip, m);
     return m;
   }
@@ -235,6 +261,7 @@
       estimated: fromRef || !(isFinite(g) && g >= 0),
       home: addHome,
       count: isFinite(qty) && $('#dr-add-qty').value !== '' ? qty : null,
+      level: addLevel,
       packTrip: $('#dr-next').checked ? App.nextTrip() : null
     });
     App.save();
@@ -263,13 +290,13 @@
     var m = cur, loc = App.locOf(m);
     var counting = m.count != null;
     $('#drd-mode').innerHTML = '<button type="button" class="' + (counting ? 'on' : '') + '" data-drd-mode="count">記數量</button>' +
-      '<button type="button" class="' + (!counting ? 'on' : '') + '" data-drd-mode="stock">有／快用完／沒了</button>';
+      '<button type="button" class="' + (!counting ? 'on' : '') + '" data-drd-mode="stock">不記數量</button>';
     $('#drd-count-wrap').hidden = !counting;
     $('#drd-count').textContent = counting ? m.count : '';
     $('#drd-unit').innerHTML = UNITS.concat((m.countUnit && UNITS.indexOf(m.countUnit) < 0) ? [m.countUnit] : []).map(function (u) {
       return '<button type="button" class="chip' + ((m.countUnit || '個') === u ? ' on' : '') + '" data-drd-unit="' + esc(u) + '">' + esc(u) + '</button>';
     }).join('');
-    $('#drd-stock').hidden = counting;
+    $('#drd-stock').hidden = true;   // 以前的「有／快用完／沒了」不再顯示（資料保留）
     $('#drd-stock').innerHTML = STOCK.map(function (x) {
       return '<button type="button" class="' + ((m.stock || 'have') === x[0] ? 'on ' + x[0] : '') + '" data-drd-stock="' + x[0] + '">' + x[1] + '</button>';
     }).join('');
@@ -281,17 +308,9 @@
       return '<button type="button" class="chip" data-drd-home="' + esc(h) + '">' + (loc.state === 'none' ? '放在 ' : '移到 ') + esc(h) + '</button>';
     }).join('');
     // 消耗品：保養品、洗漱用品、保健品、食品可以標成消耗品，用量四格（滿、一半、快用完、沒了）
-    var CS = window.Consumables;
-    var can = CS && (CS.canConsume(m) || m.consumable);
-    $('#drd-consum-wrap').hidden = !can;
-    if (can) {
-      var on = CS.isConsumable(m);
-      $('#drd-consum').checked = on;
-      $('#drd-level-wrap').hidden = !on;
-      $('#drd-level').innerHTML = CS.LEVELS.map(function (l) {
-        return '<button type="button" class="' + (CS.levelOf(m) === l[0] ? 'on' : '') + '" data-drd-level="' + l[0] + '">' + l[1] + '</button>';
-      }).join('');
-    }
+    var can = CS() && CS().canConsume(m);
+    $('#drd-level-wrap').hidden = !can;
+    if (can) $('#drd-level').outerHTML = levelSeg(m, 'data-drd-level').replace('<div class="seg dr-level-seg">', '<div id="drd-level" class="seg dr-level-seg">');
     var packed = !!App.packedItem(m);
     $('#drd-bag').hidden = packed;
     $('#drd-pack').textContent = packed ? '從行李拿出來' : '放進行李';
@@ -315,7 +334,6 @@
     var t = e.target, el;
     if (!cur) return;
     if ((el = t.closest('[data-drd-level]'))) { window.Consumables.setLevel(cur.id, el.getAttribute('data-drd-level')); App.save(); renderDetail(); return; }
-    if (t.id === 'drd-consum') { window.Consumables.setConsumable(cur.id, t.checked); App.save(); renderDetail(); return; }
     if ((el = t.closest('[data-drd-mode]'))) {
       if (el.getAttribute('data-drd-mode') === 'count') { if (cur.count == null) cur.count = cur.stock === 'out' ? 0 : 1; cur.countUnit = cur.countUnit || cur.unit || '個'; }
       else { cur.stock = cur.count === 0 ? 'out' : 'have'; cur.count = null; }
