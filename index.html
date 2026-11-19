@@ -8,17 +8,17 @@
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-title" content="Carry My Own">
   <!-- 目前的版本（發布時更新；和 version.json 比對，有新版就提示更新） -->
-  <meta name="app-version" content="20261118o">
+  <meta name="app-version" content="20261119a">
   <title>Carry My Own</title>
   <!-- 圖示：瀏覽器分頁（網址前面）、iPad 主畫面、安裝成 app 時用 -->
-  <link rel="icon" type="image/svg+xml" href="icons/favicon.svg?v=20261118o">
-  <link rel="icon" href="icons/favicon-32.png?v=20261118o" sizes="32x32" type="image/png">
-  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png?v=20261118o">
+  <link rel="icon" type="image/svg+xml" href="icons/favicon.svg?v=20261119a">
+  <link rel="icon" href="icons/favicon-32.png?v=20261119a" sizes="32x32" type="image/png">
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png?v=20261119a">
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800;900&family=Noto+Sans+TC:wght@400;500;700;900&display=swap">
-  <link rel="stylesheet" href="style.css?v=20261118o">
+  <link rel="stylesheet" href="style.css?v=20261119a">
 </head>
 <body>
   <main>
@@ -382,6 +382,8 @@
           <div class="filter-row"><span class="filter-label">風格</span><div id="closet-f-style" class="chips filter"></div></div>
         </div>
         <div id="closet-grid" class="closet-grid"></div>
+        <!-- 貼身衣物：只記數量（不用照片），依家分開 -->
+        <div id="closet-intimates" class="int-wrap" hidden></div>
         <div id="closet-empty" class="empty-state" hidden><p class="empty-line">還沒有衣服</p><a href="#closet/new" class="btn primary">新增第一件</a></div>
         <p id="closet-storage" class="muted small center"></p>
       </div>
@@ -552,6 +554,25 @@
         <button type="submit" class="btn primary">儲存</button>
       </div>
       <button type="button" id="pk-edit-delete" class="btn danger">這趟不帶（從清單刪除）</button>
+    </form>
+  </div>
+
+  <!-- 貼身衣物：新增／修改一項 -->
+  <div id="int-sheet" class="sheet ask-sheet" hidden>
+    <form id="int-form" class="sheet-panel ask-panel form" autocomplete="off">
+      <div id="int-title" class="sheet-title">新增貼身衣物</div>
+      <label>名稱<input id="int-name" maxlength="30" placeholder="例如：船型襪"></label>
+      <div class="pk-add-row">
+        <label>種類<select id="int-group"></select></label>
+        <label>單位<select id="int-unit"></select></label>
+      </div>
+      <label>每雙／每件的重量（g）<input id="int-weight" type="number" inputmode="decimal" min="0" step="any" placeholder="例如 40"></label>
+      <label class="pk-only"><input id="int-disposable" type="checkbox"> 用完就丟（例如免洗內褲：旅程中每天扣掉，用完的不會回到家裡）</label>
+      <div class="cloud-btns">
+        <button type="button" id="int-cancel" class="btn ghost">取消</button>
+        <button type="submit" class="btn primary">儲存</button>
+      </div>
+      <button type="button" id="int-delete" class="btn danger" hidden>刪除這一項</button>
     </form>
   </div>
 
@@ -928,27 +949,28 @@
     </div>
   </div>
 
-  <script src="lang.js?v=20261118o"></script>
-  <script src="i18n.js?v=20261118o"></script>
-  <script src="weights.js?v=20261118o"></script>
-  <script src="photos.js?v=20261118o"></script>
-  <script src="clothing.js?v=20261118o"></script>
-  <script src="ui.js?v=20261118o"></script>
-  <script src="app.js?v=20261118o"></script>
-  <script src="closet.js?v=20261118o"></script>
-  <script src="trips.js?v=20261118o"></script>
-  <script src="organize.js?v=20261118o"></script>
-  <script src="packing.js?v=20261118o"></script>
-  <script src="drawer.js?v=20261118o"></script>
-  <script src="bags.js?v=20261118o"></script>
-  <script src="shop.js?v=20261118o"></script>
-  <script src="outfit.js?v=20261118o"></script>
-  <script src="sample-data.js?v=20261118o"></script>
-  <script src="onboard.js?v=20261118o"></script>
-  <script src="intro.js?v=20261118o"></script>
-  <script src="nav.js?v=20261118o"></script>
-  <script src="backup.js?v=20261118o"></script>
+  <script src="lang.js?v=20261119a"></script>
+  <script src="i18n.js?v=20261119a"></script>
+  <script src="weights.js?v=20261119a"></script>
+  <script src="photos.js?v=20261119a"></script>
+  <script src="clothing.js?v=20261119a"></script>
+  <script src="ui.js?v=20261119a"></script>
+  <script src="app.js?v=20261119a"></script>
+  <script src="closet.js?v=20261119a"></script>
+  <script src="trips.js?v=20261119a"></script>
+  <script src="organize.js?v=20261119a"></script>
+  <script src="packing.js?v=20261119a"></script>
+  <script src="drawer.js?v=20261119a"></script>
+  <script src="bags.js?v=20261119a"></script>
+  <script src="shop.js?v=20261119a"></script>
+  <script src="outfit.js?v=20261119a"></script>
+  <script src="intimates.js?v=20261119a"></script>
+  <script src="sample-data.js?v=20261119a"></script>
+  <script src="onboard.js?v=20261119a"></script>
+  <script src="intro.js?v=20261119a"></script>
+  <script src="nav.js?v=20261119a"></script>
+  <script src="backup.js?v=20261119a"></script>
   <script src="vendor/supabase.js"></script>
-  <script src="cloud.js?v=20261118o"></script>
+  <script src="cloud.js?v=20261119a"></script>
 </body>
 </html>

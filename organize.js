@@ -207,6 +207,7 @@
     stayItems.forEach(function (it) {
       stayed++;
       if (window.Shop) window.Shop.leftAtHome(it, cur.home, cur.date);   // 購物放進這個家的抽屜、禮物記成在這個家
+      if (it.intimateId && window.Intimates) window.Intimates.leftAtHome(it, cur.home);   // 貼身衣物：剩下的數量放進這個家
       var m = it.catalogId && App.entryById(it.catalogId);
       if (m && App.locOf(m) && !s.items.some(function (x) { return x.catalogId === m.id; })) {
         App.markHome(m, cur.home, cur.date, true);

@@ -1836,6 +1836,8 @@
   // ---------- 畫面切換 ----------
   // 網址：#home、#add、#closet（衣櫃）、#closet/new（新增衣服）、#closet/<id>（編輯衣服）
   function route() {
+    // 免洗內褲：旅程中每過一天扣掉一件（行李變輕）
+    if (window.Intimates && window.Intimates.consume()) save();
     // 登入後雲端帶回來的語言設定（換裝置也維持同一個語言）
     if (!sampleMode() && state.prefs && (state.prefs.lang === 'en' || state.prefs.lang === 'zh') && window.I18N && state.prefs.lang !== window.I18N.lang()) {
       window.I18N.set(state.prefs.lang, { quiet: true });

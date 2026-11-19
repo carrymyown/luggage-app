@@ -98,7 +98,7 @@
   //   第 0 天台北飛東京、第 2 天在東京有正式晚餐（東京的家有黑色洋裝和樂福鞋，不用帶）
   //   CONFIRM：按過「確定這套」的那幾天（這套的衣服會加進打包清單，不重複）
   //   前三天已經搭好（每日列表右邊的小方格是穿搭縮圖），之後幾天還沒搭（虛線框＋「＋」）
-  var DAY_ACTS = [{ day: 0, acts: ['長途飛行'] }, { day: 1, acts: ['日常逛街'] }, { day: 2, acts: ['正式場合'] }, { day: 5, acts: ['日常逛街'] }];
+  var DAY_ACTS = [{ day: 0, acts: ['長途飛行'] }, { day: 1, acts: ['日常逛街'] }, { day: 2, acts: ['正式場合'] }, { day: 5, acts: ['日常逛街'] }, { day: 6, acts: ['運動'] }];
   var CONFIRM = [0, 1, 2];
   // 已經打勾（放進行李）的東西，其他的還沒打勾
   var PACKED = ['護照', '錢包', '白色 T 恤', '牛仔褲', '充電線', '白色運動鞋'];
@@ -111,6 +111,16 @@
   var GIFT_BUYS = [
     { name: '首爾的人蔘茶', weight: 0.4, qty: 1, to: '媽媽', city: '台北', status: 'packed', bag: 'checked' }
   ];
+
+  // 衣櫃 → 貼身衣物：只記數量，依家分開（項目是預設的：保暖長襪、一般長襪、短襪、成套內衣褲、運動內衣、一般內褲、免洗內褲）
+  //   這趟住 7 晚、天氣冷 → 建議保暖長襪；東京的公寓已經有 3 雙保暖長襪、2 套內衣褲 → 建議數量自動扣掉，顯示「東京的家有 3 雙」
+  //   第 6 天在首爾去健身（活動：運動）→ 建議 1 件運動內衣
+  //   免洗內褲（用完就丟）：自己加 3 件並放進行李，旅程中每過一天扣掉一件，用完的不會回到家裡
+  var INTIMATES = {
+    '台北': { 'int-sock-warm': 4, 'int-sock-long': 3, 'int-sock-short': 6, 'int-set': 8, 'int-sport': 2, 'int-brief': 3, 'int-disposable': 10 },
+    '東京的公寓': { 'int-sock-warm': 3, 'int-set': 2 }
+  };
+  var DISPOSABLE = { id: 'int-disposable', qty: 3, pack: true };
 
   // 範例的英文版：切換到 English 時，範例的家、城市、物品、旅程、行李箱、購物和禮物用這些英文名稱
   // （只在範例模式套用；使用者自己的資料照原樣顯示）。範例內容改了，這裡也要一起加上英文。
@@ -128,7 +138,7 @@
   if (window.I18N) window.I18N.addSample(EN_NAMES);
 
   // 範例內容的版本：改了範例內容就加 1，已經打開過舊範例的裝置會自動換成新的
-  var VERSION = 4;
+  var VERSION = 5;
 
   // ================= 產生範例（用各功能自己的新增函式） =================
 
@@ -179,12 +189,20 @@
     });
     trip.sample = true;
 
+    // 貼身衣物的數量（產生打包清單前先記好，建議數量才會扣掉目的地的家已經有的）
+    Object.keys(INTIMATES).forEach(function (h) {
+      Object.keys(INTIMATES[h]).forEach(function (id) { window.Intimates.setCount(id, h, INTIMATES[h][id]); });
+    });
+
     var zones = {};
     Object.keys(PACK_ZONES).forEach(function (k) { zones[k] = bagIds[PACK_ZONES[k]]; });
     window.Packing.prepareTrip(trip, zones, PACKED, ADD_TO_LIST);
 
     // 每日穿搭（行程 → 點旅程）：每天的活動、按「確定這套」（跟畫面上的操作一樣）
     DAY_ACTS.forEach(function (d) { window.Outfit.setActs(trip.id, day(d.day), d.acts); });
+    // 活動改了（第 6 天運動）：打包清單的貼身衣物建議跟著更新；免洗內褲自己加 3 件放進行李
+    window.Packing.prepareTrip(trip, zones, [], []);
+    window.Packing.addIntimate(trip, DISPOSABLE.id, DISPOSABLE.qty, DISPOSABLE.pack);
     CONFIRM.forEach(function (n) { window.Outfit.confirm(trip.id, day(n)); });
 
     PURCHASES.forEach(function (p) {

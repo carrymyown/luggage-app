@@ -926,7 +926,7 @@ input[type="date"]::-webkit-date-and-time-value { text-align: left; }
   .ask-sheet { align-items: flex-start; padding-top: 18vh; }
 }
 /* 打包清單「新增」：衣櫃／抽屜東西很多時，視窗裡面捲動，下面的按鈕才按得到 */
-#pk-add-sheet .ask-panel { max-height: calc(100% - 12px); overflow-y: auto; -webkit-overflow-scrolling: touch; }
+#pk-add-sheet .ask-panel, #pk-edit-sheet .ask-panel, #int-sheet .ask-panel { max-height: calc(100% - 12px); overflow-y: auto; -webkit-overflow-scrolling: touch; }   /* 小手機：表單比畫面高時在視窗裡捲動，下面的按鈕才按得到 */
 
 /* ---------- 打包清單 ---------- */
 .tabbar a { font-size: 0.72rem; }
@@ -2397,3 +2397,26 @@ svg * { vector-effect: non-scaling-stroke; }
 /* 英文模式：底部導覽的字比較長，字距收一點，小螢幕也放得下 */
 .lang-en .tabbar a { letter-spacing: 0.04em !important; }
 @media (max-width: 360px) { .lang-en .tabbar a { font-size: 10px !important; } }
+
+/* =====================================================================
+   衣櫃 → 貼身衣物：清單（名稱、數量、單位、加減按鈕），依家切換
+   ===================================================================== */
+.int-wrap { margin-top: 8px; }
+.int-homes { margin: 4px 0 8px; }
+.int-intro { margin: 0 0 8px; }
+.int-group { margin-top: 18px; }
+.int-group-head { font-size: 15px; font-weight: 500 !important; letter-spacing: 0.06em; padding-bottom: 8px; border-bottom: 1px solid var(--rule); }
+.int-row { display: flex; align-items: center; gap: 12px; min-height: 60px; padding: 8px 0; border-bottom: 1px solid var(--line); }
+.int-name { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; padding: 0; border: 0; background: none; color: var(--text); font: inherit; text-align: left; cursor: pointer; }
+.int-title { font-size: 15px; }
+.int-step { flex: none; display: flex; align-items: center; gap: 4px; }
+.int-btn { width: 44px; height: 44px; border: 1px solid var(--line); background: #FFFFFF; color: #111111; font-size: 18px; line-height: 1; cursor: pointer; border-radius: 0; }
+.int-btn:disabled { color: #CFCFCF; cursor: default; }
+.int-n { min-width: 64px; text-align: center; font-size: 13px; color: var(--c-meta); white-space: nowrap; }
+.int-n b { font-size: 17px; font-weight: 500 !important; color: var(--text); font-variant-numeric: tabular-nums; }
+.int-add { width: 100%; margin-top: 18px; }
+/* 打包清單：用完就丟、建議數量的說明 */
+.pk-tag-disp { display: inline-block; margin-left: 8px; padding: 0 6px; border: 1px solid #111111; font-size: 11px !important; letter-spacing: 0.08em; line-height: 1.6; }
+.pk-int-note { display: block; width: 100%; margin-top: 2px; }
+.pk-todo-sub { flex-wrap: wrap; }
+.must-linked { display: block; }

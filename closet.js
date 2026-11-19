@@ -82,13 +82,27 @@
     App.toast('已移到' + h);
   });
 
+  var INT_TAB = '__intimates';
   function renderList() {
     var all = clothes();
     $('#closet-tabs').innerHTML = [{ name: '' }].concat(C.GROUPS).map(function (g) {
       var n = g.name ? all.filter(function (m) { return m.clothing.group === g.name; }).length : all.length;
       return '<button type="button" class="tab' + (g.name === tab ? ' on' : '') + '" data-tab="' + esc(g.name) + '">' +
         (g.name ? esc(shortGroup(g.name)) : '全部') + '<small>' + n + '</small></button>';
-    }).join('');
+    }).join('') +
+      // 貼身衣物：只記數量的清單（不是照片格子）
+      (window.Intimates ? '<button type="button" class="tab' + (tab === INT_TAB ? ' on' : '') + '" data-tab="' + INT_TAB + '">貼身衣物<small>' + window.Intimates.items().length + '</small></button>' : '');
+    var intOn = tab === INT_TAB && !!window.Intimates;
+    $('#closet-intimates').hidden = !intOn;
+    $('#closet-grid').hidden = intOn;
+    document.querySelector('#closet-list .filters').hidden = intOn;
+    var addTop = document.querySelector('#closet-list .page-top-end'); if (addTop) addTop.hidden = intOn;
+    if (intOn) {
+      window.Intimates.renderInto($('#closet-intimates'));
+      $('#closet-empty').hidden = true;
+      $('#closet-storage').textContent = '';
+      return;
+    }
 
     // 顏色篩選：只列出目前分頁裡有用到的顏色
     var used = [];
@@ -452,5 +466,5 @@
     }
   }
 
-  window.Closet = { show: show, create: create };
+  window.Closet = { show: show, create: create, showIntimates: function () { tab = INT_TAB; } };
 })();

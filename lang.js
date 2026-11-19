@@ -467,6 +467,26 @@ window.LANG = { zh: { name: '繁體中文' }, en: { name: 'English', text: {}, r
   R(/^旅程結束，回到(.+)$/, function (m, tr) { return 'Trip over — back at ' + tr(m[1]); });
   R(/^下一段：(.+)$/, function (m, tr) { return 'Next flight: ' + tr(m[1]); });
 
+  // 貼身衣物
+  add({
+    '貼身衣物': 'Intimates', '保暖長襪（棉）': 'Warm socks (cotton)', '一般長襪': 'Crew socks', '短襪': 'Ankle socks', '成套內衣褲': 'Underwear set',
+    '運動內衣': 'Sports bra', '一般內褲': 'Briefs', '免洗內褲': 'Disposable briefs', '雙': 'pairs', '套': 'sets', '用完就丟': 'Use and toss',
+    '只記數量，不用照片。點名稱可以改名稱和每件的重量，打包時用來算重量。': 'Just counts, no photos. Tap a name to edit it and its weight per piece — used for packing weight.',
+    '還沒有家。先在右上角帳號裡新增一個家，就能記每個家有幾件。': 'No homes yet. Add a home in Account to keep counts for each home.',
+    '還沒有項目。': 'No items yet.', '＋ 新增項目': '＋ Add item', '新增貼身衣物': 'Add intimates item', '修改貼身衣物': 'Edit intimates item', '例如：船型襪': 'e.g. no-show socks',
+    '種類': 'Type', '每雙／每件的重量（g）': 'Weight per pair / piece (g)', '刪除這一項': 'Delete this item',
+    '用完就丟（例如免洗內褲：旅程中每天扣掉，用完的不會回到家裡）': 'Use and toss (e.g. disposable briefs: one is deducted each day of the trip and never returns home)',
+    '（每個家記的數量會一起刪除；已經放進行李的不受影響）': '(Counts at every home are deleted too; anything already in your bags stays)',
+    '有運動行程': 'Sport on the itinerary', '天氣冷': 'Cold weather', '天氣熱': 'Hot weather', '連到衣櫃的貼身衣物': 'Linked to Intimates', '依天數自動帶入': 'quantity follows trip length'
+  });
+  R(/^(.+) × (\d+)$/, function (m, tr) { var t = tr(m[1]); return t === m[1] ? null : t + ' × ' + m[2]; });
+  R(/^每(雙|件|套|個|包)約 ([\d.]+ ?k?g)$/, function (m) { var u = { '雙': 'pair', '件': 'piece', '套': 'set', '個': 'piece', '包': 'pack' }[m[1]]; return '≈ ' + m[2] + ' per ' + u; });
+  R(/^依 (\d+) 晚建議$/, function (m) { return 'Suggested for ' + m[1] + (m[1] === '1' ? ' night' : ' nights'); });
+  R(/^(.+)的家有 (\d+) (雙|件|套)$/, function (m, tr) { var u = { '雙': 'pairs', '件': 'pcs', '套': 'sets' }[m[3]]; return tr(m[1]) + ' home has ' + m[2] + ' ' + u; });
+  R(/^已用 (\d+) (雙|件|套)?$/, function (m) { return 'Used ' + m[1]; });
+  R(/^剩 (\d+)$/, function (m) { return m[1] + ' left'; });
+  R(/^已新增：(.+)$/, function (m, tr) { return 'Added: ' + tr(m[1]); });
+
   // 最後才比對的通用句型（前面都不符合時）
   R(/^在(.+)$/, function (m, tr) { var t = tr(m[1]); return 'At ' + t; });
   R(/^從(.+)帶出$/, function (m, tr) { return 'from ' + tr(m[1]); });
