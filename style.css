@@ -2453,3 +2453,10 @@ svg * { vector-effect: non-scaling-stroke; }
 /* 出發前檢查：要注意的項目用近黑色加粗（全 app 只用黑白灰，進度條除外） */
 .ck-block.bad, .ck-block.bad b, .ck-block.bad .ck-row, .ck-block.bad .ck-row b { color: var(--text) !important; }
 .ck-block.bad > b { font-weight: 500 !important; }
+
+/* =====================================================================
+   底部導覽列：每一頁都固定在最下方，永遠在頁面內容上面（彈出視窗會蓋住它）
+   ===================================================================== */
+.tabbar { position: fixed !important; left: 0; right: 0; bottom: 0; z-index: 18; padding-bottom: env(safe-area-inset-bottom, 0px); }
+/* 打字時（手機、iPad 的螢幕鍵盤打開）先收起導覽列，才不會蓋住輸入框和按鈕 */
+body.kb-open .tabbar { display: none; }

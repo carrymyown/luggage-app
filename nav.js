@@ -14,6 +14,29 @@
     if (e.target.id === 'account-sheet' || e.target.id === 'account-close' || e.target.closest('[data-account-close]')) $('#account-sheet').hidden = true;
   });
 
+  // ---------- 鍵盤打開時收起底部導覽列（觸控裝置） ----------
+  // 在輸入框打字時，iPhone／iPad 的鍵盤會把固定在底部的導覽列推上來，可能蓋住輸入框或按鈕
+  var touch = false;
+  try { touch = matchMedia('(pointer: coarse)').matches; } catch (e) { /* 不支援就當作不是觸控 */ }
+  function typing(el) {
+    if (!el || !el.tagName) return false;
+    if (el.tagName === 'TEXTAREA' || el.isContentEditable) return true;
+    if (el.tagName !== 'INPUT') return false;
+    return ['checkbox', 'radio', 'button', 'submit', 'reset', 'file', 'range', 'color'].indexOf((el.type || 'text').toLowerCase()) < 0;
+  }
+  var kbTimer = null;
+  document.addEventListener('focusin', function (e) {
+    if (!touch || !typing(e.target)) return;
+    clearTimeout(kbTimer);
+    document.body.classList.add('kb-open');
+  });
+  document.addEventListener('focusout', function () {
+    if (!touch) return;
+    clearTimeout(kbTimer);
+    // 從一個輸入框跳到下一個時不要閃一下
+    kbTimer = setTimeout(function () { if (!typing(document.activeElement)) document.body.classList.remove('kb-open'); }, 120);
+  });
+
   // ---------- 「＋」選單 ----------
   function closePlus() { $('#plus-sheet').hidden = true; }
 
