@@ -502,7 +502,7 @@ window.LANG = { zh: { name: '繁體中文' }, en: { name: 'English', text: {}, r
   R(/^(.+)的家：(.+?)(快用完|沒了)$/, function (m, tr) { return tr(m[1]) + ' home: ' + tr(m[2]) + (m[3] === '沒了' ? ' is out' : ' is running low'); });
   R(/^在(.+)買$/, function (m, tr) { return 'Buy in ' + tr(m[1]); });
   R(/^在(.+)買・已加進購物計畫，抵達時自動補成「滿」$/, function (m, tr) { return 'Buying in ' + tr(m[1]) + ' · added to shopping plans; set to Full when you arrive'; });
-  R(/^(.+) 提醒你下單$/, function (m, tr) { return 'reminder on ' + tr(m[1]); });
+  R(/^([^・]+) 提醒你下單$/, function (m, tr) { return 'reminder on ' + tr(m[1]); });
   R(/^抵達前 (\d+) 天提醒你下單$/, function (m) { return 'We will remind you to order ' + m[1] + ' days before you arrive'; });
   R(/^快速檢查：(.+)的家的消耗品$/, function (m, tr) { return 'Quick check: consumables at ' + tr(m[1]) + ' home'; });
   R(/^省下 ([\d.]+ ?k?g)$/, function (m) { return 'saves ' + m[1]; });
@@ -511,14 +511,35 @@ window.LANG = { zh: { name: '繁體中文' }, en: { name: 'English', text: {}, r
   R(/^建議帶旅行分裝 約 (.+)$/, function (m) { return 'bring a travel size, about ' + m[1]; });
   R(/^到當地買、家裡已經有，這趟一共省下 ([\d.]+) kg$/, function (m) { return 'Buying locally and using what is at home saves ' + m[1] + ' kg on this trip'; });
 
+  // 衣櫃五個分頁、三種顏色、場合；打包頁新增按鈕；洗漱和保養品
+  add({
+    '包包': 'Bags', '首飾盒': 'Jewelry box', '深色': 'Dark', '淺色': 'Light', '大地色': 'Earth tones', '場合': 'Occasion', '馬術': 'Equestrian',
+    '點下方 ＋ 新增第一件': 'Tap ＋ below to add your first piece', '這裡還沒有東西，點下方 ＋ 新增': 'Nothing here yet — tap ＋ below to add',
+    '＋ 加到清單': '+ Add to list', '＋ 放進這個行李': '+ Add to this bag', '加到打包清單': 'Add to packing list', '放進這個行李': 'Add to this bag',
+    '清單是空的。點「＋ 加到清單」從衣櫃、抽屜挑，或直接輸入。': 'Your list is empty. Tap "+ Add to list" to pick from your wardrobe or drawer, or type it in.',
+    '當地好買保養品和洗漱用品嗎？': ' — easy to buy skincare and toiletries there?',
+    '好買：到當地買，不用帶；不好買：依住的晚數帶旅行分裝。之後在行程裡也可以改。': 'Easy: buy them there, no need to pack. Hard: bring travel sizes for the nights you stay. You can change this in the trip later.',
+    '先不標': 'Not now', '之後可以在行程裡標記': 'You can set this in the trip later',
+    '記錄剩多少（保養品、洗漱用品、保健品會自動記錄）': 'Track how much is left (automatic for skincare, toiletries and health products)', '剩多少': 'How much is left',
+    '網購寄到家': 'Order online, ship home', '已加進購物清單': 'Added to the shopping list', '重量算進預留空間': 'weight counted in reserved space', '記得下單': 'Order now'
+  });
+  R(/^(.+?)的家(.+?)(快用完了|沒了)$/, function (m, tr) { return tr(m[1]) + ' home: ' + tr(m[2]) + (m[3] === '沒了' ? ' is out' : ' is running low'); });
+  R(/^在(.+)買好帶過去$/, function (m, tr) { return 'Buy in ' + tr(m[1]) + ' and bring it'; });
+  R(/^快速檢查：(.+)的家的保養品和洗漱用品$/, function (m, tr) { return 'Quick check: skincare and toiletries at ' + tr(m[1]) + ' home'; });
+  R(/^放進([^，。、？]{1,12})$/, function (m, tr) { var t = tr(m[1]); return t === m[1] && /[㐀-鿿]/.test(t) ? null : 'Add to ' + t; });
+  R(/^已放進(.+?)：(.+)$/, function (m, tr) { return 'Added to ' + tr(m[1]) + ': ' + tr(m[2]); });
+  R(/^(.+)：好買，到當地買$/, function (m, tr) { return tr(m[1]) + ': easy — buy it there'; });
+  R(/^(.+)：不好買，帶旅行分裝$/, function (m, tr) { return tr(m[1]) + ': hard — bring travel sizes'; });
+
   R(/^要放到(.+)的家$/, function (m, tr) { return 'goes to ' + tr(m[1]) + ' home'; });
   R(/^給(.+)$/, function (m, tr) { return 'for ' + tr(m[1]); });
 
   // 最後才比對的通用句型（前面都不符合時）
-  R(/^在(.+)$/, function (m, tr) { var t = tr(m[1]); return 'At ' + t; });
+  R(/^在([^・，、；：]+)$/, function (m, tr) { var t = tr(m[1]); return 'At ' + t; });
   R(/^從(.+)帶出$/, function (m, tr) { return 'from ' + tr(m[1]); });
-  R(/^從(.+)$/, function (m, tr) { return 'from ' + tr(m[1]); });
+  R(/^從([^・，、；：]+)$/, function (m, tr) { return 'from ' + tr(m[1]); });
   R(/^(.+?)\s*›$/, function (m, tr) { var t = tr(m[1]); return t === m[1] ? null : t + ' ›'; });
   // 優先比對（要排在日期句型前面）
   window.LANG.en.rules.unshift([/^(.+) 抵達$/, function (m, tr) { return 'arriving ' + tr(m[1]); }]);
+  window.LANG.en.rules.unshift([/^([^・]+) 提醒你下單$/, function (m, tr) { return 'reminder on ' + tr(m[1]); }]);
 })();

@@ -4,7 +4,8 @@
  * ⚠ 維護規則：每次新增或修改功能、欄位、選項，都要回來檢查這個檔案，
  *   讓範例能示範到最新的功能。範例一律透過各功能「自己的新增函式」產生
  *   （Closet.create、Drawer.create、Bags.create、Trips.create、Packing.prepareTrip、
- *   Shop.writePurchase、Shop.writeGift、Onboard.setDefaults、App.addHome、App.addMust、Outfit.setActs、Outfit.confirm），跟使用者在畫面上新增的資料格式完全一樣，
+ *   Shop.writePurchase、Shop.writeGift、Onboard.setDefaults、App.addHome、App.addMust、Outfit.setActs、Outfit.confirm、
+ *   Intimates.setCount、Consumables.setLevel／setConsumable／setAvail），跟使用者在畫面上新增的資料格式完全一樣，
  *   不要在這裡另外手寫資料結構。
  *
  * 內容都是虛構的；使用台灣用語，不出現中國大陸的城市名稱。
@@ -27,6 +28,9 @@
   // group／type／subtype／pattern／seasons／styles／uses 要用 clothing.js 裡的選項（每日穿搭靠這些標籤自動搭配）
   // 灰色帽T 放在台北、沒放進清單：每日穿搭的總結會建議「多帶這件，可以多 Z 套」
   // 卡其短褲「以防萬一」放進了清單，但 12 月用不到：總結會列在「這幾件可以不帶」
+  // 衣櫃五個分頁：衣服（上衣、下身、洋裝、外套、睡衣）、鞋子、包包（黑色托特包）、配件（帽子、耳環、手錶）、貼身衣物
+  // 顏色：資料裡記詳細顏色（穿搭用），衣櫃畫面只顯示深色／淺色／大地色；耳環、手錶保留金色
+  // 場合：正式、休閒、運動、馬術。白色馬褲只標「馬術」：這趟沒有騎馬，不會自動放進清單，也不會排進穿搭
   var CLOSET = [
     { name: '白色 T 恤', group: '上衣', type: 'T 恤', colors: ['白'], pattern: '素色', seasons: ['春', '夏', '秋'], styles: ['休閒'], home: '台北', weight: 0.2 },
     { name: '條紋上衣', group: '上衣', type: 'T 恤', colors: ['海軍藍', '白'], pattern: '條紋', seasons: ['春', '秋'], styles: ['休閒'], home: '台北', weight: 0.25 },
@@ -42,20 +46,24 @@
     { name: '金色手錶', group: '配件', type: '手錶', colors: ['金色'], home: '台北', weight: 0.12 },
     { name: '黑色洋裝', group: '洋裝／連身', type: '', colors: ['黑'], pattern: '素色', seasons: ['秋', '冬'], styles: ['正式'], home: TOKYO, weight: 0.35 },
     { name: '藍色襯衫', group: '上衣', type: '襯衫', colors: ['藍'], pattern: '素色', seasons: ['春', '秋', '冬'], styles: ['正式', '休閒'], home: TOKYO, weight: 0.25 },
-    { name: '卡其短褲', group: '下身', type: '短褲', colors: ['咖啡'], pattern: '素色', seasons: ['夏'], styles: ['休閒', '度假'], home: '台北', weight: 0.3 },
-    { name: '灰色帽T', group: '上衣', type: '帽T', colors: ['灰'], pattern: '素色', seasons: ['秋', '冬'], styles: ['休閒', '運動'], home: '台北', weight: 0.5 }
+    { name: '卡其短褲', group: '下身', type: '短褲', colors: ['咖啡'], pattern: '素色', seasons: ['夏'], styles: ['休閒'], home: '台北', weight: 0.3 },
+    { name: '灰色帽T', group: '上衣', type: '帽T', colors: ['灰'], pattern: '素色', seasons: ['秋', '冬'], styles: ['休閒', '運動'], home: '台北', weight: 0.5 },
+    { name: '白色馬褲', group: '下身', type: '長褲', colors: ['白'], pattern: '素色', seasons: ['春', '秋', '冬'], styles: ['馬術'], home: '台北', weight: 0.4 },
+    { name: '黑色托特包', group: '配件', type: '包包', colors: ['黑'], home: TOKYO, weight: 0.6 }
   ];
 
   // 抽屜：分別放在台北和東京的公寓；count 空白代表「有，不記數量」
-  // level：消耗品的用量（滿／一半／快用完／沒了）。東京的公寓的洗面乳「快用完」→ 首頁補貨提醒「東京的家：洗面乳快用完」
-  //   洗髮精（消耗品、一半）放進這趟的清單；首爾標「好買」→ 打包清單建議「到當地買・省下 300 g」
+  // level：剩多少（滿／一半／快用完／沒了）。保養品、保健品、洗漱用品會自動記錄剩多少
+  //   東京的公寓的洗面乳「快用完」→ 首頁補貨提醒「東京的家洗面乳快用完了」（在上一個城市買好帶過去／網購寄到家）
+  //   洗髮精（一半）放進這趟的清單；首爾標「好買」→ 打包清單建議「到當地買・省下 300 g」，不在要帶的清單上
+  //   面膜是一片一片記數量的：取消「記錄剩多少」（consumable: false），照常帶
   var DRAWER = [
     { key: 'passport', name: '護照', category: '必備品', weight: 0.04, home: '台北', unit: '本' },
     { name: '錢包', category: '必備品', weight: 0.15, home: '台北', unit: '個' },
     { name: '充電線', category: '電線電器', weight: 0.05, home: '台北', count: 1, unit: '包' },
     { name: '轉接頭', category: '電線電器', weight: 0.06, home: TOKYO, count: 2, unit: '個' },
     { name: '洗面乳', category: '保養品', weight: 0.12, home: TOKYO, count: 1, unit: '條', level: 'low' },
-    { name: '面膜', category: '保養品', weight: 0.03, home: '台北', count: 5, unit: '片' },
+    { name: '面膜', category: '保養品', weight: 0.03, home: '台北', count: 5, unit: '片', consumable: false },
     { name: '洗髮精', category: '必備品', weight: 0.3, home: '台北', count: 1, unit: '瓶', level: 'half' },
     { name: '維他命', category: '保健品', weight: 0.15, home: '台北', count: 1, unit: '瓶' },
     { name: '牙刷組', category: '必備品', weight: 0.05, home: TOKYO, count: 1, unit: '組' },
@@ -125,7 +133,8 @@
   };
   var DISPOSABLE = { id: 'int-disposable', qty: 3, pack: true };
 
-  // 城市「當地好不好買」（行程 → 編輯旅程）：首爾好買、大阪不好買（會依國家記住）
+  // 城市「當地好不好買」（行程 → 編輯旅程）：首爾好買、大阪不好買（會依國家記住；日本的其他城市也帶入不好買）
+  //   都標好了，所以打包頁不會再問；自己新增的旅程經過沒標記的城市，打包頁會問一次
   var AVAIL = [['大阪', 'hard'], ['首爾', 'easy']];
 
   // 範例的英文版：切換到 English 時，範例的家、城市、物品、旅程、行李箱、購物和禮物用這些英文名稱
@@ -136,7 +145,7 @@
     '台北・東京・首爾': 'Taipei · Tokyo · Seoul', '在東京的家停留，可以換行李箱': 'Staying at the Tokyo flat — time to swap suitcases', '去首爾找朋友': 'Visiting friends in Seoul',
     '白色 T 恤': 'White tee', '條紋上衣': 'Striped top', '米色針織衫': 'Beige knit', '牛仔褲': 'Jeans', '黑色長褲': 'Black trousers', '風衣': 'Trench coat',
     '羊毛大衣': 'Wool coat', '白色運動鞋': 'White sneakers', '黑色樂福鞋': 'Black loafers', '棒球帽': 'Baseball cap', '金色耳環': 'Gold earrings', '金色手錶': 'Gold watch',
-    '黑色洋裝': 'Black dress', '藍色襯衫': 'Blue shirt', '卡其短褲': 'Khaki shorts', '灰色帽T': 'Grey hoodie',
+    '黑色洋裝': 'Black dress', '藍色襯衫': 'Blue shirt', '卡其短褲': 'Khaki shorts', '灰色帽T': 'Grey hoodie', '白色馬褲': 'White riding breeches', '黑色托特包': 'Black tote',
     '洗面乳': 'Face wash', '牙刷組': 'Toothbrush set', '鳳梨酥禮盒': 'Pineapple cake box', '面膜': 'Face masks', '維他命': 'Vitamins', '充電線': 'Charging cable', '轉接頭': 'Travel adapter',
     '28 吋托運箱': '28" checked case', '20 吋登機箱': '20" cabin case', '後背包': 'Backpack', '隨身小包': 'Pouch', '東京的托運箱': 'Tokyo checked case',
     '洗髮精': 'Shampoo', '羊毛圍巾': 'Wool scarf', '首爾的人蔘茶': 'Ginseng tea from Seoul', '媽媽': 'Mom', '眼罩': 'Eye mask'
@@ -144,7 +153,7 @@
   if (window.I18N) window.I18N.addSample(EN_NAMES);
 
   // 範例內容的版本：改了範例內容就加 1，已經打開過舊範例的裝置會自動換成新的
-  var VERSION = 6;
+  var VERSION = 7;
 
   // ================= 產生範例（用各功能自己的新增函式） =================
 
@@ -173,7 +182,8 @@
       var m = window.Drawer.create({ name: d.name, weight: d.weight, unit: d.unit, category: d.category, estimated: true,
         home: d.home, count: d.count, extra: { sample: true } });
       if (d.key) drawerIds[d.key] = m.id;
-      if (d.level) window.Consumables.setLevel(m.id, d.level);   // 標成消耗品＋用量
+      if (d.level) window.Consumables.setLevel(m.id, d.level);   // 剩多少
+      if (d.consumable === false) window.Consumables.setConsumable(m.id, false);   // 取消「記錄剩多少」
     });
 
     var bagIds = {};

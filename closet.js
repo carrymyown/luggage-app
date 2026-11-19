@@ -1,6 +1,7 @@
 /*
  * 我的衣櫃：列出常帶物品裡「有衣服標籤」的每一件
- * 上方依大類分頁（上衣、下身、洋裝、外套、鞋子、配件），再依顏色、季節、風格篩選
+ * 上方五個分頁：衣服（再分上衣、下身、洋裝、外套、睡衣）、鞋子、包包、配件、貼身衣物；
+ * 再依顏色（深色／淺色／大地色）、季節、場合篩選。資料裡的大類不變，只是畫面上這樣歸類。
  */
 (function () {
   'use strict';
@@ -14,7 +15,6 @@
   function st() { return App.state(); }
   function isCloth(m) { return !!(m.clothing && m.clothing.group); }
   function clothes() { return st().memory.filter(isCloth); }
-  function shortGroup(name) { return name.split('／')[0]; }
 
   function packedItem(m) { return App.packedItem(m); }
 
@@ -29,8 +29,29 @@
   }
 
   // ---------- 衣櫃列表 ----------
-  var tab = '';
+  var tab = '衣服', sub = '';
   var fHome = '', fColor = '', fSeason = '', fStyle = '';
+  var TABS = ['衣服', '鞋子', '包包', '配件'];
+  var SUBS = [['上衣', '上衣'], ['下身', '下身'], ['洋裝', '洋裝／連身'], ['外套', '外套'], ['睡衣', '睡衣']];   // 衣服底下的小分類 → 資料裡的大類
+  function tabOf(c) {
+    if (!c || !c.group) return '';
+    if (c.group === '鞋子') return '鞋子';
+    if (c.group === '配件' && c.type === '包包') return '包包';
+    if (c.group === '配件' || c.group === '帽子' || c.group === '圍巾') return '配件';
+    return '衣服';
+  }
+  function subGroup(n) { var x = SUBS.find(function (p) { return p[0] === n; }); return x ? x[1] : ''; }
+  function inView(c) { return tabOf(c) === tab && (tab !== '衣服' || !sub || c.group === subGroup(sub)); }
+  // 新增時依目前分頁先帶入種類
+  function presetTags() {
+    if (tab === '衣服') return sub ? { group: subGroup(sub) } : null;
+    if (tab === '鞋子') return { group: '鞋子' };
+    if (tab === '包包') return { group: '配件', type: '包包' };
+    if (tab === '配件') return { group: '配件' };
+    return null;
+  }
+  // 卡片上的顏色點：首飾、手錶、錶帶顯示金屬色；其他顯示三種色系之一
+  function dotColors(c) { return C.usesMetal(c) ? (c.colors || []) : (C.toneOf(c) ? [C.toneOf(c)] : []); }
 
   function chipRow(values, current, attr, allLabel, withSwatch) {
     return [''].concat(values).map(function (v) {
@@ -85,10 +106,10 @@
   var INT_TAB = '__intimates';
   function renderList() {
     var all = clothes();
-    $('#closet-tabs').innerHTML = [{ name: '' }].concat(C.GROUPS).map(function (g) {
-      var n = g.name ? all.filter(function (m) { return m.clothing.group === g.name; }).length : all.length;
-      return '<button type="button" class="tab' + (g.name === tab ? ' on' : '') + '" data-tab="' + esc(g.name) + '">' +
-        (g.name ? esc(shortGroup(g.name)) : '全部') + '<small>' + n + '</small></button>';
+    if (tab !== INT_TAB && TABS.indexOf(tab) < 0) tab = '衣服';
+    $('#closet-tabs').innerHTML = TABS.map(function (name) {
+      var n = all.filter(function (m) { return tabOf(m.clothing) === name; }).length;
+      return '<button type="button" class="tab' + (name === tab ? ' on' : '') + '" data-tab="' + esc(name) + '">' + esc(name) + '<small>' + n + '</small></button>';
     }).join('') +
       // 貼身衣物：只記數量的清單（不是照片格子）
       (window.Intimates ? '<button type="button" class="tab' + (tab === INT_TAB ? ' on' : '') + '" data-tab="' + INT_TAB + '">貼身衣物<small>' + window.Intimates.items().length + '</small></button>' : '');
@@ -96,7 +117,9 @@
     $('#closet-intimates').hidden = !intOn;
     $('#closet-grid').hidden = intOn;
     document.querySelector('#closet-list .filters').hidden = intOn;
-    var addTop = document.querySelector('#closet-list .page-top-end'); if (addTop) addTop.hidden = intOn;
+    var subBox = $('#closet-sub');
+    subBox.hidden = intOn || tab !== '衣服';
+    if (!subBox.hidden) subBox.innerHTML = chipRow(SUBS.map(function (p) { return p[0]; }), sub, 'data-fsub', '全部');
     if (intOn) {
       window.Intimates.renderInto($('#closet-intimates'));
       $('#closet-empty').hidden = true;
@@ -105,13 +128,15 @@
     }
 
     // 顏色篩選：只列出目前分頁裡有用到的顏色
+    // （只分深色、淺色、大地色；首飾、手錶、錶帶另外列出金色、銀色等）
     var used = [];
     all.forEach(function (m) {
-      if (tab && m.clothing.group !== tab) return;
-      (m.clothing.colors || []).forEach(function (c) { if (used.indexOf(c) < 0) used.push(c); });
+      if (!inView(m.clothing)) return;
+      dotColors(m.clothing).forEach(function (c) { if (used.indexOf(c) < 0) used.push(c); });
     });
-    var colorOpts = C.ALL_COLORS.filter(function (c) { return used.indexOf(c) >= 0; })
-      .concat(used.filter(function (c) { return C.ALL_COLORS.indexOf(c) < 0; }));
+    var colorOpts = C.TONES.filter(function (c) { return used.indexOf(c) >= 0; })
+      .concat(C.ALL_COLORS.filter(function (c) { return used.indexOf(c) >= 0 && C.TONES.indexOf(c) < 0; }))
+      .concat(used.filter(function (c) { return C.ALL_COLORS.indexOf(c) < 0 && C.TONES.indexOf(c) < 0; }));
     if (fColor && colorOpts.indexOf(fColor) < 0) fColor = '';
     $('#closet-f-color').parentElement.hidden = !colorOpts.length;
     $('#closet-f-color').innerHTML = chipRow(colorOpts, fColor, 'data-fcolor', '全部', true);
@@ -126,9 +151,9 @@
 
     var list = all.filter(function (m) {
       var c = m.clothing;
-      return (!tab || c.group === tab) &&
+      return inView(c) &&
         (!fHome || homeMatch(App.locOf(m), fHome)) &&
-        (!fColor || (c.colors || []).indexOf(fColor) >= 0) &&
+        (!fColor || dotColors(c).indexOf(fColor) >= 0) &&
         (!fSeason || (c.seasons || []).indexOf(fSeason) >= 0) &&
         (!fStyle || (c.styles || []).indexOf(fStyle) >= 0);
     }).sort(function (a, b) { return (b.createdAt || 0) - (a.createdAt || 0); });
@@ -139,10 +164,10 @@
       var loc = App.locOf(m);
       return '<div class="cloth"><a class="cloth-link" href="#closet/' + encodeURIComponent(m.id) + '">' +
         // 範例沒有照片：用衣服顏色的純色方塊代替
-        '<div class="ph' + (!m.photoId && m.sample && (c.colors || [])[0] ? ' swatch" style="--sw:' + C.colorHex(c.colors[0]) : '') + '">' + (m.photoId ? '<img data-photo="' + esc(m.photoId) + '" alt="' + esc(m.name) + '">' : '') +
+        '<div class="ph' + (!m.photoId && m.sample && ((c.colors || [])[0] || C.toneOf(c)) ? ' swatch" style="--sw:' + C.colorHex((c.colors || [])[0] || C.toneOf(c)) : '') + '">' + (m.photoId ? '<img data-photo="' + esc(m.photoId) + '" alt="' + esc(m.name) + '">' : '') +
         (loc.state === 'pending' ? '<span class="packed pending">待確認</span>' : packed ? '<span class="packed">已打包</span>' : '') + '</div>' +
         '<div class="meta"><span class="cat">' + esc(C.typeName(c) || c.group || m.name) + '</span><span class="t">' + esc(m.name) + (m.sample ? '<span class="sample-tag">範例</span>' : '') + '</span><span class="dots">' +
-        (c.colors || []).map(function (n) {
+        dotColors(c).map(function (n) {
           return '<i style="background:' + C.colorHex(n) + '" title="' + esc(n) + '"></i>';
         }).join('') + '</span></div>' +
         '<div class="brand">' + esc([C.typeName(c) !== m.name ? C.typeName(c) : '', c.brand].filter(Boolean).join('・')) + '&nbsp;</div>' +
@@ -150,6 +175,7 @@
         '</a>' +
         '</div>';
     }).join('') : (all.length ? '<p class="empty">沒有符合的衣服</p>' : '');
+    if (!list.length && all.length && !fHome && !fColor && !fSeason && !fStyle) $('#closet-grid').innerHTML = '<p class="empty">這裡還沒有東西，點下方 ＋ 新增</p>';
     Photos.fillThumbs($('#closet-grid'));
 
     $('#closet-empty').hidden = all.length > 0;
@@ -165,10 +191,11 @@
   $('#closet-list').addEventListener('click', function (e) {
     var pk = e.target.closest('[data-pack]');
     if (pk) { onPackButton(App.entryById(pk.getAttribute('data-pack'))); return; }
-    var b = e.target.closest('[data-tab],[data-fhome],[data-fcolor],[data-fseason],[data-fstyle]');
+    var b = e.target.closest('[data-tab],[data-fsub],[data-fhome],[data-fcolor],[data-fseason],[data-fstyle]');
     if (!b) return;
     if (b.hasAttribute('data-fhome')) fHome = b.getAttribute('data-fhome');
-    if (b.hasAttribute('data-tab')) tab = b.getAttribute('data-tab');
+    if (b.hasAttribute('data-tab')) { tab = b.getAttribute('data-tab'); sub = ''; }
+    if (b.hasAttribute('data-fsub')) sub = b.getAttribute('data-fsub');
     if (b.hasAttribute('data-fcolor')) fColor = b.getAttribute('data-fcolor');
     if (b.hasAttribute('data-fseason')) fSeason = b.getAttribute('data-fseason');
     if (b.hasAttribute('data-fstyle')) fStyle = b.getAttribute('data-fstyle');
@@ -338,11 +365,12 @@
 
     $('#cf-title').textContent = m ? '編輯衣服' : '新增衣服';
     $('#cf-name').value = m ? m.name : '';
-    picker.set(m ? m.clothing : (tab ? { group: tab } : C.empty()));
+    var pre = m ? null : presetTags();
+    picker.set(m ? m.clothing : (pre || C.empty()));
     if (m) setWeight(m.weight, !!m.estimated);
-    else if (tab) setWeight(refWeight(picker.get()), true);
+    else if (pre) setWeight(refWeight(picker.get()), true);
     else setWeight(null, false);
-    if (!m && tab) $('#cf-name').value = autoName = C.typeName(picker.get());
+    if (!m && pre) $('#cf-name').value = autoName = C.typeName(picker.get());
 
     showPhoto(null);
     if (m && m.photoId) Photos.url(m.photoId).then(function (u) {
@@ -364,6 +392,7 @@
     m.weight = o.weight;
     m.estimated = !!o.estimated;
     m.clothing = JSON.parse(JSON.stringify(o.tags));
+    if (C.fixTags) C.fixTags(m.clothing);   // 顏色歸成三種之一（沒選的話依詳細顏色）、度假→休閒
     // 睡衣以「一套」為單位；改成別的類別就回到「個」
     if (o.tags.group === '睡衣') m.unit = '套';
     else if (m.unit === '套') m.unit = '個';

@@ -8,17 +8,17 @@
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-title" content="Carry My Own">
   <!-- 目前的版本（發布時更新；和 version.json 比對，有新版就提示更新） -->
-  <meta name="app-version" content="20261119c">
+  <meta name="app-version" content="20261119d">
   <title>Carry My Own</title>
   <!-- 圖示：瀏覽器分頁（網址前面）、iPad 主畫面、安裝成 app 時用 -->
-  <link rel="icon" type="image/svg+xml" href="icons/favicon.svg?v=20261119c">
-  <link rel="icon" href="icons/favicon-32.png?v=20261119c" sizes="32x32" type="image/png">
-  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png?v=20261119c">
+  <link rel="icon" type="image/svg+xml" href="icons/favicon.svg?v=20261119d">
+  <link rel="icon" href="icons/favicon-32.png?v=20261119d" sizes="32x32" type="image/png">
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png?v=20261119d">
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800;900&family=Noto+Sans+TC:wght@400;500;700;900&display=swap">
-  <link rel="stylesheet" href="style.css?v=20261119c">
+  <link rel="stylesheet" href="style.css?v=20261119d">
 </head>
 <body>
   <main>
@@ -244,9 +244,13 @@
 
       <div id="pack-main" hidden>
         <!-- 不放大標題：最上方直接是兩個平行的分頁：清單（要帶什麼、還沒放進去的）／行李（每個行李箱裡放了什麼） -->
-        <div id="pack-tabs" class="home-switch pk-tabs" role="tablist">
-          <button type="button" data-pack-tab="todo" role="tab">清單<span class="tab-en">LIST</span><small id="pk-todo-n"></small></button>
-          <button type="button" data-pack-tab="bags" role="tab">行李<span class="tab-en">BAGS</span><small id="pk-bags-n"></small></button>
+        <!-- 「編輯」在分頁列右上角（小字；一次刪很多項、拖曳調整順序；按「完成」結束） -->
+        <div class="pk-tabs-row">
+          <div id="pack-tabs" class="home-switch pk-tabs" role="tablist">
+            <button type="button" data-pack-tab="todo" role="tab">清單<span class="tab-en">LIST</span><small id="pk-todo-n"></small></button>
+            <button type="button" data-pack-tab="bags" role="tab">行李<span class="tab-en">BAGS</span><small id="pk-bags-n"></small></button>
+          </div>
+          <button type="button" id="pack-edit" class="link small pk-edit-btn">編輯</button>
         </div>
 
         <label class="pk-trip" id="pack-trip-wrap">這趟旅程
@@ -257,10 +261,11 @@
         <div id="pack-remain" class="pk-remain"></div>
 
         <div id="pack-tab-todo">
-          <!-- 清單右上角：編輯（一次刪很多項、拖曳調整順序；按「完成」結束） -->
+          <!-- 這趟沒有家的城市第一次出現：問一次當地好不好買 -->
+          <div id="pack-ask" class="card pk-ask" hidden></div>
+          <!-- 只有一個新增按鈕：從衣櫃、抽屜挑，或直接輸入 -->
           <div class="pk-list-tools">
-            <button type="button" id="pack-add" class="btn ghost pk-add-btn">＋ 新增</button>
-            <button type="button" id="pack-edit" class="link small pk-edit-btn">編輯</button>
+            <button type="button" id="pack-add" class="btn ghost pk-add-btn">＋ 加到清單</button>
           </div>
           <div id="pack-todo"></div>
           <div id="pack-done-note" class="pk-done-note"></div>
@@ -385,20 +390,18 @@
     <section id="view-closet" class="view" hidden>
       <div id="closet-list">
         <div class="home-switch"><a href="#closet" class="on">衣櫃<span class="tab-en">WARDROBE</span></a><a href="#drawer">抽屜<span class="tab-en">DRAWER</span></a><a href="#bags">行李箱<span class="tab-en">LUGGAGE</span></a></div>
-        <div class="page-top page-top-end">
-          <a href="#closet/new" class="btn primary small-btn">＋ 新增衣服</a>
-        </div>
         <div id="closet-tabs" class="tabs"></div>
+        <div id="closet-sub" class="chips filter closet-sub" hidden></div>
         <div class="filters">
           <div class="filter-row"><span class="filter-label">家</span><div id="closet-f-home" class="chips filter"></div></div>
           <div class="filter-row"><span class="filter-label">顏色</span><div id="closet-f-color" class="chips filter"></div></div>
           <div class="filter-row"><span class="filter-label">季節</span><div id="closet-f-season" class="chips filter"></div></div>
-          <div class="filter-row"><span class="filter-label">風格</span><div id="closet-f-style" class="chips filter"></div></div>
+          <div class="filter-row"><span class="filter-label">場合</span><div id="closet-f-style" class="chips filter"></div></div>
         </div>
         <div id="closet-grid" class="closet-grid"></div>
         <!-- 貼身衣物：只記數量（不用照片），依家分開 -->
         <div id="closet-intimates" class="int-wrap" hidden></div>
-        <div id="closet-empty" class="empty-state" hidden><p class="empty-line">還沒有衣服</p><a href="#closet/new" class="btn primary">新增第一件</a></div>
+        <div id="closet-empty" class="empty-state" hidden><p class="empty-line">點下方 ＋ 新增第一件</p></div>
         <p id="closet-storage" class="muted small center"></p>
       </div>
 
@@ -593,7 +596,7 @@
   <!-- 打包清單：手動新增 -->
   <div id="pk-add-sheet" class="sheet ask-sheet" hidden>
     <form id="pk-add-form" class="sheet-panel ask-panel form" autocomplete="off">
-      <div class="sheet-title">新增到打包清單</div>
+      <div id="pk-add-title" class="sheet-title">加到打包清單</div>
       <div id="pk-add-tabs" class="home-switch pk-add-tabs"><button type="button" data-pk-tab="closet">從衣櫃挑</button><button type="button" data-pk-tab="drawer">從抽屜挑</button><button type="button" data-pk-tab="input" class="on">直接輸入</button></div>
       <div id="pk-add-pick" hidden>
         <input id="pk-add-search" class="more-search" placeholder="搜尋名稱" autocomplete="off">
@@ -605,7 +608,7 @@
           <label>重量（g）<input id="pk-add-weight" type="number" inputmode="decimal" min="0" step="any" placeholder="例如 200"></label>
           <label>數量<input id="pk-add-qty" type="number" inputmode="numeric" min="1" step="1" value="1"></label>
         </div>
-        <label>放在哪一區<select id="pk-add-zone"></select></label>
+        <label id="pk-add-zone-wrap">放在哪一區<select id="pk-add-zone"></select></label>
         <label class="pk-only"><input id="pk-add-only" type="checkbox"> 只能手提（例如行動電源、護照）</label>
       </div>
       <div class="cloud-btns">
@@ -661,8 +664,9 @@
       <div id="drd-stock" class="seg dr-stock dr-stock-big"></div>
       <!-- 消耗品：用量四格（依家分開，每個家的這一筆各自記） -->
       <div id="drd-consum-wrap" hidden>
-        <label class="pk-only"><input id="drd-consum" type="checkbox"> 這是消耗品（會用完的保養品、洗漱用品、保健品、食品）</label>
-        <div id="drd-level" class="seg dr-stock dr-stock-big" hidden></div>
+        <label class="pk-only"><input id="drd-consum" type="checkbox"> 記錄剩多少（保養品、洗漱用品、保健品會自動記錄）</label>
+        <div id="drd-level-wrap" hidden><span class="field-title">剩多少</span>
+        <div id="drd-level" class="seg dr-stock dr-stock-big"></div></div>
       </div>
 
       <div class="field-title">目前位置</div>
@@ -970,29 +974,29 @@
     </div>
   </div>
 
-  <script src="lang.js?v=20261119c"></script>
-  <script src="i18n.js?v=20261119c"></script>
-  <script src="weights.js?v=20261119c"></script>
-  <script src="photos.js?v=20261119c"></script>
-  <script src="clothing.js?v=20261119c"></script>
-  <script src="ui.js?v=20261119c"></script>
-  <script src="app.js?v=20261119c"></script>
-  <script src="closet.js?v=20261119c"></script>
-  <script src="trips.js?v=20261119c"></script>
-  <script src="organize.js?v=20261119c"></script>
-  <script src="packing.js?v=20261119c"></script>
-  <script src="drawer.js?v=20261119c"></script>
-  <script src="bags.js?v=20261119c"></script>
-  <script src="shop.js?v=20261119c"></script>
-  <script src="outfit.js?v=20261119c"></script>
-  <script src="consumables.js?v=20261119c"></script>
-  <script src="intimates.js?v=20261119c"></script>
-  <script src="sample-data.js?v=20261119c"></script>
-  <script src="onboard.js?v=20261119c"></script>
-  <script src="intro.js?v=20261119c"></script>
-  <script src="nav.js?v=20261119c"></script>
-  <script src="backup.js?v=20261119c"></script>
+  <script src="lang.js?v=20261119d"></script>
+  <script src="i18n.js?v=20261119d"></script>
+  <script src="weights.js?v=20261119d"></script>
+  <script src="photos.js?v=20261119d"></script>
+  <script src="clothing.js?v=20261119d"></script>
+  <script src="ui.js?v=20261119d"></script>
+  <script src="app.js?v=20261119d"></script>
+  <script src="closet.js?v=20261119d"></script>
+  <script src="trips.js?v=20261119d"></script>
+  <script src="organize.js?v=20261119d"></script>
+  <script src="packing.js?v=20261119d"></script>
+  <script src="drawer.js?v=20261119d"></script>
+  <script src="bags.js?v=20261119d"></script>
+  <script src="shop.js?v=20261119d"></script>
+  <script src="outfit.js?v=20261119d"></script>
+  <script src="consumables.js?v=20261119d"></script>
+  <script src="intimates.js?v=20261119d"></script>
+  <script src="sample-data.js?v=20261119d"></script>
+  <script src="onboard.js?v=20261119d"></script>
+  <script src="intro.js?v=20261119d"></script>
+  <script src="nav.js?v=20261119d"></script>
+  <script src="backup.js?v=20261119d"></script>
   <script src="vendor/supabase.js"></script>
-  <script src="cloud.js?v=20261119c"></script>
+  <script src="cloud.js?v=20261119d"></script>
 </body>
 </html>

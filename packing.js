@@ -47,9 +47,9 @@
   // 當地容易買到
   var EASY_BUY = ['牙刷', '牙膏', '洗髮', '潤髮', '沐浴', '洗面', '毛巾', '雨傘', '零食', '泡麵', '口罩', '面膜', '防曬',
     '分裝瓶', '拖鞋', '刮鬍刀', '乳液', '餅乾', '襪子', '衛生紙', '濕紙巾'];
-  // 活動：kw 用來比對物品名稱，uses 對應鞋子的「用途」，styles 對應衣服的「風格」
+  // 活動：kw 用來比對物品名稱，uses 對應鞋子的「用途」，styles 對應衣服的「場合」
   var ACTS = [
-    { name: '騎馬', kw: ['騎馬', '馬術', '馬靴', '馬褲', '頭盔'], uses: ['騎馬'] },
+    { name: '騎馬', kw: ['騎馬', '馬術', '馬靴', '馬褲', '頭盔'], uses: ['騎馬'], styles: ['馬術'] },
     { name: '網球', kw: ['網球', '球拍'], uses: ['網球'] },
     { name: '游泳', kw: ['泳', '蛙鏡'], uses: [] },
     { name: '登山健行', kw: ['登山', '健行'], uses: ['登山'] },
@@ -224,6 +224,12 @@
     var unsel = ACTS.filter(function (a) { return list.activities.indexOf(a.name) < 0; });
     if (sel.some(function (a) { return has(m.name, a.kw); })) return true;          // 這趟活動的裝備
     if (unsel.some(function (a) { return has(m.name, a.kw); })) return false;       // 別的活動的裝備
+    // 場合標了「馬術」：有騎馬一定帶；沒有騎馬時，只適合馬術的就不帶
+    var sty = c.styles || [];
+    if (sty.indexOf('馬術') >= 0) {
+      if (list.activities.indexOf('騎馬') >= 0) return true;
+      if (sty.length === 1) return false;
+    }
     var uses = c.uses || [];
     var special = ['騎馬', '網球', '登山', '跑步', '雨天'];
     var selUses = [].concat.apply([], sel.map(function (a) { return a.uses; }));
@@ -312,6 +318,8 @@
       if (dest) {
         want = 'home';
         note = (App.homeCity ? App.homeCity(dest.home) : dest.home) + '的家有' + (C.isConsumable(dest.m) ? '・' + C.levelName(C.levelOf(dest.m)) : '');
+      } else if (!C.isToiletry(m)) {
+        want = '';   // 保健品、藥品：照常帶
       } else if (plan.decision === 'local') {
         want = 'local';
         note = '到當地買・省下 ' + App.fmtWeight(w * e.qty);
@@ -725,12 +733,13 @@
     all.forEach(function (e, i) { pos[e.id] = e.sort != null ? e.sort : 100000 + i; });
     all.sort(function (a, b) { return pos[a.id] - pos[b.id]; });
     $('#pack-edit').textContent = editMode ? '完成' : '編輯';
-    $('#pack-edit').hidden = !take.length && !editMode;
+    $('#pack-edit').hidden = packTab !== 'todo' || (!take.length && !editMode);
     $('#pack-add').hidden = editMode;
     $('#view-pack').classList.toggle('pk-editing', editMode);
     $('#pack-todo').innerHTML = take.length ? (!todo.length ? '<p class="pk-all-done">全部都放進去了</p>' : '') + groupsHTML(all, boxes, act) :
-      '<p class="muted small">清單是空的。點「＋ 新增」從衣櫃、抽屜挑，或直接輸入。</p>';
+      '<p class="muted small">清單是空的。點「＋ 加到清單」從衣櫃、抽屜挑，或直接輸入。</p>';
     $('#pack-done-note').innerHTML = '';
+    renderAsk();
 
     // 分頁二：依隨身小包、背包、手提、托運分組
     $('#pack-zones').innerHTML = act.map(function (z) {
@@ -743,7 +752,8 @@
           // 名稱下方一條進度條：已放／額度（隨身小包算在背包額度時，兩個一起算）
           (b.none ? '<span class="pk-box-note muted small">不計算重量</span>' :
             UI.bar(b.load || 0, b.allow, 'pk:' + curTrip.id + ':' + b.group, b.shared ? '<span class="wbar-share">和' + (z === 'pouch' ? '背包' : '隨身小包') + '共用</span>' : '')) + '</div>' +
-        (rows.length ? rows.map(boxRowHTML).join('') : '<p class="pk-box-empty muted small">還沒有放東西</p>') + '</div>';
+        (rows.length ? rows.map(boxRowHTML).join('') : '<p class="pk-box-empty muted small">還沒有放東西</p>') +
+        '<button type="button" class="btn ghost small-btn pk-zone-add" data-zone-add="' + z + '">＋ 放進這個行李</button></div>';
     }).join('');
 
     var home = list.entries.filter(function (e) { return e.status === 'home'; });
@@ -769,6 +779,24 @@
     }, 0);
     $('#pack-saved').hidden = !(saved > 0) || packTab !== 'todo';
     $('#pack-saved').textContent = saved > 0 ? '到當地買、家裡已經有，這趟一共省下 ' + UI.kg(saved) + ' kg' : '';
+  }
+
+  // 這趟沒有家的城市第一次出現：問一次當地好不好買保養品和洗漱用品（記住；行程裡可以改）
+  function renderAsk() {
+    var C = window.Consumables, box = $('#pack-ask');
+    var cities = C && packTab === 'todo' && !editMode ? C.askCities(curTrip) : [];
+    var hasT = cities.length && curList.entries.some(function (e) {
+      var m = e.catalogId && App.entryById(e.catalogId);
+      return m && C.isToiletry(m) && ['take', 'home', 'local'].indexOf(e.status) >= 0;
+    });
+    box.hidden = !hasT;
+    box.innerHTML = hasT ? cities.slice(0, 1).map(function (c) {
+      return '<p class="pk-ask-q"><b>' + esc(c) + '</b>當地好買保養品和洗漱用品嗎？</p>' +
+        '<p class="muted small">好買：到當地買，不用帶；不好買：依住的晚數帶旅行分裝。之後在行程裡也可以改。</p>' +
+        '<div class="pk-ask-btns"><button type="button" class="btn ghost small-btn" data-ask-avail="easy" data-ask-city="' + esc(c) + '">好買</button>' +
+        '<button type="button" class="btn ghost small-btn" data-ask-avail="hard" data-ask-city="' + esc(c) + '">不好買</button>' +
+        '<button type="button" class="link small" data-ask-avail="" data-ask-city="' + esc(c) + '">先不標</button></div>';
+    }).join('') : '';
   }
 
   // 放進去會不會超重：會的話先問一下
@@ -881,7 +909,17 @@
       commit();
       return;
     }
+    if ((el = t.closest('[data-ask-city]'))) {
+      var ac = el.getAttribute('data-ask-city'), av = el.getAttribute('data-ask-avail');
+      if (av) window.Consumables.setAvail(ac, av); else window.Consumables.markAsked(ac);
+      syncConsumables(curList, curTrip);
+      touch(curList);
+      App.toast(av === 'easy' ? ac + '：好買，到當地買' : av === 'hard' ? ac + '：不好買，帶旅行分裝' : '之後可以在行程裡標記');
+      commit();
+      return;
+    }
     if (t.id === 'pack-add') { openAdd(); return; }
+    if ((el = t.closest('[data-zone-add]'))) { openAdd(el.getAttribute('data-zone-add')); return; }
     if (t.id === 'pack-check') { openCheck(); return; }
   });
 
@@ -1182,11 +1220,18 @@
   document.addEventListener('pointercancel', endSort);
 
   // ---------- 手動新增 ----------
-  function openAdd() {
+  // zone：從「行李」分頁某個行李的「＋ 放進這個行李」打開 → 挑的東西直接放進那個行李（打勾）
+  var addZone = null;
+  function openAdd(zone) {
     if (!curList || $('#pack-main').hidden) return;
+    addZone = zone && activeZones(curList).indexOf(zone) >= 0 ? zone : null;
+    $('#pk-add-title').textContent = addZone ? '放進' + zoneName(addZone) : '加到打包清單';
+    $('#pk-add-zone-wrap').hidden = !!addZone;
+    $('#pk-add-submit').textContent = addZone ? '放進這個行李' : '加入清單';
     $('#pk-add-name').value = ''; $('#pk-add-weight').value = ''; $('#pk-add-qty').value = 1; $('#pk-add-only').checked = false;
     var bx = boxRemains();
     $('#pk-add-zone').innerHTML = activeZones(curList).map(function (z) { return '<option value="' + z + '">' + zoneName(z) + '・' + boxText(bx[z]) + '</option>'; }).join('');
+    if (addZone) $('#pk-add-zone').value = addZone;
     var names = [];
     st().memory.forEach(function (m) { if (names.indexOf(m.name) < 0) names.push(m.name); });
     (window.REFERENCE_WEIGHTS || []).forEach(function (r) { if (names.indexOf(r.name) < 0) names.push(r.name); });
@@ -1211,14 +1256,14 @@
   function renderPick() {
     var q = norm($('#pk-add-search').value.trim());
     var inList = {};
-    curList.entries.forEach(function (e) { if (e.catalogId && e.status === 'take') inList[e.catalogId] = true; });
+    curList.entries.forEach(function (e) { if (e.catalogId && e.status === 'take' && (!addZone || e.checked)) inList[e.catalogId] = true; });
     var list = st().memory.filter(function (m) {
       return (addTab === 'closet' ? App.isCloth(m) : !App.isCloth(m)) && (!q || norm(m.name).indexOf(q) >= 0);
     }).sort(function (a, b) { return (inList[a.id] ? 1 : 0) - (inList[b.id] ? 1 : 0) || a.name.localeCompare(b.name); });
     // 衣櫃分頁最上面：貼身衣物（例如免洗內褲、自己新增的船型襪）
     var ints = addTab === 'closet' && window.Intimates ? window.Intimates.items().filter(function (x) { return !q || norm(x.name).indexOf(q) >= 0; }) : [];
     var intIn = {};
-    curList.entries.forEach(function (e) { if (e.intimateId && e.status === 'take') intIn[e.intimateId] = true; });
+    curList.entries.forEach(function (e) { if (e.intimateId && e.status === 'take' && (!addZone || e.checked)) intIn[e.intimateId] = true; });
     var intHtml = ints.map(function (x) {
       return '<button type="button" class="more-row' + (intIn[x.id] ? ' in' : '') + '" data-pk-int="' + esc(x.id) + '"' + (intIn[x.id] ? ' disabled' : '') + '>' +
         '<span class="more-name">' + esc(x.name) + '<span class="muted small">貼身衣物・每' + esc(x.unit) + '約 ' + esc(App.fmtWeight(x.weight || 0)) + '</span></span>' +
@@ -1255,8 +1300,17 @@
     var x = window.Intimates && window.Intimates.byId(id);
     var e = addIntimate(curTrip, id);
     if (!e) return;
+    if (addZone) putInZone(e);
     App.save(); render(); renderPick();
-    App.toast('已加入' + zoneName(e.zone) + '：' + x.name + ' × ' + e.qty);
+    App.toast((addZone ? '已放進' : '已加入') + zoneName(e.zone) + '：' + x.name + ' × ' + e.qty);
+  }
+  // 「＋ 放進這個行李」：放進指定的行李並打勾（已經打勾放在別的行李的，移過來）
+  function putInZone(e) {
+    if (!addZone || !okToPut(e, addZone)) return false;
+    if (e.checked && e.zone !== addZone) setChecked(curList, e, false);
+    e.status = 'take'; e.zone = addZone;
+    setChecked(curList, e, true);
+    return true;
   }
   // 把衣櫃／抽屜的東西加進打包清單（「＋ 加入」和範例資料都用這裡）
   function addToList(list, m) {
@@ -1289,10 +1343,11 @@
     var m = App.entryById(id);
     if (!m) return;
     var e = addToList(curList, m);
+    if (addZone) putInZone(e);
     App.save();
     render();
     renderPick();
-    App.toast('已加入' + zoneName(e.zone) + '：' + m.name);
+    App.toast((addZone && e.checked ? '已放進' : '已加入') + zoneName(e.zone) + '：' + m.name);
   }
   $('#pk-add-tabs').addEventListener('click', function (ev) {
     var b = ev.target.closest('[data-pk-tab]');
@@ -1332,12 +1387,13 @@
     e.unit = m ? m.unit || '個' : ref && ref.unit ? ref.unit : '個';
     e.category = m ? m.category : ref ? ref.category : '必備品';
     e.carryOnly = $('#pk-add-only').checked;
-    e.zone = $('#pk-add-zone').value;
+    e.zone = addZone || $('#pk-add-zone').value;
     e.status = 'take';
     if (!old) curList.entries.push(e);
+    if (addZone) putInZone(e);
     touch(curList);
     $('#pk-add-sheet').hidden = true;
-    App.toast('已加入' + zoneName(e.zone) + '：' + name);
+    App.toast((addZone && e.checked ? '已放進' : '已加入') + zoneName(e.zone) + '：' + name);
     commit();
   });
   $('#pk-add-sheet').addEventListener('click', function (ev) {

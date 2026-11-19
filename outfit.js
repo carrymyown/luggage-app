@@ -241,11 +241,13 @@
       if (c.part === 'shoes') s += has(m, ['運動', '休閒', '走路']) || inList(uses, '走路') ? 4 : has(m, ['高跟', '跟鞋']) ? -4 : 0;
       if (c.part === 'outer') s += 2;   // 機艙冷，帶一件
     }
+    // 騎馬：標了「馬術」場合的衣物優先；沒有騎馬的日子，只適合馬術的就不選
+    if (inList(sty, '馬術')) s += inList(acts, '騎馬') ? 10 : (sty.length === 1 ? -8 : 0);
     if (inList(acts, '騎馬')) { if (has(m, ['馬術', '馬褲', '騎馬', '馬靴'])) s += 8; if (c.part === 'shoes') s += inList(uses, '騎馬') ? 10 : 0; if (c.part === 'dress') s -= 8; }
     if (inList(acts, '網球')) { if (c.part === 'shoes') s += inList(uses, '網球') ? 10 : 0; if (inList(sty, '運動')) s += 3; if (c.part === 'dress') s -= 6; }
     if (inList(acts, '運動')) { if (inList(sty, '運動')) s += 4; if (c.part === 'shoes') s += inList(uses, '跑步') || inList(uses, '走路') ? 5 : 0; if (c.part === 'dress') s -= 6; }
     if (inList(acts, '登山')) { if (c.part === 'shoes') s += inList(uses, '登山') ? 10 : has(m, ['高跟', '跟鞋', '樂福']) ? -6 : 0; if (inList(sty, '運動')) s += 2; if (c.part === 'dress') s -= 10; }
-    if (inList(acts, '海邊')) { if (inList(tg.seasons, '夏') || inList(sty, '度假')) s += 4; if (c.part === 'shoes' && has(m, ['涼', '拖'])) s += 6; }
+    if (inList(acts, '海邊')) { if (inList(tg.seasons, '夏')) s += 4; if (c.part === 'shoes' && has(m, ['涼', '拖'])) s += 6; }
     if (inList(acts, '日常逛街')) { if (inList(sty, '休閒')) s += 3; if (c.part === 'shoes' && (inList(uses, '走路') || has(m, ['運動', '休閒']))) s += 3; }
     // 重複使用（行李越少越好）；相鄰兩天上衣不同
     var used = ctx.usage[m.id] || 0;
@@ -390,7 +392,8 @@
     acc: 'M34 18a14 14 0 1 0 0.1 0zM34 26a6 6 0 1 1-0.1 0z'
   };
   function art(part, m) {
-    var col = m && m.clothing && (m.clothing.colors || [])[0] ? C.colorHex(m.clothing.colors[0]) : '#F4F4F4';
+    var cc = m && m.clothing ? ((m.clothing.colors || [])[0] || (C.toneOf && C.toneOf(m.clothing))) : '';   // 詳細顏色；沒有就用色系
+    var col = cc ? C.colorHex(cc) : '#F4F4F4';
     var hex = String(col).match(/#[0-9a-fA-F]{3,6}/); col = hex ? hex[0] : '#F4F4F4';   // 金色、銀色是漸層：取第一個顏色
     var key = part === 'acc1' || part === 'acc2' ? 'acc' : part;
     if (key === 'acc' && m) {

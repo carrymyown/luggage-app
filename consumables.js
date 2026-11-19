@@ -34,7 +34,14 @@
   };
 
   function st() { return App.state(); }
-  function isConsumable(m) { return !!(m && !App.isCloth(m) && m.consumable); }
+  // 洗漱用品（多半放在必備品）：依名稱判斷
+  var WASH_KW = ['牙膏', '牙刷', '牙線', '漱口', '洗髮', '潤髮', '護髮', '沐浴', '洗面', '洗臉', '卸妝', '洗手', '刮鬍', '隱形眼鏡', '生理', '衛生棉', '止汗', '體香'];
+  function isWash(m) { var n = App.norm(m && m.name || ''); return WASH_KW.some(function (k) { return n.indexOf(App.norm(k)) >= 0; }); }
+  // 保養品、保健品、洗漱用品：自動記錄剩多少（自己取消勾選的 m.consumable === false 不算）；其他品類自己勾
+  function autoConsum(m) { return m.category === '保養品' || m.category === '保健品' || ((m.category === '必備品' || m.category === '食品') && isWash(m)); }
+  function isConsumable(m) { return !!(m && !App.isCloth(m) && (m.consumable === true || (m.consumable !== false && autoConsum(m)))); }
+  // 打包時看「當地買／家裡有／旅行分裝」的：保養品和洗漱用品（保健品、藥品照常帶）
+  function isToiletry(m) { return isConsumable(m) && m.category !== '保健品' && (m.category === '保養品' || m.category === '必備品' || isWash(m)); }
   function canConsume(m) { return !!(m && !App.isCloth(m) && CATS.indexOf(m.category) >= 0); }
   function levelOf(m) { return LEVELS.some(function (l) { return l[0] === m.level; }) ? m.level : 'full'; }
   function levelName(lv) { return (LEVELS.find(function (l) { return l[0] === lv; }) || LEVELS[0])[1]; }
@@ -55,8 +62,8 @@
     if (level === 'full' || level === 'half') delete m.restock;   // 補好了：不再提醒
     return m;
   }
-  function consumablesAt(home) {
-    return st().memory.filter(function (m) { return isConsumable(m) && homeOfM(m) === home; })
+  function consumablesAt(home, onlyWash) {
+    return st().memory.filter(function (m) { return (onlyWash ? isToiletry(m) : isConsumable(m)) && homeOfM(m) === home; })
       .sort(function (a, b) { return a.name.localeCompare(b.name, 'zh-Hant'); });
   }
 
@@ -87,9 +94,19 @@
     var a = availData(), c = countryOf(city);
     v = v === 'easy' || v === 'hard' ? v : '';
     if (v) a.byCity[city] = v; else delete a.byCity[city];
+    if (!a.asked) a.asked = {};
+    a.asked[city] = true;   // 問過了（打包頁不再問）
     if (c) { if (v) a.byCountry[c] = v; }   // 也記成這個國家的預設（下次經過同一個國家自動帶入）
     return v;
   }
+
+  // 打包頁：這趟沒有家、還沒標記也還沒問過的城市（第一次出現時問一次，之後記住；行程裡可以改）
+  function askCities(t) {
+    if (!t) return [];
+    var a = availData(), asked = a.asked || {};
+    return tripPlan(t).cities.filter(function (c) { return !availOf(c) && !asked[c]; });
+  }
+  function markAsked(city) { var a = availData(); if (!a.asked) a.asked = {}; a.asked[city] = true; }
 
   // ---------- 這趟：沒有家的城市和晚數、好不好買 ----------
   function homeFor(city) { return window.Trips ? window.Trips.homeFor(city) : null; }
@@ -213,21 +230,21 @@
     box.hidden = false;
     box.innerHTML = '<div class="rs-head"><span class="eyebrow">RESTOCK</span><span class="sec-title">補貨提醒</span></div>' + list.map(function (r) {
       var m = r.m, c = r.choice, city = App.homeCity ? App.homeCity(r.home) : r.home;
-      var head = '<div class="rs-text"><b>' + esc(city) + '的家：' + esc(m.name) + levelName(r.level) + '</b>' +
+      var head = '<div class="rs-text"><b>' + esc(city) + '的家' + esc(m.name) + (r.level === 'out' ? '沒了' : '快用完了') + '</b>' +
         '<span class="muted small">' + esc(t.name || '') + (r.date ? '・<span>' + esc(md(r.date)) + ' 抵達</span>' : '') + '</span></div>';
       var body;
       if (c && c.mode === 'buy') {
-        body = '<p class="rs-done">在' + esc(r.prevCity || '上一個城市') + '買・已加進購物計畫，抵達時自動補成「滿」 <button type="button" class="link small" data-rs="undo" data-rs-id="' + esc(m.id) + '">改選</button></p>';
+        body = '<p class="rs-done">在' + esc(r.prevCity || '上一個城市') + '買好帶過去・已加進購物清單，重量算進預留空間 <button type="button" class="link small" data-rs="undo" data-rs-id="' + esc(m.id) + '">改選</button></p>';
       } else if (c && c.mode === 'online') {
         var due = r.date ? addDays(r.date, -ONLINE_DAYS) : '';
         var now = due && today >= due;
         body = '<label class="rs-online' + (now && !c.ordered ? ' due' : '') + '"><input type="checkbox" data-rs-ordered="' + esc(m.id) + '"' + (c.ordered ? ' checked' : '') + '> ' +
-          (c.ordered ? '已訂' : now ? '記得下單：網路訂到家' : '網路訂到家・' + esc(md(due)) + ' 提醒你下單') + '</label>' +
+          (c.ordered ? '已訂' : now ? '記得下單：網購寄到家' : '網購寄到家・' + esc(md(due)) + ' 提醒你下單') + '</label>' +
           ' <button type="button" class="link small" data-rs="undo" data-rs-id="' + esc(m.id) + '">改選</button>';
       } else {
         body = '<div class="rs-btns">' +
-          '<button type="button" class="btn ghost small-btn" data-rs="buy" data-rs-id="' + esc(m.id) + '" data-rs-city="' + esc(r.prevCity) + '">在' + esc(r.prevCity || '上一個城市') + '買</button>' +
-          '<button type="button" class="btn ghost small-btn" data-rs="online" data-rs-id="' + esc(m.id) + '">網路訂到家</button>' +
+          '<button type="button" class="btn ghost small-btn" data-rs="buy" data-rs-id="' + esc(m.id) + '" data-rs-city="' + esc(r.prevCity) + '">在' + esc(r.prevCity || '上一個城市') + '買好帶過去</button>' +
+          '<button type="button" class="btn ghost small-btn" data-rs="online" data-rs-id="' + esc(m.id) + '">網購寄到家</button>' +
           '<button type="button" class="link small" data-rs="none" data-rs-id="' + esc(m.id) + '">不用提醒</button></div>';
       }
       return '<div class="rs-row">' + head + body + '</div>';
@@ -240,7 +257,7 @@
     var mode = b.getAttribute('data-rs'), id = b.getAttribute('data-rs-id');
     chooseRestock(t, id, mode === 'undo' ? '' : mode, b.getAttribute('data-rs-city'));
     App.save();
-    App.toast(mode === 'buy' ? '已加進購物計畫' : mode === 'online' ? '抵達前 ' + ONLINE_DAYS + ' 天提醒你下單' : mode === 'none' ? '這趟不再提醒' : '已取消');
+    App.toast(mode === 'buy' ? '已加進購物清單' : mode === 'online' ? '抵達前 ' + ONLINE_DAYS + ' 天提醒你下單' : mode === 'none' ? '這趟不再提醒' : '已取消');
     App.refreshView();
   });
   document.addEventListener('change', function (e) {
@@ -252,10 +269,10 @@
   // ---------- 快速檢查：這個家的消耗品，每樣點一下更新用量（一頁看完，可以全部略過） ----------
   var skipped = {};
   function quickCheck(home, key) {
-    var list = consumablesAt(home);
+    var list = consumablesAt(home, true);   // 只列這個家的保養品和洗漱用品
     if (!list.length || skipped[key || home]) return '';
     return '<div class="qc" data-qc="' + esc(key || home) + '">' +
-      '<div class="qc-head"><span class="field-title">快速檢查：' + esc(App.homeCity ? App.homeCity(home) : home) + '的家的消耗品</span>' +
+      '<div class="qc-head"><span class="field-title">快速檢查：' + esc(App.homeCity ? App.homeCity(home) : home) + '的家的保養品和洗漱用品</span>' +
       '<button type="button" class="link small" data-qc-skip="' + esc(key || home) + '">全部略過</button></div>' +
       '<p class="muted small qc-hint">離開前點一下更新用量，快用完的會在下次回來前提醒你。</p>' +
       list.map(function (m) {
@@ -276,7 +293,7 @@
   }, true);
 
   window.Consumables = {
-    LEVELS: LEVELS, CATS: CATS, isConsumable: isConsumable, canConsume: canConsume, levelOf: levelOf, levelName: levelName,
+    LEVELS: LEVELS, CATS: CATS, isConsumable: isConsumable, isToiletry: isToiletry, isWash: isWash, canConsume: canConsume, askCities: askCities, markAsked: markAsked, levelOf: levelOf, levelName: levelName,
     setConsumable: setConsumable, setLevel: setLevel, consumablesAt: consumablesAt,
     countryOf: countryOf, availOf: availOf, setAvail: setAvail, tripPlan: tripPlan, travelWeight: travelWeight, atDestination: atDestination,
     reminders: reminders, chooseRestock: chooseRestock, setOrdered: setOrdered, plannedWeight: plannedWeight, applyArrivals: applyArrivals,

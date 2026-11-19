@@ -92,7 +92,8 @@
     '玳瑁色': 'radial-gradient(circle at 30% 30%, #e0a34a 20%, #5a3010 60%)',
     '金框': 'radial-gradient(circle, #fff 45%, #d4af37 50%)', '銀框': 'radial-gradient(circle, #fff 45%, #a1a1aa 50%)',
     '透明': 'linear-gradient(135deg, #f8fafc, #e2e8f0)', '綠框': 'radial-gradient(circle, #fff 45%, #16a34a 50%)',
-    '紫框': 'radial-gradient(circle, #fff 45%, #8b5cf6 50%)', '紅框': 'radial-gradient(circle, #fff 45%, #dc2626 50%)'
+    '紫框': 'radial-gradient(circle, #fff 45%, #8b5cf6 50%)', '紅框': 'radial-gradient(circle, #fff 45%, #dc2626 50%)',
+    '深色': '#2B2B2B', '淺色': '#ECE9E4', '大地色': '#A8875F'
   };
   HEX[OTHER] = 'conic-gradient(#dc2626, #facc15, #16a34a, #3b82f6, #8b5cf6, #dc2626)';
 
@@ -109,7 +110,30 @@
 
   var PATTERNS = ['素色', '條紋', '格紋', '碎花', '印花', '圓點', OTHER];
   var SEASONS = ['春', '夏', '秋', '冬'];
-  var STYLES = ['休閒', '正式', '運動', '度假'];
+  var STYLES = ['正式', '休閒', '運動', '馬術'];   // 場合（以前叫風格；度假自動轉成休閒）
+  // 顏色只分三種：深色、淺色、大地色（詳細顏色保留在資料裡，穿搭搭配時一樣用得到）
+  var TONES = ['深色', '淺色', '大地色'];
+  var TONE_OF = {
+    '黑': '深色', '黑色': '深色', '灰': '深色', '海軍藍': '深色', '深藍': '深色', '綠': '深色', '綠色': '深色', '紅': '深色', '紅色': '深色', '酒紅': '深色', '紫': '深色', '深棕色': '大地色',
+    '白': '淺色', '白色': '淺色', '淺灰': '淺色', '藍': '淺色', '藍色': '淺色', '淺藍': '淺色', '粉紅': '淺色', '黃': '淺色', '珍珠白': '淺色', '透明': '淺色',
+    '米': '大地色', '米色': '大地色', '咖啡': '大地色', '咖啡色': '大地色', '淺棕色': '大地色', '卡其': '大地色', '駝色': '大地色', '玳瑁色': '大地色'
+  };
+  // 一件東西的顏色歸類：自己選過的三種之一優先，沒有就依詳細顏色判斷
+  function toneOf(c) {
+    if (!c) return '';
+    if (TONES.indexOf(c.tone) >= 0) return c.tone;
+    var cs = c.colors || [];
+    for (var i = 0; i < cs.length; i++) {
+      var x = cs[i];
+      if (TONE_OF[x]) return TONE_OF[x];
+      if (/深|暗|黑|酒紅|墨/.test(x)) return '深色';
+      if (/淺|白|粉|嫩/.test(x)) return '淺色';
+      if (/米|卡其|咖啡|駝|棕|大地|奶茶/.test(x)) return '大地色';
+    }
+    return '';
+  }
+  // 首飾、手錶、錶帶：維持原本的金色、銀色等選項，不套用三種顏色
+  function usesMetal(c) { return !!c && c.group === '配件' && ['耳環', '項鍊', '戒指', '手環', '手錶', '錶帶'].indexOf(c.type) >= 0; }
 
   // ---------- 大類與細項 ----------
   var SHOE_TYPES = {
@@ -128,7 +152,7 @@
     { name: '鞋子', part: 'shoes', types: Object.keys(SHOE_TYPES).concat(OTHER) },
     { name: '帽子', part: 'hat', types: ['棒球帽', '漁夫帽', '登山帽', '毛帽', '草帽', '貝雷帽', '紳士帽', OTHER] },
     { name: '圍巾', part: 'scarf', types: [] },
-    { name: '配件', part: 'accessory', types: ['耳環', '項鍊', '戒指', '手環', '手錶', '錶帶', '皮帶', '太陽眼鏡', '包包', OTHER] }
+    { name: '配件', part: 'accessory', types: ['耳環', '項鍊', '戒指', '手環', '首飾盒', '手錶', '錶帶', '皮帶', '太陽眼鏡', '包包', OTHER] }
   ];
   var CLOTHES = ['上衣', '下身', '洋裝／連身', '外套'];
 
@@ -145,26 +169,27 @@
     var grp = groupOf(g);
     if (grp && grp.types.length) f.push({ key: 'type', label: typeLabel, kind: 'one', options: grp.types, sub: true });
 
+    var TONE_FIELD = { key: 'tone', label: '顏色', kind: 'one', options: TONES, swatch: true, noOther: true };
     if (CLOTHES.indexOf(g) >= 0) {
-      f.push({ key: 'colors', label: '顏色', kind: 'many', options: FULL_COLORS, swatch: true });
+      f.push(TONE_FIELD);
       f.push({ key: 'pattern', label: '花紋', kind: 'one', options: PATTERNS });
       f.push({ key: 'seasons', label: '適合季節', kind: 'many', options: SEASONS, noOther: true });
-      f.push({ key: 'styles', label: '風格', kind: 'many', options: STYLES.concat(OTHER) });
+      f.push({ key: 'styles', label: '場合', kind: 'many', options: STYLES.concat(OTHER) });
     } else if (g === '鞋子') {
       if (SHOE_TYPES[t]) f.push({ key: 'subtype', label: '款式', kind: 'one', options: SHOE_TYPES[t], sub: true });
       f.push({ key: 'uses', label: '用途', kind: 'many', options: ['日常', '正式', '跑步', '走路', '網球', '騎馬', '雨天', '登山', OTHER] });
-      f.push({ key: 'colors', label: '顏色', kind: 'many', options: FULL_COLORS, swatch: true });
+      f.push(TONE_FIELD);
       f.push({ key: 'seasons', label: '適合季節', kind: 'many', options: SEASONS, noOther: true });
     } else if (g === '睡衣') {
-      f.push({ key: 'colors', label: '顏色', kind: 'many', options: BASIC_COLORS, swatch: true });
+      f.push(TONE_FIELD);
       f.push({ key: 'seasons', label: '適合季節', kind: 'many', options: SEASONS, noOther: true });
     } else if (g === '帽子') {
-      f.push({ key: 'colors', label: '顏色', kind: 'many', options: FULL_COLORS, swatch: true });
+      f.push(TONE_FIELD);
       f.push({ key: 'seasons', label: '適合季節', kind: 'many', options: SEASONS, noOther: true });
     } else if (g === '圍巾') {
       f.push({ key: 'thickness', label: '厚度', kind: 'one', options: ['薄', '厚', OTHER] });
       f.push({ key: 'material', label: '材質', kind: 'one', options: ['針織', '喀什米爾', OTHER] });
-      f.push({ key: 'colors', label: '顏色', kind: 'many', options: FULL_COLORS, swatch: true });
+      f.push(TONE_FIELD);
       f.push({ key: 'seasons', label: '適合季節', kind: 'many', options: SEASONS, noOther: true });
     } else if (g === '配件') {
       if (['耳環', '項鍊', '戒指', '手環'].indexOf(t) >= 0) {
@@ -176,28 +201,24 @@
         f.push({ key: 'material', label: '材質', kind: 'one', options: ['皮革', '金屬', '布／尼龍', '矽膠', OTHER] });
         f.push({ key: 'fitsWatches', label: '適用手錶', kind: 'watches' });
       } else if (t === '皮帶') {
-        f.push({ key: 'colors', label: '顏色', kind: 'many', options: BELT_COLORS, swatch: true });
+        f.push(TONE_FIELD);
         f.push({ key: 'material', label: '材質', kind: 'one', options: ['皮革', '布面', OTHER] });
         f.push({ key: 'length', label: '長度', kind: 'length', options: ['短', '標準', '長'] });
-      } else if (t === '太陽眼鏡') {
-        f.push({ key: 'colors', label: '顏色', kind: 'many', options: SUN_COLORS, swatch: true });
-      } else if (t === '包包') {
-        f.push({ key: 'colors', label: '顏色', kind: 'many', options: BAG_COLORS, swatch: true });
-      } else if (t) {
-        f.push({ key: 'colors', label: '顏色', kind: 'many', options: FULL_COLORS, swatch: true });
+      } else if (t === '太陽眼鏡' || t === '包包' || t) {
+        f.push(TONE_FIELD);
       }
     }
     return f;
   }
 
   // 每個選項欄位會用到的 key，用來「換種類時清掉不適用的值」
-  var OPTION_KEYS = ['type', 'subtype', 'colors', 'pattern', 'seasons', 'styles', 'uses', 'material', 'thickness', 'length', 'fitsWatches'];
+  var OPTION_KEYS = ['type', 'subtype', 'colors', 'tone', 'pattern', 'seasons', 'styles', 'uses', 'material', 'thickness', 'length', 'fitsWatches'];
 
   function colorHex(name) { return HEX[name] || HEX[OTHER]; }
 
   function empty() {
     return {
-      v: 3, group: '', type: '', subtype: '', part: '', home: '', colors: [], pattern: '', seasons: [], styles: [],
+      v: 3, group: '', type: '', subtype: '', part: '', home: '', colors: [], tone: '', pattern: '', seasons: [], styles: [],
       brand: '', uses: [], material: '', thickness: '', length: '', lengthCm: null, fitsWatches: []
     };
   }
@@ -275,10 +296,10 @@
       OPTION_KEYS.forEach(function (key) {
         var f = fields.find(function (x) { return x.key === key; });
         var isArr = Array.isArray(empty()[key]);
-        if (!f) { tags[key] = isArr ? [] : ''; return; }
+        if (!f) { if (key === 'colors') return; tags[key] = isArr ? [] : ''; return; }   // 詳細顏色一律保留（畫面上只顯示三種）
         if (f.kind === 'watches') return;
         var opts = extend ? extend(f, tags) : f.options;
-        if (isArr) tags[key] = (tags[key] || []).filter(function (v) { return opts.indexOf(v) >= 0; });
+        if (isArr && key !== 'colors') tags[key] = (tags[key] || []).filter(function (v) { return opts.indexOf(v) >= 0; });
         else if (tags[key] && opts.indexOf(tags[key]) < 0) tags[key] = '';
       });
     }
@@ -339,9 +360,21 @@
   };
   var V1_COLOR = { '米色': '米', '深藍': '海軍藍', '橘': OTHER, '多色': OTHER };
   var V1_PATTERN = { '點點': '圓點', '圖案': OTHER, '迷彩': OTHER };
-  var V1_STYLE = { '上班': '正式' };
+  var V1_STYLE = { '上班': '正式', '度假': '休閒' };
 
   function uniq(arr) { return arr.filter(function (v, i) { return v && arr.indexOf(v) === i; }); }
+
+  // 新版欄位：顏色補上三種之一（詳細顏色保留）、場合「度假」轉成「休閒」。回傳有沒有改
+  function fixTags(c) {
+    if (!c || !c.group) return false;
+    var changed = false;
+    if (!c.tone && !usesMetal(c)) { var t = toneOf(c); if (t) { c.tone = t; changed = true; } }
+    if ((c.styles || []).indexOf('度假') >= 0) {
+      c.styles = uniq(c.styles.map(function (x) { return x === '度假' ? '休閒' : x; }));
+      changed = true;
+    }
+    return changed;
+  }
 
   function fromOld(old) {
     var t = V1_TYPE[old.type] || ['', ''];
@@ -552,6 +585,7 @@
     OTHER: OTHER, GROUPS: GROUPS, OUTFIT_PARTS: OUTFIT_PARTS,
     isOutfitItem: function (c) { return !!(c && OUTFIT_PARTS.indexOf(c.part) >= 0); },
     isSleepwear: function (c) { return !!(c && c.group === '睡衣'); }, SEASONS: SEASONS, STYLES: STYLES, ALL_COLORS: ALL_COLORS,
+    TONES: TONES, toneOf: toneOf, usesMetal: usesMetal, fixTags: fixTags,
     groupOf: groupOf, colorHex: colorHex, empty: empty, hasTags: hasTags, typeName: typeName, refName: refName,
     guess: guess, upgrade: upgrade, fromOld: fromOld, fieldsFor: fieldsFor, createPicker: createPicker, askText: askText
   };

@@ -287,7 +287,9 @@
     if (!Array.isArray(s.packLists)) s.packLists = [];
     if (!s.dayPlans || typeof s.dayPlans !== 'object' || Array.isArray(s.dayPlans)) s.dayPlans = {};
     if (!s.prefs || typeof s.prefs !== 'object' || Array.isArray(s.prefs)) s.prefs = {};
-    if (!s.cityAvail || typeof s.cityAvail !== 'object' || Array.isArray(s.cityAvail)) s.cityAvail = { byCountry: {}, byCity: {} };   // 城市當地好不好買   // 個人設定：lang 語言（zh／en），跟著雲端同步
+    if (!s.cityAvail || typeof s.cityAvail !== 'object' || Array.isArray(s.cityAvail)) s.cityAvail = { byCountry: {}, byCity: {} };   // 城市當地好不好買
+    // 衣服標籤新版：顏色補上三種之一（深色／淺色／大地色，詳細顏色保留）、場合「度假」轉成「休閒」
+    if (window.Clothing && window.Clothing.fixTags) (s.memory || []).forEach(function (m) { if (m && m.clothing) window.Clothing.fixTags(m.clothing); });   // 個人設定：lang 語言（zh／en），跟著雲端同步
     s.bags.forEach(normalizeBag);
     // 以前 app 自己建立的預設行李（托運行李 4 kg、登機箱 2.5 kg、打包清單自動建立的 0 kg）不是你選的行李箱：
     // 改成「尚未選擇行李箱」（資料保留，空箱不算，等你選真正用的行李箱）

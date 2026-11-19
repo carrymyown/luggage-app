@@ -78,7 +78,7 @@
             '<button type="button" class="dr-main" data-dr-open="' + esc(m.id) + '">' +
             '<span class="dr-name">' + esc(m.name) + (m.sample ? '<span class="sample-tag">範例</span>' : '') + '</span>' +
             '<span class="muted small">' + esc(weightText(m)) + (showLoc || loc.state !== 'home' ? '・' + esc(App.locText(loc)) : '') +
-              (window.Consumables && m.consumable ? '・<span class="dr-level lv-' + window.Consumables.levelOf(m) + '">' + window.Consumables.levelName(window.Consumables.levelOf(m)) + '</span>' : '') + '</span></button>' +
+              (window.Consumables && window.Consumables.isConsumable(m) ? '・<span class="dr-level lv-' + window.Consumables.levelOf(m) + '">' + window.Consumables.levelName(window.Consumables.levelOf(m)) + '</span>' : '') + '</span></button>' +
             qtyHTML(m) + '</div>';
         }).join('') + '</div>';
     }).join('');
@@ -285,8 +285,9 @@
     var can = CS && (CS.canConsume(m) || m.consumable);
     $('#drd-consum-wrap').hidden = !can;
     if (can) {
-      $('#drd-consum').checked = !!m.consumable;
-      $('#drd-level').hidden = !m.consumable;
+      var on = CS.isConsumable(m);
+      $('#drd-consum').checked = on;
+      $('#drd-level-wrap').hidden = !on;
       $('#drd-level').innerHTML = CS.LEVELS.map(function (l) {
         return '<button type="button" class="' + (CS.levelOf(m) === l[0] ? 'on' : '') + '" data-drd-level="' + l[0] + '">' + l[1] + '</button>';
       }).join('');

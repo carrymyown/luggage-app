@@ -491,6 +491,9 @@ input:focus, select:focus { outline: 2px solid var(--primary); outline-offset: -
 .tab small { margin-left: 4px; font-size: 0.75rem; }
 .tab.on { color: var(--primary); border-bottom-color: var(--primary); font-weight: 700; }
 .filters { margin-bottom: 4px; }
+.closet-sub { margin: -2px 0 10px; }
+.closet-sub .chip { min-height: 32px; padding: 4px 12px; font-size: 0.88rem; background: transparent; }
+.closet-sub .chip.on { background: var(--primary); color: #fff; }
 .filter-row { display: flex; align-items: center; gap: 8px; }
 .filter-label { flex: none; width: 2.5em; font-size: 0.85rem; color: var(--muted); }
 .filter-row .chips.filter { flex: 1; min-width: 0; margin-bottom: 8px; }
@@ -2359,7 +2362,17 @@ svg * { vector-effect: non-scaling-stroke; }
 .page-top-end { justify-content: flex-end; margin: 12px 0 4px; }
 .page-top .small-btn { flex: none; }
 #view-pack .pk-tabs { margin-top: 0; }
-#pack-main > .pk-tabs + .pk-trip { margin-top: 12px; }
+#pack-main > .pk-tabs-row + .pk-trip { margin-top: 12px; }
+#drd-level-wrap .field-title { display: block; margin: 12px 0 6px; }
+.pk-tabs-row { position: relative; }
+.pk-tabs-row .pk-edit-btn { position: absolute; right: 0; top: 0; bottom: 1px; min-height: 0; padding: 0 2px; color: var(--muted); }
+.pk-list-tools .pk-add-btn { width: 100%; }
+.pk-zone .pk-zone-add { display: flex; width: 100%; margin: 10px 0 22px; }
+.pk-ask { margin: 0 0 12px; padding: 14px 16px; }
+.pk-ask-q { margin: 0 0 4px; }
+.pk-ask-q b { margin-right: 4px; }
+.pk-ask-btns { display: flex; align-items: center; gap: 8px; margin-top: 10px; }
+.pk-ask-btns .link { margin-left: auto; }
 #view-pack .pk-remain { margin-top: 16px; }
 
 /* 每一組：標題「上衣 2 / 4」，整組打勾完成出現小勾、可以收合 */
