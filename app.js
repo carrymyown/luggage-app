@@ -1021,14 +1021,23 @@
 
   // ---------- 參考重量比對 ----------
   // 常見簡體字轉繁體，讓簡體輸入也能對到
-  var S2T = {};
-  ('线線电電头頭转轉换換机機风風药藥镜鏡键鍵盘盤装裝袜襪裤褲衬襯伞傘护護钱錢签簽证證维維鱼魚' +
+  // 注意：norm 在打開 app 讀取資料（load → migrate）時就會用到，那時候檔案後面的 var 都還沒有值，
+  //   所以對照表放在函式裡，第一次用到時才建立（以前放在 var S2T 裡，讀取時是 undefined，整份資料會讀不進來）
+  function s2tMap() {
+    if (!s2tMap.m) {
+      var m = {};
+      ('线線电電头頭转轉换換机機风風药藥镜鏡键鍵盘盤装裝袜襪裤褲衬襯伞傘护護钱錢签簽证證维維鱼魚' +
    '马馬网網运運动動叶葉饼餅宝寶记記笔筆脑腦长長绒絨内內带帶凉涼阳陽叠疊隐隱妆妝晒曬体體胡鬍' +
    '垫墊温溫壶壺凤鳳红紅坚堅卷捲离離夹夾触觸阅閱读讀戴戴发髮洁潔肤膚润潤乐樂鞋鞋针針织織连連' +
-   '单單数數码碼备備源源移移动動盔盔帽帽围圍巾巾腰腰拍拍罩罩').replace(/(.)(.)/g, function (_, a, b) { S2T[a] = b; });
+   '单單数數码碼备備源源移移动動盔盔帽帽围圍巾巾腰腰拍拍罩罩').replace(/(.)(.)/g, function (_, a, b) { m[a] = b; });
+      s2tMap.m = m;
+    }
+    return s2tMap.m;
+  }
 
   function norm(str) {
-    return String(str).toLowerCase().replace(/[^\s]/g, function (c) { return S2T[c] || c; })
+    var map = s2tMap();
+    return String(str).toLowerCase().replace(/[^\s]/g, function (c) { return map[c] || c; })
       .replace(/[\s\-_.,，。、・·()（）\[\]【】\/]+/g, '');
   }
 

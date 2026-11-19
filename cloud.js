@@ -500,19 +500,47 @@
     if (isNaN(d)) return '';
     return (window.Trips && window.Trips.fmtDate ? window.Trips.fmtDate(d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0')) : (d.getMonth() + 1) + '/' + d.getDate()) + ' ' + hhmm(d);
   }
+  // 這台裝置留下的備份（cmo-rescue-…）：讀不懂時留下的原始資料、或被換掉的那一份
+  function rescues() {
+    var out = [];
+    try {
+      Object.keys(localStorage).forEach(function (k) {
+        var m = k.match(/^cmo-rescue-(unreadable|local)-(\d+)$/);
+        if (!m) return;
+        try {
+          var v = JSON.parse(localStorage.getItem(k));
+          var data = m[1] === 'local' ? v && v.data : v;
+          if (!data || typeof data !== 'object' || !countOf(data)) return;
+          out.push({ key: k, at: +m[2], data: data });
+        } catch (e) { /* 讀不懂的就不列 */ }
+      });
+    } catch (e) { /* 不影響 */ }
+    return out.sort(function (a, b) { return b.at - a.at; });
+  }
+  function rescueHTML() {
+    var list = rescues();
+    if (!list.length) return '';
+    return '<div class="field-title hist-sec">這台裝置留下的備份</div>' + list.map(function (r) {
+      var n = function (k) { return Array.isArray(r.data[k]) ? r.data[k].length : 0; };
+      return '<div class="hist-row"><span class="hist-main"><b>' + esc(fmtTime(new Date(r.at).toISOString())) + '</b>' +
+        '<span class="muted small">物品 ' + n('memory') + '・旅程 ' + n('trips') + '</span></span>' +
+        '<button type="button" class="btn ghost small-btn" data-rescue-restore="' + esc(r.key) + '" data-hist-time="' + esc(fmtTime(new Date(r.at).toISOString())) + '">還原</button></div>';
+    }).join('') + '<div class="field-title hist-sec">雲端之前的版本</div>';
+  }
   function openHistory() {
     $('#account-sheet').hidden = true;
-    $('#history-list').innerHTML = '<p class="muted small">讀取中…</p>';
+    var local = rescueHTML();
+    $('#history-list').innerHTML = local + '<p class="muted small">讀取中…</p>';
     $('#history-sheet').hidden = false;
     listHistory().then(function (rows) {
-      $('#history-list').innerHTML = rows.length ? rows.map(function (r) {
+      $('#history-list').innerHTML = local + (rows.length ? rows.map(function (r) {
         return '<div class="hist-row"><span class="hist-main"><b>' + esc(fmtTime(r.saved_at)) + '</b>' +
           '<span class="muted small">物品 ' + (r.item_count || 0) + '・旅程 ' + (r.trip_count || 0) + '</span></span>' +
           '<button type="button" class="btn ghost small-btn" data-hist-restore="' + esc(String(r.id)) + '" data-hist-time="' + esc(fmtTime(r.saved_at)) + '">還原</button></div>';
-      }).join('') : '<p class="muted small">還沒有之前的版本。之後每次存到雲端，上一版都會自動留下來。</p>';
+      }).join('') : '<p class="muted small">還沒有之前的版本。之後每次存到雲端，上一版都會自動留下來。</p>');
     }).catch(function (err) {
       var m = (err && (err.message || '')) + ' ' + (err && err.code || '');
-      $('#history-list').innerHTML = '<p class="muted small">' + (/app_state_history|42P01|PGRST205|schema cache/.test(m) ?
+      $('#history-list').innerHTML = local + '<p class="muted small">' + (/app_state_history|42P01|PGRST205|schema cache/.test(m) ?
         '雲端還沒有開啟「之前的版本」。請先在 Supabase 執行 supabase/history.sql。' : esc(friendly(err))) + '</p>';
     });
   }
@@ -521,6 +549,21 @@
     if (!t.closest) return;
     if (t.closest('#history-open')) { openHistory(); return; }
     if (t.id === 'history-close' || t.id === 'history-sheet') { $('#history-sheet').hidden = true; return; }
+    var rb = t.closest('[data-rescue-restore]');
+    if (rb) {
+      if (!confirm('要還原到 ' + rb.getAttribute('data-hist-time') + ' 的版本嗎？\n目前的資料會先自動留成一個版本，之後還可以再換回來。')) return;
+      try {
+        var raw = JSON.parse(localStorage.getItem(rb.getAttribute('data-rescue-restore')));
+        var data = /-local-/.test(rb.getAttribute('data-rescue-restore')) ? raw.data : raw;
+        backupLocal(App.state(), 'before-rescue-restore');
+        App.replaceState(data);
+        $('#history-sheet').hidden = true;
+        App.toast('已還原');
+        allowShrink = {}; keepLocal = {};
+        schedule(300);   // 同步到雲端（一樣先讀雲端；雲端比較多時會先問）
+      } catch (err) { alert('還原失敗：' + friendly(err)); }
+      return;
+    }
     var b = t.closest('[data-hist-restore]');
     if (!b) return;
     if (!confirm('要還原到 ' + b.getAttribute('data-hist-time') + ' 的版本嗎？\n目前的資料會先自動留成一個版本，之後還可以再換回來。')) return;

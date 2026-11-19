@@ -2600,3 +2600,5 @@ input:not([type=checkbox]):not([type=radio]):not([type=file]):not([type=range]),
 .hist-row .btn { flex: none; }
 #history-sheet .btn.ghost#history-close { margin-top: 16px; width: 100%; }
 #account-sheet .account-backup { flex-wrap: wrap; row-gap: 4px; }
+
+.hist-sec { margin: 16px 0 4px; }
