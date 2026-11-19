@@ -8,17 +8,17 @@
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-title" content="Carry My Own">
   <!-- 目前的版本（發布時更新；和 version.json 比對，有新版就提示更新） -->
-  <meta name="app-version" content="20261119g">
+  <meta name="app-version" content="20261119h">
   <title>Carry My Own</title>
   <!-- 圖示：瀏覽器分頁（網址前面）、iPad 主畫面、安裝成 app 時用 -->
-  <link rel="icon" type="image/svg+xml" href="icons/favicon.svg?v=20261119g">
-  <link rel="icon" href="icons/favicon-32.png?v=20261119g" sizes="32x32" type="image/png">
-  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png?v=20261119g">
+  <link rel="icon" type="image/svg+xml" href="icons/favicon.svg?v=20261119h">
+  <link rel="icon" href="icons/favicon-32.png?v=20261119h" sizes="32x32" type="image/png">
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png?v=20261119h">
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800;900&family=Noto+Sans+TC:wght@400;500;700;900&display=swap">
-  <link rel="stylesheet" href="style.css?v=20261119g">
+  <link rel="stylesheet" href="style.css?v=20261119h">
 </head>
 <body>
   <main>
@@ -857,6 +857,7 @@
         <div class="account-item account-backup">
           <button type="button" id="backup-export" class="link small">匯出備份</button>
           <label class="link small file-link">匯入備份<input id="backup-import" type="file" accept=".json,application/json"></label>
+          <button type="button" id="history-open" class="link small" hidden>還原到之前的版本</button>
         </div>
         <button type="button" id="sample-again" class="account-item">再看一次範例</button>
         <button type="button" id="intro-again" class="account-item">再看一次介紹</button>
@@ -865,6 +866,15 @@
       <a id="backup-download" class="btn primary download-btn" hidden>下載備份檔</a>
       <button type="button" id="account-close" class="btn ghost">關閉</button>
       <p id="app-version" class="app-version muted small"></p>
+    </div>
+  </div>
+
+  <!-- 還原到之前的版本：雲端每次更新前自動留下的上一版（最多 50 版） -->
+  <div id="history-sheet" class="sheet" hidden>
+    <div class="sheet-panel org-panel form" role="dialog" aria-modal="true" aria-labelledby="history-title">
+      <div id="history-title" class="sheet-title">還原到之前的版本</div>
+      <div id="history-list"></div>
+      <button type="button" id="history-close" class="btn ghost">關閉</button>
     </div>
   </div>
 
@@ -1002,30 +1012,30 @@
     </div>
   </div>
 
-  <script src="lang.js?v=20261119g"></script>
-  <script src="i18n.js?v=20261119g"></script>
-  <script src="weights.js?v=20261119g"></script>
-  <script src="photos.js?v=20261119g"></script>
-  <script src="clothing.js?v=20261119g"></script>
-  <script src="ui.js?v=20261119g"></script>
-  <script src="app.js?v=20261119g"></script>
-  <script src="closet.js?v=20261119g"></script>
-  <script src="trips.js?v=20261119g"></script>
-  <script src="organize.js?v=20261119g"></script>
-  <script src="packing.js?v=20261119g"></script>
-  <script src="drawer.js?v=20261119g"></script>
-  <script src="bags.js?v=20261119g"></script>
-  <script src="shop.js?v=20261119g"></script>
-  <script src="outfit.js?v=20261119g"></script>
-  <script src="consumables.js?v=20261119g"></script>
-  <script src="intimates.js?v=20261119g"></script>
-  <script src="sample-data.js?v=20261119g"></script>
-  <script src="onboard.js?v=20261119g"></script>
-  <script src="profile.js?v=20261119g"></script>
-  <script src="intro.js?v=20261119g"></script>
-  <script src="nav.js?v=20261119g"></script>
-  <script src="backup.js?v=20261119g"></script>
+  <script src="lang.js?v=20261119h"></script>
+  <script src="i18n.js?v=20261119h"></script>
+  <script src="weights.js?v=20261119h"></script>
+  <script src="photos.js?v=20261119h"></script>
+  <script src="clothing.js?v=20261119h"></script>
+  <script src="ui.js?v=20261119h"></script>
+  <script src="app.js?v=20261119h"></script>
+  <script src="closet.js?v=20261119h"></script>
+  <script src="trips.js?v=20261119h"></script>
+  <script src="organize.js?v=20261119h"></script>
+  <script src="packing.js?v=20261119h"></script>
+  <script src="drawer.js?v=20261119h"></script>
+  <script src="bags.js?v=20261119h"></script>
+  <script src="shop.js?v=20261119h"></script>
+  <script src="outfit.js?v=20261119h"></script>
+  <script src="consumables.js?v=20261119h"></script>
+  <script src="intimates.js?v=20261119h"></script>
+  <script src="sample-data.js?v=20261119h"></script>
+  <script src="onboard.js?v=20261119h"></script>
+  <script src="profile.js?v=20261119h"></script>
+  <script src="intro.js?v=20261119h"></script>
+  <script src="nav.js?v=20261119h"></script>
+  <script src="backup.js?v=20261119h"></script>
   <script src="vendor/supabase.js"></script>
-  <script src="cloud.js?v=20261119g"></script>
+  <script src="cloud.js?v=20261119h"></script>
 </body>
 </html>

@@ -562,6 +562,28 @@ window.LANG = { zh: { name: '繁體中文' }, en: { name: 'English', text: {}, r
   R(/^還有 (\d+) 天沒搭，搭完再告訴你哪些可以不帶$/, function (m) { return m[1] + (m[1] === '1' ? ' day' : ' days') + ' left to style. We\'ll show what to leave behind once you\'re done.'; });
   R(/^這趟不帶：(.+)$/, function (m, tr) { return 'Leaving behind: ' + tr(m[1]); });
 
+  // 保護雲端資料、之前的版本
+  add({
+    '還原到之前的版本': 'Restore an earlier version', '讀取中…': 'Loading…', '還原': 'Restore', '還原中…': 'Restoring…', '已還原': 'Restored',
+    '還沒有之前的版本。之後每次存到雲端，上一版都會自動留下來。': 'No earlier versions yet. From now on, the previous version is kept every time we save to the cloud.',
+    '雲端還沒有開啟「之前的版本」。請先在 Supabase 執行 supabase/history.sql。': 'Earlier versions are not enabled in the cloud yet. Run supabase/history.sql in Supabase first.',
+    '範例資料不會上傳到雲端': 'Sample data is never uploaded', '剛好有別的裝置在更新，請再試一次': 'Another device is updating right now — please try again',
+    '找不到這個版本': 'Version not found'
+  });
+  window.LANG.en.rules.unshift([/^物品 (\d+)・旅程 (\d+)$/, function (m) { return m[1] + ' items · ' + m[2] + (m[2] === '1' ? ' trip' : ' trips'); }]);
+  R(/^要還原到 (.+) 的版本嗎？\n目前的資料會先自動留成一個版本，之後還可以再換回來。$/, function (m, tr) { return 'Restore the version from ' + tr(m[1]) + '?\nYour current data is kept as a version first, so you can switch back.'; });
+  R(/^雲端的資料比這台裝置少很多：(.+)。可能是被別的裝置蓋掉了。\n\n按「確定」：用這台裝置的資料還原雲端。\n按「取消」：改成和雲端一樣（這台裝置目前的資料會另外留一份）。$/, function (m) {
+    var x = m[1].match(/^(物品|旅程|資料)從 (\d+) (樣|趟|筆)變成 (\d+) (樣|趟|筆)$/);
+    var what = x ? ({ '物品': 'items', '旅程': 'trips', '資料': 'records' }[x[1]] + ': ' + x[2] + ' here, ' + x[4] + ' in the cloud') : m[1];
+    return 'The cloud has much less than this device (' + what + '). Another device may have overwritten it.\n\nOK: restore the cloud from this device.\nCancel: match the cloud (this device’s current data is saved separately).';
+  });
+  R(/^還原失敗：(.+)$/, function (m, tr) { return 'Restore failed: ' + tr(m[1]); });
+  R(/^這次同步會讓雲端的(.+)（少了一半以上）。\n\n按「確定」：用這台裝置的資料更新雲端。\n按「取消」：不要覆蓋，改用雲端的資料（這台裝置目前的資料會另外留一份）。$/, function (m) {
+    var x = m[1].match(/^(物品|旅程|資料)從 (\d+) (樣|趟|筆)變成 (\d+) (樣|趟|筆)$/);
+    var what = x ? ({ '物品': 'items', '旅程': 'trips', '資料': 'records' }[x[1]] + ' from ' + x[2] + ' to ' + x[4]) : m[1];
+    return 'This sync would reduce your cloud ' + what + ' (more than half fewer).\n\nOK: update the cloud with this device’s data.\nCancel: don’t overwrite — use the cloud data instead (this device’s current data is saved separately).';
+  });
+
   R(/^要放到(.+)的家$/, function (m, tr) { return 'goes to ' + tr(m[1]) + ' home'; });
   R(/^給(.+)$/, function (m, tr) { return 'for ' + tr(m[1]); });
 

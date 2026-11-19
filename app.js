@@ -243,14 +243,26 @@
     location.reload();
   }
 
+  // 讀這台裝置的資料。讀不懂（格式壞掉、轉換出錯）時：
+  //   以前會直接換成空的資料，之後一存檔就把原本的資料蓋掉、同步時再把雲端也蓋成空的。
+  //   現在改成：原本的內容另外留一份（cmo-rescue-…，登出也不會清掉），這次不寫回這台裝置、也不上傳，等雲端的資料載回來。
+  var loadFailed = false;
   function load() {
-    try {
-      var raw = localStorage.getItem(dataKey());
-      if (raw) {
+    var raw = null;
+    try { raw = localStorage.getItem(dataKey()); } catch (e) { /* 私密瀏覽 */ }
+    if (raw) {
+      try {
         var s = JSON.parse(raw);
-        if (s && Array.isArray(s.bags) && Array.isArray(s.items) && Array.isArray(s.memory)) return migrate(s);
-      }
-    } catch (e) { /* 讀不到就用預設值 */ }
+        if (s && typeof s === 'object' && !Array.isArray(s)) {
+          if (!Array.isArray(s.bags)) s.bags = [];
+          if (!Array.isArray(s.items)) s.items = [];
+          if (!Array.isArray(s.memory)) s.memory = [];
+          return migrate(s);
+        }
+      } catch (e) { try { console.error('讀不懂這台裝置的資料', e); } catch (e2) { /* 不影響 */ } }
+      loadFailed = true;
+      try { localStorage.setItem('cmo-rescue-unreadable-' + Date.now(), raw); } catch (e) { /* 空間不夠：原本的那一份也不會被覆蓋 */ }
+    }
     return migrate(defaultState());   // 補齊所有欄位（打包清單、購物、禮物…）
   }
 
@@ -364,6 +376,8 @@
   var locked = false, saveOk = true;
   function save() {
     if (locked) { saveOk = false; return false; }
+    // 這台裝置的資料讀不懂：不要用空的資料蓋掉原本那一份（等雲端的資料載回來就恢復正常）
+    if (loadFailed && !sampleMode()) { saveOk = false; return false; }
     delete state.pristine;
     saveOk = true;
     try { localStorage.setItem(dataKey(), JSON.stringify(state)); }
@@ -378,16 +392,20 @@
 
   // 存檔但不觸發同步（雲端同步自己用）
   function saveQuiet() {
-    if (locked) return;
+    if (locked || (loadFailed && !sampleMode())) return;
     try { localStorage.setItem(dataKey(), JSON.stringify(state)); } catch (e) { /* 下次再存 */ }
   }
 
   // 雲端合併後套用到這台裝置（不會再觸發同步）
   function replaceState(next) {
     if (sampleMode()) return;   // 範例模式中不接收雲端的資料
-    state = migrate(JSON.parse(JSON.stringify(next)));
+    var copy = JSON.parse(JSON.stringify(next || {}));
+    ['bags', 'items', 'memory'].forEach(function (k) { if (!Array.isArray(copy[k])) copy[k] = []; });
+    var s2 = migrate(copy);   // 轉換失敗會丟出錯誤，目前的資料不動
+    state = s2;
+    loadFailed = false;
     try { localStorage.setItem(STORE_KEY, JSON.stringify(state)); } catch (e) { /* 下次再存 */ }
-    refreshView();
+    try { refreshView(); } catch (e) { try { console.error(e); } catch (e2) { /* 不影響 */ } }   // 畫面出錯也不影響資料
   }
 
   // 重畫目前的畫面；正在填表單（編輯衣服、旅程）時先不重畫，避免打斷
@@ -1892,6 +1910,7 @@
 
   window.App = {
     lastSaveOk: function () { return saveOk; },
+    loadFailed: function () { return loadFailed; },
     rerender: rerender,
     reserveText: reserveText, openGoal: openGoal,
     saveQuiet: saveQuiet,

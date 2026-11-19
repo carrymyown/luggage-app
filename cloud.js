@@ -192,6 +192,7 @@
       });
     }, Promise.resolve()).then(function () {
       if (changed) App.saveQuiet();
+      return changed;
     });
   }
 
@@ -269,6 +270,38 @@
     return syncing;
   }
 
+  // ---------- 保護雲端資料 ----------
+  // 資料筆數（物品、旅程、行李裡的東西、禮物、購物、自己的行李箱；範例不算）：用來判斷這次上傳會不會讓雲端少很多
+  function countOf(d) {
+    if (!d || typeof d !== 'object') return 0;
+    function n(arr) { return Array.isArray(arr) ? arr.filter(function (x) { return x && !x.sample; }).length : 0; }
+    return n(d.memory) + n(d.trips) + n(d.items) + n(d.gifts) + n((d.shopping || {}).purchases) +
+      (Array.isArray(d.bags) ? d.bags.filter(function (b) { return b && !b.auto && !b.sample; }).length : 0);
+  }
+  // 少了一半以上的話，回傳說明（例如「物品從 28 樣變成 6 樣」）；沒有就回傳空字串
+  function shrinkOf(remote, next) {
+    function n(d, k) { return Array.isArray(d && d[k]) ? d[k].filter(function (x) { return x && !x.sample; }).length : 0; }
+    var rm = n(remote, 'memory'), mm = n(next, 'memory'), rt = n(remote, 'trips'), mt = n(next, 'trips');
+    var rc = countOf(remote), mc = countOf(next);
+    if (rm >= 3 && mm * 2 < rm) return '物品從 ' + rm + ' 樣變成 ' + mm + ' 樣';
+    if (rt >= 2 && mt * 2 < rt) return '旅程從 ' + rt + ' 趟變成 ' + mt + ' 趟';
+    if (rc >= 3 && mc * 2 < rc) return '資料從 ' + rc + ' 筆變成 ' + mc + ' 筆';
+    return '';
+  }
+  // 範例資料：永遠不上傳
+  function isSampleData(d) { return !!(d && d.sampleBuilt); }
+  // 這台裝置目前的資料另外留一份（不要用雲端的、或改用雲端的之前）：localStorage 的 cmo-rescue-local-<時間>
+  function backupLocal(d, why) {
+    try { localStorage.setItem('cmo-rescue-local-' + Date.now(), JSON.stringify({ why: why || '', savedAt: new Date().toISOString(), data: d })); } catch (e) { /* 空間不夠就算了 */ }
+  }
+  var allowShrink = {};   // 這次已經確認過「要用這台覆蓋雲端」的雲端版本
+  var keepLocal = {};     // 這次已經確認過「雲端少很多時，用這台的資料還原雲端」的雲端版本
+
+  // 同步一次：一定先讀雲端，讀成功之後才可能上傳
+  //  - 這台沒有資料（剛登入、資料讀不懂、被清掉）→ 一律用雲端的，絕不上傳
+  //  - 範例資料 → 不上傳
+  //  - 這次上傳會讓雲端的資料少一半以上 → 先停下來問
+  //  - 雲端每次被更新前，上一版會自動留在 app_state_history（設定見 supabase/history.sql）
   function run(uid) {
     var meta = loadMeta();
     var attempt = 0;
@@ -277,10 +310,13 @@
       return client.from('app_state').select('data, version').eq('user_id', uid).maybeSingle().then(function (res) {
         if (res.error) throw res.error;
         var local = clone(App.state());
+        if (App.sampleMode() || isSampleData(local)) throw new Error('範例資料不會上傳到雲端');
         var base = meta.userId === uid && meta.base ? JSON.parse(meta.base) : null;
+        var localEmpty = !!local.pristine || (App.loadFailed && App.loadFailed()) || App.isEmptyState(local, true);
 
-        // 雲端還沒有資料：把這台的資料上傳
+        // 雲端還沒有資料
         if (!res.data) {
+          if (localEmpty) return;   // 這台也沒有：不用上傳空的資料
           delete local.pristine;
           return client.from('app_state').insert({ user_id: uid, data: local, version: 1 }).then(function (ins) {
             if (ins.error) {
@@ -294,11 +330,24 @@
 
         var remote = res.data.data || {};
         var rv = res.data.version;
-        // 這台是剛裝好、還沒用過的：直接用雲端的資料
-        // 這台還沒有自己的資料（剛裝好，或只有範例）：直接用雲端的，範例不會混進帳號
-        var fresh = !base && (local.pristine || App.isEmptyState(local, true));
-        var merged = fresh ? clone(remote) : base && rv === meta.version ? local : merge3(base, local, remote);
+        // 這台沒有資料：直接用雲端的（不管上次同步過沒有），不上傳
+        if (localEmpty) {
+          if (!eq(App.state(), local)) return loop();
+          App.replaceState(clone(remote));   // 轉換失敗會丟出錯誤：什麼都不上傳
+          meta = { userId: uid, version: rv, base: JSON.stringify(App.state()) };
+          saveMeta(meta);
+          return;
+        }
+        var merged = base && rv === meta.version ? clone(local) : merge3(base, local, remote);
         delete merged.pristine;
+        // 雲端的資料比這台少很多（可能被別的裝置蓋掉了）：先問，不要自動把這台的資料也刪掉
+        var lost = shrinkOf(local, merged);
+        if (lost && !keepLocal[rv]) {
+          var useLocal = confirm('雲端的資料比這台裝置少很多：' + lost + '。可能是被別的裝置蓋掉了。\n\n' +
+            '按「確定」：用這台裝置的資料還原雲端。\n按「取消」：改成和雲端一樣（這台裝置目前的資料會另外留一份）。');
+          if (useLocal) { keepLocal[rv] = true; allowShrink[rv] = true; merged = clone(local); delete merged.pristine; }
+          else backupLocal(local, 'cloud-shrink-accepted');
+        }
 
         // 合併期間你剛好又改了資料：重來一次，避免蓋掉
         if (!eq(App.state(), local)) return loop();
@@ -309,6 +358,20 @@
           meta = { userId: uid, version: rv, base: JSON.stringify(merged) };
           saveMeta(meta);
           return;
+        }
+        // 這次上傳會讓雲端的資料少一半以上：先停下來問，不自動覆蓋
+        var drop = shrinkOf(remote, merged);
+        if (drop && !allowShrink[rv]) {
+          var go = confirm('這次同步會讓雲端的' + drop + '（少了一半以上）。\n\n' +
+            '按「確定」：用這台裝置的資料更新雲端。\n按「取消」：不要覆蓋，改用雲端的資料（這台裝置目前的資料會另外留一份）。');
+          if (!go) {
+            backupLocal(merged, 'shrink-declined');
+            App.replaceState(clone(remote));
+            meta = { userId: uid, version: rv, base: JSON.stringify(App.state()) };
+            saveMeta(meta);
+            return;
+          }
+          allowShrink[rv] = true;
         }
         return client.from('app_state')
           .update({ data: merged, version: rv + 1, updated_at: new Date().toISOString() })
@@ -325,12 +388,54 @@
           });
       });
     }
-    return uploadPhotos(uid).then(loop).then(function () {
+    // 先讀雲端、合併、存好資料；之後才上傳照片、刪照片、下載照片
+    return loop().then(function () {
+      return uploadPhotos(uid);
+    }).then(function (changed) {
+      if (changed) { attempt = 0; return loop(); }   // 照片路徑有更新：再同步一次（一樣先讀雲端）
+    }).then(function () {
       return processDeletes(uid);
     }).then(function () {
       return downloadPhotos(uid);
     }).then(function (got) {
       if (got) App.refreshView();
+    });
+  }
+
+  // ---------- 之前的版本（雲端每次更新前自動留下的，最多 50 版） ----------
+  function listHistory() {
+    if (!client || !user) return Promise.reject(new Error('請先登入'));
+    return client.from('app_state_history').select('id, version, saved_at, item_count, trip_count')
+      .eq('user_id', user.id).order('saved_at', { ascending: false }).limit(50).then(function (res) {
+        if (res.error) throw res.error;
+        return res.data || [];
+      });
+  }
+  // 還原到某一版：雲端改成那一版（目前的會自動留成一個新的歷史版本），這台裝置也換成那一版
+  function restoreHistory(id) {
+    if (!client || !user || App.sampleMode()) return Promise.reject(new Error('請先登入'));
+    var uid = user.id;
+    clearTimeout(timer);
+    return Promise.resolve(syncing).then(function () {
+      return client.from('app_state_history').select('data').eq('id', id).eq('user_id', uid).maybeSingle();
+    }).then(function (res) {
+      if (res.error) throw res.error;
+      if (!res.data || !res.data.data) throw new Error('找不到這個版本');
+      var data = res.data.data;
+      return client.from('app_state').select('version').eq('user_id', uid).maybeSingle().then(function (cur) {
+        if (cur.error) throw cur.error;
+        var rv = cur.data ? cur.data.version : 0;
+        var q = cur.data ?
+          client.from('app_state').update({ data: data, version: rv + 1, updated_at: new Date().toISOString() }).eq('user_id', uid).eq('version', rv).select('version') :
+          client.from('app_state').insert({ user_id: uid, data: data, version: 1 });
+        return q.then(function (up) {
+          if (up.error) throw up.error;
+          if (cur.data && (!up.data || !up.data.length)) throw new Error('剛好有別的裝置在更新，請再試一次');
+          backupLocal(App.state(), 'before-restore');
+          App.replaceState(clone(data));
+          saveMeta({ userId: uid, version: cur.data ? rv + 1 : 1, base: JSON.stringify(data) });
+        });
+      });
     });
   }
 
@@ -384,9 +489,51 @@
     box.hidden = !box.innerHTML;
     var out = $('#cl-logout');
     if (out) { out.hidden = !user; out.disabled = false; out.textContent = '登出'; }
+    var hb = $('#history-open'); if (hb) hb.hidden = !user || App.sampleMode();
     renderStatus();
     if (window.Profile) window.Profile.render();
   }
+
+  // ---------- 畫面：還原到之前的版本 ----------
+  function fmtTime(iso) {
+    var d = new Date(iso);
+    if (isNaN(d)) return '';
+    return (window.Trips && window.Trips.fmtDate ? window.Trips.fmtDate(d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0')) : (d.getMonth() + 1) + '/' + d.getDate()) + ' ' + hhmm(d);
+  }
+  function openHistory() {
+    $('#account-sheet').hidden = true;
+    $('#history-list').innerHTML = '<p class="muted small">讀取中…</p>';
+    $('#history-sheet').hidden = false;
+    listHistory().then(function (rows) {
+      $('#history-list').innerHTML = rows.length ? rows.map(function (r) {
+        return '<div class="hist-row"><span class="hist-main"><b>' + esc(fmtTime(r.saved_at)) + '</b>' +
+          '<span class="muted small">物品 ' + (r.item_count || 0) + '・旅程 ' + (r.trip_count || 0) + '</span></span>' +
+          '<button type="button" class="btn ghost small-btn" data-hist-restore="' + esc(String(r.id)) + '" data-hist-time="' + esc(fmtTime(r.saved_at)) + '">還原</button></div>';
+      }).join('') : '<p class="muted small">還沒有之前的版本。之後每次存到雲端，上一版都會自動留下來。</p>';
+    }).catch(function (err) {
+      var m = (err && (err.message || '')) + ' ' + (err && err.code || '');
+      $('#history-list').innerHTML = '<p class="muted small">' + (/app_state_history|42P01|PGRST205|schema cache/.test(m) ?
+        '雲端還沒有開啟「之前的版本」。請先在 Supabase 執行 supabase/history.sql。' : esc(friendly(err))) + '</p>';
+    });
+  }
+  document.addEventListener('click', function (e) {
+    var t = e.target;
+    if (!t.closest) return;
+    if (t.closest('#history-open')) { openHistory(); return; }
+    if (t.id === 'history-close' || t.id === 'history-sheet') { $('#history-sheet').hidden = true; return; }
+    var b = t.closest('[data-hist-restore]');
+    if (!b) return;
+    if (!confirm('要還原到 ' + b.getAttribute('data-hist-time') + ' 的版本嗎？\n目前的資料會先自動留成一個版本，之後還可以再換回來。')) return;
+    b.disabled = true; b.textContent = '還原中…';
+    restoreHistory(b.getAttribute('data-hist-restore')).then(function () {
+      $('#history-sheet').hidden = true;
+      App.toast('已還原');
+      App.refreshView();
+    }).catch(function (err) {
+      b.disabled = false; b.textContent = '還原';
+      alert('還原失敗：' + friendly(err));
+    });
+  });
 
   // 「登入」：展開登入表單（範例提示列、介紹最後一頁、第一次使用的「登入」也用這裡）
   var loginOpen = false;
@@ -611,6 +758,6 @@
     render();
   }
 
-  window.Cloud = { openLogin: openLogin, waitingForData: waitingForData, schedule: schedule, sync: sync, queueDelete: queueDelete, merge3: merge3, render: render, status: function () { return status; } };
+  window.Cloud = { listHistory: listHistory, restoreHistory: restoreHistory, countOf: countOf, openLogin: openLogin, waitingForData: waitingForData, schedule: schedule, sync: sync, queueDelete: queueDelete, merge3: merge3, render: render, status: function () { return status; } };
   init();
 })();
