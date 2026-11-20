@@ -31,6 +31,14 @@
 - 使用者自己輸入的內容（物品、家、城市、朋友、自己新增的選項）不翻譯。選單選項的 value 要用中文原文（存進資料的一律是中文）。
 - 英文用詞：首頁 Overview、行程 Trips、打包 Packing、家 Homes、衣櫃 Wardrobe、抽屜 Drawer、行李箱 Luggage、清單 List、行李 Bags、購物 Shopping、禮物 Gifts、預留空間 Reserved space、必帶 Essentials、穿搭 Outfits。日期英文用「Thu, Nov 20」，時間 24 小時制，重量 kg。
 
+## 資料安全（雲端同步）
+- **每次修改到登入、登出、同步、範例或資料格式（`cloud.js`、`app.js` 的 load／migrate／save、`onboard.js`、`profile.js`、`sample-data.js`），發布前一定要跑 `node tests/safety.js`，全部通過才可以 commit／push，並在回報裡寫出測試結果（幾項通過）。** 也可以用 `SERVER_GUARD=off node tests/safety.js` 確認 app 自己（沒有雲端那一層）也守得住。
+- 同步一定先讀雲端，讀成功之後才可能上傳；讀取失敗、離線時不上傳。
+- 本機資料是空的、讀不懂、或是範例資料時，絕對不上傳，改用雲端的。讀不懂的本機資料另外留在 `cmo-rescue-…`。
+- 刪除只刪那一筆：存檔時比對上一次，真的被刪掉的才記到 `state.tombstones`（id → 時間）；合併時只有記在這裡的才刪，「少了但沒有刪除紀錄」一律保留。不要再用「整份換掉」的方式刪資料。
+- 上傳會讓物品或旅程少一半以上時先問使用者；雲端（`supabase/safety.sql`）也會擋下沒確認過的大量減少和範例資料，並保留之前 50 版。
+- 打開 app 讀資料時（`load` → `migrate`）會用到的東西，要放在 `var state = load()` 之前，或寫在函式裡；檔案後面的 `var` 那時候還沒有值（這次資料被清空就是這個原因）。
+
 ## 其他固定要求
 - 其他功能不要動。不要清掉瀏覽器或雲端已存的資料。風格維持極簡雜誌感。
 - 程式裡只能放 Supabase 的 publishable key，不要放 service_role key。

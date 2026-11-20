@@ -566,9 +566,9 @@ window.LANG = { zh: { name: '繁體中文' }, en: { name: 'English', text: {}, r
   add({
     '還原到之前的版本': 'Restore an earlier version', '讀取中…': 'Loading…', '還原': 'Restore', '還原中…': 'Restoring…', '已還原': 'Restored',
     '還沒有之前的版本。之後每次存到雲端，上一版都會自動留下來。': 'No earlier versions yet. From now on, the previous version is kept every time we save to the cloud.',
-    '雲端還沒有開啟「之前的版本」。請先在 Supabase 執行 supabase/history.sql。': 'Earlier versions are not enabled in the cloud yet. Run supabase/history.sql in Supabase first.',
+    '雲端還沒有開啟「之前的版本」。請先在 Supabase 執行 supabase/safety.sql。': 'Earlier versions are not enabled in the cloud yet. Run supabase/safety.sql in Supabase first.',
     '範例資料不會上傳到雲端': 'Sample data is never uploaded', '剛好有別的裝置在更新，請再試一次': 'Another device is updating right now — please try again',
-    '找不到這個版本': 'Version not found', '這台裝置留下的備份': 'Backups kept on this device', '雲端之前的版本': 'Earlier versions in the cloud'
+    '找不到這個版本': 'Version not found', '雲端擋下了這次同步：資料會一次少一半以上': 'The cloud blocked this sync: more than half of your data would disappear at once', '這台裝置留下的備份': 'Backups kept on this device', '雲端之前的版本': 'Earlier versions in the cloud'
   });
   window.LANG.en.rules.unshift([/^物品 (\d+)・旅程 (\d+)$/, function (m) { return m[1] + ' items · ' + m[2] + (m[2] === '1' ? ' trip' : ' trips'); }]);
   R(/^要還原到 (.+) 的版本嗎？\n目前的資料會先自動留成一個版本，之後還可以再換回來。$/, function (m, tr) { return 'Restore the version from ' + tr(m[1]) + '?\nYour current data is kept as a version first, so you can switch back.'; });

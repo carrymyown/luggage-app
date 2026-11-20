@@ -55,6 +55,8 @@
       return '雲端資料表還沒建立，請先在 Supabase 執行設定 SQL';
     }
     if (/Bucket not found/i.test(m)) return '照片空間 item-photos 還沒建立，請先在 Supabase 執行照片設定 SQL';
+    if (/CMO_SHRINK_BLOCKED/.test(m)) return '雲端擋下了這次同步：資料會一次少一半以上';
+    if (/CMO_SAMPLE_BLOCKED/.test(m)) return '範例資料不會上傳到雲端';
     if (/row-level security|violates/i.test(m)) return '雲端權限設定不正確，請重新執行設定 SQL';
     if (/Failed to fetch|NetworkError|Load failed|network/i.test(m)) return '連不上雲端，有網路後會自動再試';
     return m || '發生錯誤';
@@ -68,7 +70,12 @@
     return arr.every(function (x) { return x === null || typeof x !== 'object'; });
   }
 
-  function mergeById(b, l, r, hasBase) {
+  // 只刪那一筆：一邊沒有、另一邊有的東西，只有在「刪除紀錄」（tombstones）裡、而且刪除時間比這筆最後修改還晚，才會刪掉；
+  // 其他情況（例如這台的資料讀取出錯、整份被換掉而少了東西）一律保留，不會被當成刪除
+  function stampOf(x) { return Number(x && (x.updatedAt || x.createdAt)) || 0; }
+  function mergeById(b, l, r, hasBase, tombs) {
+    tombs = tombs || {};
+    function gone(x) { var t = tombs[String(x.id)]; return !!t && t >= stampOf(x); }
     var B = {}, L = {}, R = {};
     b.forEach(function (x) { B[x.id] = x; });
     l.forEach(function (x) { L[x.id] = x; });
@@ -81,8 +88,8 @@
         if (inB && eq(R[id], B[id])) return L[id];
         return (R[id].updatedAt || 0) > (L[id].updatedAt || 0) ? R[id] : L[id];
       }
-      if (inL) return inB && eq(L[id], B[id]) ? null : L[id];   // 雲端刪掉、這台沒動 → 刪除
-      return inB && eq(R[id], B[id]) ? null : R[id];            // 這台刪掉、雲端沒動 → 刪除
+      if (inL) return gone(L[id]) ? null : L[id];   // 雲端那邊刪掉了（有刪除紀錄）才刪
+      return gone(R[id]) ? null : R[id];            // 這台刪掉了（有刪除紀錄）才刪
     }
     var out = [], seen = {};
     l.forEach(function (x) { seen[x.id] = 1; var v = decide(x.id); if (v) out.push(v); });
@@ -92,6 +99,7 @@
 
   function mergeSet(b, l, r, hasBase) {
     var out = [];
+    if (!l.length || !r.length) return (l.length ? l : r).slice();   // 一邊整個變空的：不當成刪除，保留另一邊
     l.forEach(function (x) {
       if (r.indexOf(x) >= 0 || !(hasBase && b.indexOf(x) >= 0)) { if (out.indexOf(x) < 0) out.push(x); }
     });
@@ -105,9 +113,16 @@
 
   // 三方合併：base＝上次同步的內容（第一次同步時是 null，兩邊全部保留）
   // 裡面是物件的欄位（例如回程購物 shopping：plans、purchases、ratio）也逐項合併，兩台都改過時不會整包蓋掉
-  function merge3(base, local, remote) {
+  function merge3(base, local, remote, tombs) {
     var hasBase = !!base;
     base = base || {};
+    // 兩邊的刪除紀錄合在一起（同一筆取比較晚的時間）
+    if (!tombs) {
+      tombs = {};
+      [local && local.tombstones, remote && remote.tombstones].forEach(function (t) {
+        if (plainObj(t)) Object.keys(t).forEach(function (id) { if (!(tombs[id] >= t[id])) tombs[id] = Number(t[id]) || 0; });
+      });
+    }
     var out = {};
     var keys = Object.keys(local).concat(Object.keys(remote).filter(function (k) { return !(k in local); }));
     keys.forEach(function (k) {
@@ -117,10 +132,11 @@
       if (Array.isArray(l) && Array.isArray(r)) {
         var both = l.concat(r);
         var bArr = Array.isArray(b) ? b : [];
-        if (byIdArray(both)) { out[k] = mergeById(bArr, l, r, hasBase && Array.isArray(b)); return; }
+        if (byIdArray(both)) { out[k] = mergeById(bArr, l, r, hasBase && Array.isArray(b), tombs); return; }
         if (primitiveArray(both)) { out[k] = mergeSet(bArr, l, r, hasBase && Array.isArray(b)); return; }
       }
-      if (plainObj(l) && plainObj(r)) { out[k] = merge3(hasBase && plainObj(b) ? b : null, l, r); return; }
+      if (k === 'tombstones' && plainObj(l) && plainObj(r)) { out[k] = Object.assign({}, l, r); Object.keys(out[k]).forEach(function (id) { out[k][id] = Math.max(Number(l[id]) || 0, Number(r[id]) || 0); }); return; }
+      if (plainObj(l) && plainObj(r)) { out[k] = merge3(hasBase && plainObj(b) ? b : null, l, r, tombs); return; }
       out[k] = hasBase && eq(l, b) ? r : l;
     });
     return out;
@@ -301,7 +317,7 @@
   //  - 這台沒有資料（剛登入、資料讀不懂、被清掉）→ 一律用雲端的，絕不上傳
   //  - 範例資料 → 不上傳
   //  - 這次上傳會讓雲端的資料少一半以上 → 先停下來問
-  //  - 雲端每次被更新前，上一版會自動留在 app_state_history（設定見 supabase/history.sql）
+  //  - 雲端每次被更新前，上一版會自動留在 app_state_history（設定見 supabase/safety.sql）
   function run(uid) {
     var meta = loadMeta();
     var attempt = 0;
@@ -329,6 +345,7 @@
         }
 
         var remote = res.data.data || {};
+        if ('shrinkOk' in remote) { remote = clone(remote); delete remote.shrinkOk; }   // 只給雲端的安全檢查看，不放進這台的資料
         var rv = res.data.version;
         // 這台沒有資料：直接用雲端的（不管上次同步過沒有），不上傳
         if (localEmpty) {
@@ -338,7 +355,8 @@
           saveMeta(meta);
           return;
         }
-        var merged = base && rv === meta.version ? clone(local) : merge3(base, local, remote);
+        // 一律逐筆合併（就算雲端沒變也一樣）：這台少掉、但沒有刪除紀錄的東西，會從雲端補回來
+        var merged = merge3(base, local, remote);
         delete merged.pristine;
         // 雲端的資料比這台少很多（可能被別的裝置蓋掉了）：先問，不要自動把這台的資料也刪掉
         var lost = shrinkOf(local, merged);
@@ -373,8 +391,10 @@
           }
           allowShrink[rv] = true;
         }
+        // 使用者確認過這次會少很多：帶上這次的版本號，雲端的安全檢查才會放行（見 supabase/safety.sql）
+        var payload = allowShrink[rv] ? Object.assign({}, merged, { shrinkOk: String(rv + 1) }) : merged;
         return client.from('app_state')
-          .update({ data: merged, version: rv + 1, updated_at: new Date().toISOString() })
+          .update({ data: payload, version: rv + 1, updated_at: new Date().toISOString() })
           .eq('user_id', uid).eq('version', rv).select('version')
           .then(function (up) {
             if (up.error) throw up.error;
@@ -421,12 +441,14 @@
     }).then(function (res) {
       if (res.error) throw res.error;
       if (!res.data || !res.data.data) throw new Error('找不到這個版本');
-      var data = res.data.data;
+      var data = clone(res.data.data);
+      delete data.shrinkOk;
       return client.from('app_state').select('version').eq('user_id', uid).maybeSingle().then(function (cur) {
         if (cur.error) throw cur.error;
         var rv = cur.data ? cur.data.version : 0;
+        var payload = Object.assign({}, data, { shrinkOk: String(rv + 1) });   // 自己選的還原：雲端的安全檢查放行
         var q = cur.data ?
-          client.from('app_state').update({ data: data, version: rv + 1, updated_at: new Date().toISOString() }).eq('user_id', uid).eq('version', rv).select('version') :
+          client.from('app_state').update({ data: payload, version: rv + 1, updated_at: new Date().toISOString() }).eq('user_id', uid).eq('version', rv).select('version') :
           client.from('app_state').insert({ user_id: uid, data: data, version: 1 });
         return q.then(function (up) {
           if (up.error) throw up.error;
@@ -541,7 +563,7 @@
     }).catch(function (err) {
       var m = (err && (err.message || '')) + ' ' + (err && err.code || '');
       $('#history-list').innerHTML = local + '<p class="muted small">' + (/app_state_history|42P01|PGRST205|schema cache/.test(m) ?
-        '雲端還沒有開啟「之前的版本」。請先在 Supabase 執行 supabase/history.sql。' : esc(friendly(err))) + '</p>';
+        '雲端還沒有開啟「之前的版本」。請先在 Supabase 執行 supabase/safety.sql。' : esc(friendly(err))) + '</p>';
     });
   }
   document.addEventListener('click', function (e) {

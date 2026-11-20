@@ -372,6 +372,35 @@
     return s;
   }
 
+  // ---------- 刪除紀錄（同步時「只刪那一筆」） ----------
+  // state.tombstones = { 物品／旅程…的 id: 刪除的時間 }。存檔時和上一次比對，真的被刪掉的那幾筆才記下來；
+  // 雲端合併時，只有記在這裡的才會刪除。資料「少了」但沒有刪除紀錄（例如讀取出錯、整份被換掉）一律保留，不會被當成刪除。
+  var TOMB_DAYS = 365;
+  function idSet(s) {
+    var set = {};
+    (function walk(x, key) {
+      if (!x || typeof x !== 'object' || key === 'tombstones') return;
+      if (Array.isArray(x)) {
+        x.forEach(function (v) {
+          if (v && typeof v === 'object' && !Array.isArray(v) && (typeof v.id === 'string' || typeof v.id === 'number') && v.id !== '') set[String(v.id)] = true;
+          walk(v, '');
+        });
+        return;
+      }
+      Object.keys(x).forEach(function (k) { walk(x[k], k); });
+    })(s, '');
+    return set;
+  }
+  function noteDeletions() {
+    if (sampleMode()) { savedIds = idSet(state); return; }   // 範例不同步，不用記
+    var now = Date.now(), cur = idSet(state);
+    if (!state.tombstones || typeof state.tombstones !== 'object' || Array.isArray(state.tombstones)) state.tombstones = {};
+    var t = state.tombstones;
+    Object.keys(savedIds || {}).forEach(function (id) { if (!cur[id]) t[id] = now; });
+    Object.keys(t).forEach(function (id) { if (now - t[id] > TOMB_DAYS * 86400000) delete t[id]; });
+    savedIds = cur;
+  }
+
   // 登出清資料後到重新載入前，不再寫入任何資料（避免把剛清掉的資料又存回去）
   var locked = false, saveOk = true;
   function save() {
@@ -379,6 +408,7 @@
     // 這台裝置的資料讀不懂：不要用空的資料蓋掉原本那一份（等雲端的資料載回來就恢復正常）
     if (loadFailed && !sampleMode()) { saveOk = false; return false; }
     delete state.pristine;
+    noteDeletions();
     saveOk = true;
     try { localStorage.setItem(dataKey(), JSON.stringify(state)); }
     catch (e) { saveOk = false; toast('無法儲存（瀏覽器可能在私密模式）'); }
@@ -403,6 +433,7 @@
     ['bags', 'items', 'memory'].forEach(function (k) { if (!Array.isArray(copy[k])) copy[k] = []; });
     var s2 = migrate(copy);   // 轉換失敗會丟出錯誤，目前的資料不動
     state = s2;
+    savedIds = idSet(state);
     loadFailed = false;
     try { localStorage.setItem(STORE_KEY, JSON.stringify(state)); } catch (e) { /* 下次再存 */ }
     try { refreshView(); } catch (e) { try { console.error(e); } catch (e2) { /* 不影響 */ } }   // 畫面出錯也不影響資料
@@ -416,6 +447,7 @@
   }
 
   var state = load();
+  var savedIds = idSet(state);   // 上次存檔（或載入）時有哪些東西：存檔時比對，少掉的才記成「刪除」
 
   // ---------- 工具 ----------
   var $ = function (sel) { return document.querySelector(sel); };
